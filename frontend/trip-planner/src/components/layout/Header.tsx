@@ -1,0 +1,38 @@
+import { AppBar, Toolbar, Button } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import { useNavigate } from "react-router-dom";
+import "./Header.css";
+
+export default function Header() {
+  const navigate = useNavigate();
+
+  return (
+    <AppBar position="static" elevation={0} className="header">
+      <Toolbar className="header-toolbar">
+        <div className="header-logo" onClick={() => navigate("/")}>
+          tripplanner
+        </div>
+
+        <nav className="header-nav">
+          <span>여행 계획</span>
+          <span>패스</span>
+          <span>좌석 예약</span>
+          <span>도움말</span>
+        </nav>
+
+        <div className="header-actions">
+          <span className="header-icon">
+            <SearchIcon />
+          </span>
+          <span className="header-icon">
+            <ShoppingCartOutlinedIcon />
+          </span>
+          <Button className="header-login-btn" onClick={() => navigate("/login")}>
+            로그인
+          </Button>
+        </div>
+      </Toolbar>
+    </AppBar>
+  );
+}

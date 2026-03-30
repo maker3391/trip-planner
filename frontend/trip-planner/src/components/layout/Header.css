@@ -1,0 +1,50 @@
+.header {
+  background-color: #ffffff !important;
+  color: #1f1f1f !important;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.header-toolbar {
+  min-height: 82px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px !important;
+}
+
+.header-logo {
+  font-size: 36px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: -1px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.header-nav span {
+  cursor: pointer;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.header-login-btn {
+  color: #1f1f1f !important;
+  font-weight: 700 !important;
+}
