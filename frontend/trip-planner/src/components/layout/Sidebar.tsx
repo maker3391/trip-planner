@@ -1,6 +1,25 @@
+import { useState } from "react";
 import "./Sidebar.css";
 
-export default function Sidebar() {
+interface SidebarProps {
+  onSearch: (keyword: string) => void;
+}
+
+export default function Sidebar({onSearch}: SidebarProps) {
+  const [keyword, setKeyword] = useState("");
+
+  const handleSearch = () => {
+    const trimmedKeyword = keyword.trim();
+    if (!trimmedKeyword) return;
+    onSearch(trimmedKeyword);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-top">
@@ -22,9 +41,14 @@ export default function Sidebar() {
           className="sidebar-input"
           type="text"
           placeholder="도시 또는 기차역"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
 
-        <button className="sidebar-button">여행을 계획해 보세요</button>
+        <button className="sidebar-button" onClick={handleSearch}>
+          여행을 계획해 보세요
+        </button>
       </div>
     </aside>
   );
