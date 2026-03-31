@@ -1,0 +1,68 @@
+.tutorial-title {
+  font-weight: 800 !important;
+  color: #1f1f1f;
+}
+
+.tutorial-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 6px 2px;
+}
+
+.tutorial-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background-color: #fafafa;
+  border: 1px solid #ececec;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.tutorial-step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f7b500;
+  color: #1f1f1f;
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tutorial-step h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #1f1f1f;
+}
+
+.tutorial-step p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b4b4b;
+}
+
+.tutorial-actions {
+  padding: 14px 20px !important;
+}
+
+.tutorial-close-btn {
+  color: #1f1f1f !important;
+  font-weight: 700 !important;
+}
+
+.tutorial-step.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tutorial-step.clickable:hover {
+  background-color: #fff4d6;
+  transform: translateY(-2px);
+}

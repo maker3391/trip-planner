@@ -68,10 +68,26 @@
 .login-divider {
   display: flex;
   align-items: center;
-  justify-content: center;
+  text-align: center;
   margin: 20px 0;
-  color: #999999;
   font-size: 14px;
+  color: #999;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: #ddd;
+}
+
+.login-divider::before {
+  margin-right: 12px;
+}
+
+.login-divider::after {
+  margin-left: 12px;
 }
 
 .social-button {
@@ -84,6 +100,11 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.login-input,
+.login-button {
+  box-sizing: border-box;
 }
 
 .login-signup {

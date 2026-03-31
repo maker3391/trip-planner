@@ -29,6 +29,11 @@
 
 .header-nav span {
   cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.header-nav span:hover {
+  color: #f7b500;
 }
 
 .header-actions {

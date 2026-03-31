@@ -10,10 +10,12 @@
 
 .map-area {
   flex: 1;
-  background-color: #d8e7e2;
+  background: linear-gradient(135deg, #d8e7e2 0%, #e9f2ef 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 32px;
+  overflow-y: auto;
 }
 
 .map-placeholder {

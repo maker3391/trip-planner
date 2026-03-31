@@ -25,9 +25,8 @@ export default function LoginPage() {
 
           <div className="login-divider">또는</div>
 
-          <button className="social-button">Facebook 계정으로 진행하기</button>
+          <button className="social-button">Kakao 계정으로 진행하기</button>
           <button className="social-button">Google 계정으로 진행하기</button>
-          <button className="social-button">Apple 계정으로 진행하기</button>
 
           <p className="login-signup">
             계정이 없으신가요? <span>지금 가입하세요</span>

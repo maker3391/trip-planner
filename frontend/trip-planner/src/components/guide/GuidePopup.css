@@ -1,0 +1,136 @@
+.guide-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.guide-popup {
+  width: 90%;
+  max-width: 760px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+}
+
+.guide-popup-badge {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background-color: #f7b500;
+  color: #1f1f1f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.guide-popup-title {
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #1f1f1f;
+}
+
+.guide-popup-description {
+  margin: 0 0 24px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #4a4a4a;
+}
+
+.guide-popup-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.guide-popup-card {
+  background-color: #fafafa;
+  border: 1px solid #ececec;
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.guide-popup-card h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1f1f1f;
+}
+
+.guide-popup-card ul,
+.guide-popup-card ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.guide-popup-card li {
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #444444;
+}
+
+.guide-popup-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.guide-popup-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #444444;
+}
+
+.guide-popup-close-btn {
+  min-width: 100px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background-color: #f7b500;
+  color: #1f1f1f;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.guide-popup-close-btn:hover {
+  filter: brightness(0.98);
+}
+
+@media (max-width: 768px) {
+  .guide-popup {
+    padding: 24px;
+  }
+
+  .guide-popup-title {
+    font-size: 26px;
+  }
+
+  .guide-popup-content {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-popup-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .guide-popup-close-btn {
+    width: 100%;
+  }
+}
