@@ -42,7 +42,7 @@ function MapSearchHandler({searchKeyword}: {searchKeyword: string}) {
 
 export default function MyMapApp({searchKeyword}: MyMapAppProps) {
   return (
-    <APIProvider apiKey="AIzaSyA1RObcKLbeR4OkFTIcLZXta4nQElBBsMk">
+    <APIProvider apiKey="">
       <div style={{ width: '100%', height: '100%', background: 'lightgray' }}> 
         <Map
           style={{ width: '100%', height: '100%' }}
