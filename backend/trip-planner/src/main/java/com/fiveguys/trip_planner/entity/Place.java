@@ -35,6 +35,9 @@ public class Place {
     @Column(name = "external_place_id")
     private String externalPlaceId;
 
+    @Column(name = "place_url", length = 1000)
+    private String placeUrl;
+
     @CreatedDate // Entity가 생성되어 저장될 때 시간이 자동 저장됨
     @Column(updatable = false)
     private LocalDateTime createdAt;
