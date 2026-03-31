@@ -3,7 +3,7 @@ import { APIProvider, Map } from '@vis.gl/react-google-maps';
 
 export default function MyMapApp() {
   return (
-    <APIProvider apiKey="AIzaSyA1RObcKLbeR4OkFTIcLZXta4nQElBBsMk">
+    <APIProvider apiKey="">
       <div style={{ width: '100%', height: '100%', background: 'lightgray' }}> 
         <Map
           style={{ width: '100%', height: '100%' }}
