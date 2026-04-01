@@ -1,9 +1,11 @@
 package com.fiveguys.trip_planner.controller;
 
 import com.fiveguys.trip_planner.dto.LoginRequest;
-import com.fiveguys.trip_planner.response.LoginResponse;
+import com.fiveguys.trip_planner.response.MessageResponse;
+import com.fiveguys.trip_planner.dto.RefreshTokenRequest;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.response.SignupResponse;
+import com.fiveguys.trip_planner.response.TokenResponse;
 import com.fiveguys.trip_planner.response.UserMeResponse;
 import com.fiveguys.trip_planner.entity.User;
 import com.fiveguys.trip_planner.service.AuthService;
@@ -26,7 +28,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
@@ -41,5 +43,15 @@ public class AuthController {
                         user.getStatus()
                 )
         );
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.getRefreshToken()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<MessageResponse> logout(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(authService.logout(user));
     }
 }

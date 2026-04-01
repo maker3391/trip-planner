@@ -68,7 +68,7 @@ public class User {
     public static User createOAuthUser(String email, String name, String provider, String providerId) {
         User user = new User();
         user.setEmail(email);
-        user.setPassword(null);
+        user.setPassword("OAUTH2_TEMP_PASSWORD");
         user.setName(name);
         user.setPhone(null);
         user.setRole("USER");
