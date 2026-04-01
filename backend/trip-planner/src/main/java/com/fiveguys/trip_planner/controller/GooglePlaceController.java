@@ -1,6 +1,6 @@
 package com.fiveguys.trip_planner.controller;
 
-import com.fiveguys.trip_planner.response.GooglePlaceResponse;
+import com.fiveguys.trip_planner.dto.GooglePlaceResponse;
 import com.fiveguys.trip_planner.service.GooglePlaceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

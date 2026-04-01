@@ -1,8 +1,5 @@
-<<<<<<<< HEAD:backend/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/ExpenseSummaryResponse.java
 package com.fiveguys.trip_planner.dto;
-========
-package com.fiveguys.trip_planner.dto.response;
->>>>>>>> 839db98d3a8c55ff3a2c7b51732a7fc635ee03a0:backend/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/response/ExpenseSummaryResponse.java
+
 
 import lombok.Builder;
 import lombok.Getter;

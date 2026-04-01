@@ -1,22 +1,22 @@
 package com.fiveguys.trip_planner.controller;
 
-import com.fiveguys.trip_planner.service.AuthService;
 import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.dto.LoginResopnse;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.dto.SignupResponse;
+import com.fiveguys.trip_planner.dto.UserMeResponse;
+import com.fiveguys.trip_planner.entity.User;
+import com.fiveguys.trip_planner.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class    AuthController {
+public class AuthController {
 
     private final AuthService authService;
 
@@ -30,4 +30,16 @@ public class    AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserMeResponse> me(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(
+                new UserMeResponse(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getName(),
+                        user.getRole(),
+                        user.getStatus()
+                )
+        );
+    }
 }
