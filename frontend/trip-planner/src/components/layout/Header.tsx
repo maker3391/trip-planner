@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
+import { CalculatorService } from "./calculator";
+import Calculator from "./Calculator.tsx";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -30,7 +32,10 @@ export default function Header() {
               <SearchIcon />
             </span>
             <span className="header-icon">
-              <ShoppingCartOutlinedIcon />
+              <button onClick={CalculatorService.openCalculator}
+                style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <ShoppingCartOutlinedIcon />
+              </button>
             </span>
             <Button className="header-login-btn" onClick={() => navigate("/login")}>
               로그인
@@ -43,6 +48,7 @@ export default function Header() {
         open={openTutorial}
         onClose={() => setOpenTutorial(false)}
       />
+      <Calculator />
     </>
   );
 }

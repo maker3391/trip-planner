@@ -1,7 +1,5 @@
 import { useState } from "react";
 import "./Sidebar.css";
-import Calculator from "./Calculator.tsx";
-import { CalculatorService } from "./calculator";
 
 interface SidebarProps {
   onSearch: (keyword: string) => void;
@@ -37,8 +35,6 @@ export default function Sidebar({onSearch}: SidebarProps) {
           가까운 출발 지점을 선택하세요. 다음으로, 꼭 가봐야 할 명소를 추가하고
           꿈꾸던 여행을 계획해 보세요.
         </p>
-        
-        <Calculator />
 
         <label className="sidebar-label">내 출발 지점</label>
         <input
@@ -52,9 +48,6 @@ export default function Sidebar({onSearch}: SidebarProps) {
 
         <button className="sidebar-button" onClick={handleSearch}>
           여행을 계획해 보세요
-        </button>
-        <button className="sidebar-button" onClick={CalculatorService.openCalculator}>
-          장바구니 보기
         </button>
       </div>
     </aside>

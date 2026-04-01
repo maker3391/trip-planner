@@ -64,7 +64,7 @@ const Calculator: React.FC = () => {
       {isCalcOpen && (
         <div className="calc-popup-container">
           <div className="calc-header">
-            <h3>예상 경비 계산기</h3>
+            <h3>장바구니</h3>
             <button className="calc-close-btn" onClick={() => setIsCalcOpen(false)}>✕</button>
           </div>
           
