@@ -1,7 +1,7 @@
 package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.client.GooglePlaceClient;
-import com.fiveguys.trip_planner.dto.response.GooglePlaceResponse;
+import com.fiveguys.trip_planner.response.GooglePlaceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

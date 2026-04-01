@@ -10,12 +10,9 @@
         <module name="com.fiveguys.trip-planner.main" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="21" />
   </component>
   <component name="JavacSettings">
-    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="com.fiveguys.trip-planner" options="-parameters" />
-      <module name="com.fiveguys.trip-planner.main" options="-parameters" />
-      <module name="com.fiveguys.trip-planner.test" options="-parameters" />
-    </option>
+    <option name="ADDITIONAL_OPTIONS_STRING" value="-parameters" />
   </component>
 </project>

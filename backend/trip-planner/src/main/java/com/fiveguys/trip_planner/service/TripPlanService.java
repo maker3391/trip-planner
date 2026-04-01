@@ -1,7 +1,7 @@
 package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.dto.TripPlanRequestDto;
-import com.fiveguys.trip_planner.dto.response.TripPlanResponseDto;
+import com.fiveguys.trip_planner.response.TripPlanResponseDto;
 import com.fiveguys.trip_planner.entity.TripDay;
 import com.fiveguys.trip_planner.entity.TripMember;
 import com.fiveguys.trip_planner.entity.TripPlan;

@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.dto.response;
+package com.fiveguys.trip_planner.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

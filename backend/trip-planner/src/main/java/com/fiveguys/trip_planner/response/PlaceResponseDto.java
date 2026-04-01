@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.dto.response;
+package com.fiveguys.trip_planner.response;
 
 import com.fiveguys.trip_planner.entity.Place;
 import lombok.Getter;
