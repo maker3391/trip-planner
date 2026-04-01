@@ -1,6 +1,5 @@
 package com.fiveguys.trip_planner.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

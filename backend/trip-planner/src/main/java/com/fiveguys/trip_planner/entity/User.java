@@ -25,7 +25,7 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String password;
 
     @Column(nullable = false, length = 50)
@@ -39,6 +39,12 @@ public class User {
 
     @Column(nullable = false, length = 20)
     private String status;
+
+    @Column(length = 30)
+    private String provider;
+
+    @Column(length = 100)
+    private String providerId;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
@@ -56,6 +62,19 @@ public class User {
         user.setPhone(phone);
         user.setRole("USER");
         user.setStatus("ACTIVE");
+        return user;
+    }
+
+    public static User createOAuthUser(String email, String name, String provider, String providerId) {
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(null);
+        user.setName(name);
+        user.setPhone(null);
+        user.setRole("USER");
+        user.setStatus("ACTIVE");
+        user.setProvider(provider);
+        user.setProviderId(providerId);
         return user;
     }
 }
