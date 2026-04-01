@@ -1,6 +1,6 @@
 package com.fiveguys.trip_planner.service;
 
-import com.fiveguys.trip_planner.dto.response.ExpenseSummaryResponse;
+import com.fiveguys.trip_planner.dto.ExpenseSummaryResponse;
 import com.fiveguys.trip_planner.entity.*;
 import com.fiveguys.trip_planner.repository.*;
 import lombok.*;

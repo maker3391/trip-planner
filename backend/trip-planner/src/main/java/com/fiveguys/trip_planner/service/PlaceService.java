@@ -1,7 +1,7 @@
 package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.dto.PlaceRequestDto;
-import com.fiveguys.trip_planner.dto.response.PlaceResponseDto;
+import com.fiveguys.trip_planner.dto.PlaceResponseDto;
 import com.fiveguys.trip_planner.entity.Place;
 import com.fiveguys.trip_planner.repository.PlaceRepository;
 import lombok.RequiredArgsConstructor;

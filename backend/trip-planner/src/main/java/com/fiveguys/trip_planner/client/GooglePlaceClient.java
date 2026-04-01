@@ -1,6 +1,10 @@
 package com.fiveguys.trip_planner.client;
 
+<<<<<<< HEAD
+import com.fiveguys.trip_planner.dto.GooglePlaceResponse;
+=======
 import com.fiveguys.trip_planner.dto.response.GooglePlaceResponse;
+>>>>>>> 839db98d3a8c55ff3a2c7b51732a7fc635ee03a0
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
