@@ -5,7 +5,7 @@ import com.fiveguys.trip_planner.response.MessageResponse;
 import com.fiveguys.trip_planner.dto.RefreshTokenRequest;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.response.SignupResponse;
-import com.fiveguys.trip_planner.dto.TokenResponse;
+import com.fiveguys.trip_planner.response.TokenResponse;
 import com.fiveguys.trip_planner.response.UserMeResponse;
 import com.fiveguys.trip_planner.entity.User;
 import com.fiveguys.trip_planner.service.AuthService;

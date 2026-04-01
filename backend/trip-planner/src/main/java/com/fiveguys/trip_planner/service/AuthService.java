@@ -4,7 +4,7 @@ import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.response.MessageResponse;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.response.SignupResponse;
-import com.fiveguys.trip_planner.dto.TokenResponse;
+import com.fiveguys.trip_planner.response.TokenResponse;
 import com.fiveguys.trip_planner.entity.RefreshToken;
 import com.fiveguys.trip_planner.entity.User;
 import com.fiveguys.trip_planner.exception.DuplicateEmailException;
