@@ -1,4 +1,5 @@
 import { useState, ChangeEvent } from "react";
+import axios from "axios";
 import type { LoginRequest } from "../types/auth";
 import Header from "../components/layout/Header";
 import "./LoginPage.css";
@@ -20,16 +21,38 @@ export default function LoginPage() {
   };
 
   // 3. 로그인 버튼 클릭 시 호출되는 핸들러
-  const handleSubmit = () => {
-    if (!formData.email || !formData.password) {
-      alert("이메일과 비밀번호를 모두 입력해주세요.");
-      return;
+  const handleSubmit = async () => {
+  if (!formData.email || !formData.password) {
+    alert("이메일과 비밀번호를 모두 입력해주세요.");
+    return;
+  }
+
+  try {
+    const response = await axios.post("http://localhost:8080/api/auth/login", {
+      email: formData.email,
+      password: formData.password,
+    });
+
+    console.log("서버 응답:", response.data);
+
+    // ✅ 토큰 저장 (핵심)
+    if (response.data.token) {
+      localStorage.setItem("token", response.data.token);
     }
-    
-    console.log("로그인 시도 데이터:", formData);
-    alert(`로그인 시도: ${formData.email}`);
-    // 여기서 실제 API 호출(axios 등)을 진행하면 됩니다.
-  };
+
+    alert("로그인 성공 🎉");
+
+  } catch (error: unknown) {
+    console.error("로그인 실패:", error);
+
+    if (axios.isAxiosError(error) && error.response) {
+      const errorData = error.response.data as { message?: string };
+      alert(errorData.message || "로그인 실패");
+    } else {
+      alert("서버 연결 실패");
+    }
+  }
+};
 
   return (
     <div className="login-page">

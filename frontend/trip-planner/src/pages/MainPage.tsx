@@ -3,6 +3,7 @@ import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import GuidePopup from "../components/guide/GuidePopup";
 import "./MainPage.css";
+import MyMapApp from "./MyMapApp";
 
 export default function MainPage() {
   const [openGuidePopup, setOpenGuidePopup] = useState(false);

@@ -1,13 +1,13 @@
 package com.fiveguys.trip_planner.service;
 
-import com.fiveguys.trip_planner.common.exception.DuplicateEmailException;
-import com.fiveguys.trip_planner.common.exception.InvalidLoginException;
+import com.fiveguys.trip_planner.exception.DuplicateEmailException;
+import com.fiveguys.trip_planner.exception.InvalidLoginException;
 import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.dto.LoginResopnse;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.dto.SignupResponse;
-import com.fiveguys.trip_planner.user.entity.User;
-import com.fiveguys.trip_planner.user.repository.UserRepository;
+import com.fiveguys.trip_planner.entity.User;
+import com.fiveguys.trip_planner.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
