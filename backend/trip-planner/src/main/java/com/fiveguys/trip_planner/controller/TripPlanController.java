@@ -27,8 +27,8 @@ public class TripPlanController {
             Principal principal // 로그인한 사용자 정보 가져오기
             ) {
         // 현재 로그인한 사용자의 email(또는 ID)로 User 엔티티 조회
-        String email = principal.getName();
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        Long userId = Long.parseLong(principal.getName());
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         TripPlanResponseDto response = tripPlanService.createTripPlan(requestDto, user);
 

@@ -18,8 +18,8 @@ public class PlaceController {
     private final PlaceService placeService;
 
     @PostMapping
-    public ResponseEntity<com.fiveguys.trip_planner.dto.PlaceResponseDto.PlaceResponseDto> createPlace(@RequestBody PlaceRequestDto requestDto) {
-        PlaceResponseDto.PlaceResponseDto responseDto = placeService.createPlace(requestDto);
+    public ResponseEntity<PlaceResponseDto> createPlace(@RequestBody PlaceRequestDto requestDto) {
+        PlaceResponseDto responseDto = placeService.createPlace(requestDto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }

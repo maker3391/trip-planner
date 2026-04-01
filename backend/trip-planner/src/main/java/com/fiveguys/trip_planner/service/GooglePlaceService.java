@@ -19,7 +19,6 @@ public class GooglePlaceService {
         if(response == null || response.getPlaces() == null) {
             return List.of();
         }
-
         return response.getPlaces();
     }
 }

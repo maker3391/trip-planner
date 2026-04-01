@@ -1,7 +1,7 @@
 package com.fiveguys.trip_planner.controller;
 
 import com.fiveguys.trip_planner.dto.LoginRequest;
-import com.fiveguys.trip_planner.dto.MessageResponse;
+import com.fiveguys.trip_planner.response.MessageResponse;
 import com.fiveguys.trip_planner.dto.RefreshTokenRequest;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.response.SignupResponse;
