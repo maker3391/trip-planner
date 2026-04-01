@@ -1,0 +1,152 @@
+/* Calculator.css */
+
+/* 장바구니 팝업 (우측 하단 플로팅 팝업 형태) */
+.calc-popup-container {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 320px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Pretendard', sans-serif;
+}
+
+.calc-header {
+  background-color: #ffca28; /* TPlanner UI 포인트 컬러 */
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calc-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.calc-close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #333;
+}
+
+.calc-body {
+  padding: 16px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.calc-empty {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+
+.calc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.calc-list-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.calc-item-cat {
+  color: #ff9800;
+  margin-right: 6px;
+  font-weight: bold;
+}
+
+.calc-footer {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+.calc-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.calc-btn-reset {
+  width: 100%;
+  padding: 10px;
+  background-color: #e0e0e0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #555;
+}
+
+.calc-btn-reset:hover {
+  background-color: #d5d5d5;
+}
+
+/* 확인 팝업 (화면 중앙 오버레이) */
+.calc-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.calc-confirm-popup {
+  background-color: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.calc-confirm-popup h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.calc-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.calc-btn-confirm {
+  flex: 1;
+  padding: 10px;
+  background-color: #ffca28;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.calc-btn-cancel {
+  flex: 1;
+  padding: 10px;
+  background-color: #eee;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}

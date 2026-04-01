@@ -42,7 +42,7 @@ function MapSearchHandler({searchKeyword}: {searchKeyword: string}) {
 
 export default function MyMapApp({searchKeyword}: MyMapAppProps) {
   return (
-    <APIProvider apiKey="">
+    <APIProvider apiKey="AIzaSyA1RObcKLbeR4OkFTIcLZXta4nQElBBsMk">
       <div style={{ width: '100%', height: '100%', background: 'lightgray' }}> 
         <Map
           style={{ width: '100%', height: '100%' }}
@@ -58,3 +58,5 @@ export default function MyMapApp({searchKeyword}: MyMapAppProps) {
 }
 
 //apikey는 무조건 삭제AIzaSyA1RObcKLbeR4OkFTIcLZXta4nQElBBsMk
+//주석 추가해도 차이가 나나
+//git에 main파일 정상화

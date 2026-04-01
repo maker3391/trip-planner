@@ -50,6 +50,10 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new InvalidLoginException("이메일 또는 비밀번호가 틀렸습니다."));
 
+        if (user.getPassword() == null) {
+            throw new InvalidLoginException("소셜 로그인으로 가입한 계정입니다.");
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new InvalidLoginException("이메일 또는 비밀번호가 틀렸습니다.");
         }

@@ -1,6 +1,6 @@
 package com.fiveguys.trip_planner.dto;
 
-public record LoginResopnse(
+public record LoginResponse(
         Long userId,
         String email,
         String name,
