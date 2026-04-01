@@ -58,3 +58,4 @@ export default function MyMapApp({searchKeyword}: MyMapAppProps) {
 }
 
 //apikey는 무조건 삭제AIzaSyA1RObcKLbeR4OkFTIcLZXta4nQElBBsMk
+//주석 추가해도 차이가 나나
