@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.common.exception;
+package com.fiveguys.trip_planner.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;

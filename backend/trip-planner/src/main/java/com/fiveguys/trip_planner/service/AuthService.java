@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.auth.service;
+package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.common.exception.DuplicateEmailException;
 import com.fiveguys.trip_planner.common.exception.InvalidLoginException;

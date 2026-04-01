@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.user.entity;
+package com.fiveguys.trip_planner.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
