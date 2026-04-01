@@ -1,6 +1,8 @@
 import { useState, ChangeEvent } from "react";
-import type { LoginRequest } from "../types/auth";
+import type { LoginRequest } from "../types/auth"; 
 import Header from "../components/layout/Header";
+import kakaoIcon from "../assets/icons/kakao.png";
+import googleIcon from "../assets/icons/google.png";
 import "./LoginPage.css";
 
 export default function LoginPage() {
@@ -72,10 +74,13 @@ export default function LoginPage() {
           <div className="login-divider">또는</div>
 
           <button className="social-button" onClick={() => console.log("카카오 로그인 클릭")}>
-            Kakao 계정으로 진행하기
+            <img src={kakaoIcon} alt="카카오 아이콘" className="social-icon"/>
+            <span className="social-button-text">Kakao 계정으로 진행하기</span>
           </button>
+
           <button className="social-button" onClick={() => console.log("구글 로그인 클릭")}>
-            Google 계정으로 진행하기
+            <img src={googleIcon} alt="구글 아이콘" className="social-icon"/>
+            <span className="social-button-text">Google 계정으로 진행하기</span>
           </button>
 
           <p className="login-signup">

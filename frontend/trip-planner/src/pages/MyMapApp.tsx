@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'; // 리액트 임포트 확인
+import { useEffect, useState } from 'react'; // 리액트 임포트 확인
 import { AdvancedMarker, APIProvider, Map, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 
 interface MyMapAppProps {
