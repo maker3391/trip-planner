@@ -37,8 +37,11 @@ export default function Header() {
                 <ShoppingCartOutlinedIcon />
               </button>
             </span>
-            <Button className="header-login-btn" onClick={() => navigate("/login")}>
+            <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
               로그인
+            </Button>
+            <Button className="header-login-signup-btn" onClick={() => navigate("/signup")}>
+              회원가입
             </Button>
           </div>
         </Toolbar>
