@@ -1,5 +1,5 @@
 package com.fiveguys.trip_planner.client;
-import com.fiveguys.trip_planner.dto.response.GooglePlaceResponse;
+import com.fiveguys.trip_planner.response.GooglePlaceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

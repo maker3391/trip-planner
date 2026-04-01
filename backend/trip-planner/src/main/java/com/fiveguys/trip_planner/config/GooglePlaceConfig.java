@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.common.config;
+package com.fiveguys.trip_planner.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

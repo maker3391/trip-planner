@@ -1,6 +1,6 @@
-package com.fiveguys.trip_planner.user.repository;
+package com.fiveguys.trip_planner.repository;
 
-import com.fiveguys.trip_planner.user.entity.User;
+import com.fiveguys.trip_planner.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

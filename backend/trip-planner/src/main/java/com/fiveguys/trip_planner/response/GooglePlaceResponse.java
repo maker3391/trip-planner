@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.dto.response;
+package com.fiveguys.trip_planner.response;
 
 import lombok.Data;
 

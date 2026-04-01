@@ -1,6 +1,6 @@
-package com.fiveguys.trip_planner.auth.controller;
+package com.fiveguys.trip_planner.controller;
 
-import com.fiveguys.trip_planner.auth.service.AuthService;
+import com.fiveguys.trip_planner.service.AuthService;
 import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.dto.LoginResopnse;
 import com.fiveguys.trip_planner.dto.SignupRequest;

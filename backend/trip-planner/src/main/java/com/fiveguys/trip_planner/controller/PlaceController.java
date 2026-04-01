@@ -1,8 +1,8 @@
-package com.fiveguys.trip_planner.auth.controller;
+package com.fiveguys.trip_planner.controller;
 
 import com.fiveguys.trip_planner.service.PlaceService;
 import com.fiveguys.trip_planner.dto.PlaceRequestDto;
-import com.fiveguys.trip_planner.dto.response.PlaceResponseDto;
+import com.fiveguys.trip_planner.dto.PlaceResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
