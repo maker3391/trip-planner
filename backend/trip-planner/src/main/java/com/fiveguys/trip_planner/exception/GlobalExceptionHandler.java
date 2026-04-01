@@ -1,5 +1,6 @@
 package com.fiveguys.trip_planner.exception;
 
+import com.fiveguys.trip_planner.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,7 +1,8 @@
 package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.dto.PlaceRequestDto;
-import com.fiveguys.trip_planner.response.PlaceResponseDto;
+import com.fiveguys.trip_planner.dto.PlaceResponseDto;
+
 import com.fiveguys.trip_planner.entity.Place;
 import com.fiveguys.trip_planner.repository.PlaceRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,7 @@ public class PlaceService {
     private final PlaceRepository placeRepository;
 
     @Transactional
-    public PlaceResponseDto createPlace(PlaceRequestDto requestDto) {
+    public com.fiveguys.trip_planner.dto.PlaceResponseDto.PlaceResponseDto createPlace(PlaceRequestDto requestDto) {
         Place place = new Place();
         place.setName(requestDto.getName());
         place.setAddress(requestDto.getAddress());
@@ -26,6 +27,6 @@ public class PlaceService {
 
         Place savePlace = placeRepository.save(place);
 
-        return new PlaceResponseDto(savePlace);
+        return new PlaceResponseDto.PlaceResponseDto(savePlace);
     }
 }

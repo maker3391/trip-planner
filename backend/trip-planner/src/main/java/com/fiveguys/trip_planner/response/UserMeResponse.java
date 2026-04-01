@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.dto;
+package com.fiveguys.trip_planner.response;
 
 public record UserMeResponse(
         Long id,

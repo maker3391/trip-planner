@@ -1,10 +1,10 @@
 package com.fiveguys.trip_planner.controller;
 
 import com.fiveguys.trip_planner.dto.LoginRequest;
-import com.fiveguys.trip_planner.dto.LoginResponse;
+import com.fiveguys.trip_planner.response.LoginResponse;
 import com.fiveguys.trip_planner.dto.SignupRequest;
-import com.fiveguys.trip_planner.dto.SignupResponse;
-import com.fiveguys.trip_planner.dto.UserMeResponse;
+import com.fiveguys.trip_planner.response.SignupResponse;
+import com.fiveguys.trip_planner.response.UserMeResponse;
 import com.fiveguys.trip_planner.entity.User;
 import com.fiveguys.trip_planner.service.AuthService;
 import jakarta.validation.Valid;

@@ -1,4 +1,4 @@
-package com.fiveguys.trip_planner.exception;
+package com.fiveguys.trip_planner.response;
 
 import java.time.LocalDateTime;
 
