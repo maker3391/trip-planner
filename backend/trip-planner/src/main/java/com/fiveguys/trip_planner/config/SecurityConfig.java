@@ -38,22 +38,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-=======
-//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
->>>>>>> 6ad00fb435562434a2039e27aed16821f34d1193
-=======
-//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
->>>>>>> 6ad00fb435562434a2039e27aed16821f34d1193
-=======
-//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
->>>>>>> 6ad00fb435562434a2039e27aed16821f34d1193
                 )
                 .authorizeHttpRequests(auth -> auth
                         // 2. Preflight 요청(OPTIONS)을 무조건 허용하도록 설정
@@ -62,7 +47,6 @@ public class SecurityConfig {
                                 "/api/auth/signup",
                                 "/api/auth/login",
                                 "/api/auth/refresh",
-                                "/api/chat",
                                 "/oauth2/**",
                                 "/login/**"
                         ).permitAll()

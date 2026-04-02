@@ -23,16 +23,14 @@ export default function Header() {
   const [openTutorial, setOpenTutorial] = useState(false);
   const [user, setUser] = useState<UserInfo | null>(null);
 
-
+  // Header.tsx 내부
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("accessToken");
 
-      if (!token) {
-        setUser(null);
-        return;
-      } else {
-        fetchUser();
+      // 💡 토큰이 없으면 서버에 물어보지도 마! (이게 없으면 계속 500 뜹니다)
+      if (!token || token === "undefined") {
+        return; 
       }
 
       try {
@@ -40,8 +38,6 @@ export default function Header() {
         setUser(userData);
       } catch (error) {
         console.error("사용자 정보 조회 실패:", error);
-        localStorage.removeItem("accessToken");
-        setUser(null);
       }
     };
 

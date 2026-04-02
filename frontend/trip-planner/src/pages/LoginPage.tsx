@@ -27,54 +27,32 @@ export default function LoginPage() {
 
   // 3. 로그인 버튼 클릭 시 호출되는 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const loginData = {
-    email: formData.email,
-    password: formData.password,
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 1. 토큰 저장 (가장 먼저!)
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("isLoggedIn", "true");
+
+        // 2. ⚡️ 가장 확실한 방법: 새로고침 이동
+        // navigate("/") 대신 아래를 쓰면 Header가 처음부터 다시 시작하며 500 에러를 안 냅니다.
+        window.location.href = "/"; 
+    } else {
+        console.error("로그인 실패");
+      }
+    } catch (error) {
+      console.error("네트워크 오류:", error);
+    }
   };
-
-  try {
-    const response = await fetch("http://localhost:8080/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(loginData),
-    });
-
-    // 1. 에러 처리 (실패 시)
-    if (!response.ok) {
-      // response.json()은 한 번만 호출할 수 있으므로 주의!
-      const errorDetail = await response.json();
-      console.error("로그인 실패:", errorDetail);
-      alert("로그인 정보가 올바르지 않습니다."); // 사용자 알림 추가
-      return; // 함수 종료
-    }
-
-    if (response.ok) {
-      const data = await response.json();
-      
-      // 1. 로컬 스토리지에 토큰 저장 (가장 먼저!)
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("isLoggedIn", "true");
-
-      // 2. 메인 페이지로 이동
-      // 이동하면 Header 컴포넌트가 다시 렌더링되면서 getMe를 호출합니다.
-      navigator("/"); 
-    }
-    
-    // 3. 페이지 이동
-    // Header 컴포넌트가 새로운 토큰을 인식하도록 메인으로 보냅니다.
-    navigator("/"); 
-    
-    // 💡 만약 Header가 즉시 업데이트되지 않는다면 아래 방법을 고려하세요.
-    // window.location.href = "/"; 
-
-  } catch (error) {
-    console.error("네트워크 오류:", error);
-  }
-};
 
   // 🔥 핵심: 구글 로그인 이동 함수
   const handleGoogleLogin = () => {
