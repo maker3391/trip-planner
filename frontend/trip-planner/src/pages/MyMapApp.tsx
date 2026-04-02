@@ -52,19 +52,45 @@ function MapController({
   const map = useMap();
   const placesLib = useMapsLibrary('places');
 
-  // 검색어 입력 시 해당 위치로 이동
   useEffect(() => {
-    if (!map || !searchKeyword.trim()) return;
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: searchKeyword }, (results, status) => {
-      if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
-        map.panTo(results[0].geometry.location);
-        map.setZoom(15);
+    if (!map || !placesLib || !searchKeyword.trim()) return;
+
+    const service = new google.maps.places.PlacesService(document.createElement('div'));
+    
+    service.findPlaceFromQuery({
+      query: searchKeyword,
+      fields: ['place_id', 'geometry']
+    }, (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && results?.[0]?.place_id) {
+        const placeId = results[0].place_id;
+        const location = results[0].geometry?.location;
+
+        if (location) {
+          map.panTo(location);
+          map.setZoom(16);
+
+          service.getDetails({
+            placeId: placeId,
+            fields: ['name', 'formatted_address', 'photos', 'place_id', 'price_level', 'geometry'],
+            language: 'ko'
+          }, (place, detailStatus) => {
+            if (detailStatus === google.maps.places.PlacesServiceStatus.OK && place) {
+              onMapClick({
+                lat: place.geometry?.location?.lat() || location.lat(),
+                lng: place.geometry?.location?.lng() || location.lng(),
+                name: place.name || searchKeyword,
+                address: place.formatted_address || "",
+                placeId: place.place_id,
+                photos: place.photos?.map(p => p.getUrl({ maxWidth: 400 })),
+                priceLevel: place.price_level
+              });
+            }
+          });
+        }
       }
     });
-  }, [map, searchKeyword]);
+  }, [map, placesLib, searchKeyword, onMapClick]);
 
-  // 지도 클릭 시 장소 정보 추출
   useEffect(() => {
     if (!map || !placesLib) return;
 
@@ -75,7 +101,6 @@ function MapController({
       const service = new google.maps.places.PlacesService(document.createElement('div'));
 
       if ('placeId' in e && e.placeId) {
-        // 이미 등록된 장소 아이콘 클릭 시
         service.getDetails({ 
           placeId: e.placeId, 
           fields: ['name', 'formatted_address', 'photos', 'place_id', 'price_level'], 
@@ -94,7 +119,6 @@ function MapController({
         });
         if (e.stop) e.stop();
       } else {
-        // 빈 지도 클릭 시 역지오코딩
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng }, language: 'ko' }, (results, status) => {
           if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
@@ -142,14 +166,40 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  // 지도 클릭 시 실행: 데이터 추가 및 즉시 선택(패널 오픈)
   const handleMapClick = useCallback((newPoint: PlacePoint) => {
     setPath(prev => {
       const nextPath = [...prev, newPoint];
-      setConnectSource(nextPath.length - 1); // 새로 찍은 핀을 즉시 활성화
+      setConnectSource(nextPath.length - 1); 
       return nextPath;
     });
   }, []);
+
+  // 💡 [추가] 선택된 핀 취소 로직
+  const deleteSelectedPin = () => {
+    if (connectSource === null) {
+      alert("취소할 핀을 먼저 선택해주세요.");
+      return;
+    }
+
+    const targetIdx = connectSource;
+
+    // 1. 핀 삭제
+    setPath(prev => prev.filter((_, i) => i !== targetIdx));
+
+    // 2. 연결된 선 삭제 및 인덱스 재정렬
+    setConnections(prev => 
+      prev
+        .filter(conn => conn.from !== targetIdx && conn.to !== targetIdx)
+        .map(conn => ({
+          from: conn.from > targetIdx ? conn.from - 1 : conn.from,
+          to: conn.to > targetIdx ? conn.to - 1 : conn.to
+        }))
+    );
+
+    // 3. 상태 초기화
+    setConnectSource(null);
+    setEditingIdx(null);
+  };
 
   const handleConnect = (idx: number) => {
     if (connectSource === null) {
@@ -182,7 +232,6 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
     <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', fontFamily: 'sans-serif' }}>
       <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={['places', 'geocoding']}>
         
-        {/* 중앙 지도 영역 */}
         <div style={{ flex: 1, position: 'relative' }}>
           <Map
             style={{ width: '100%', height: '100%' }}
@@ -201,7 +250,6 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
             />
           </Map>
 
-          {/* 왼쪽 경로 편집 패널 */}
           <div style={{
             position: 'absolute', top: '20px', left: '20px', zIndex: 10,
             background: 'white', padding: '20px', borderRadius: '18px', 
@@ -218,7 +266,8 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
             {!isCollapsed && (
               <>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-                  <button onClick={() => setPath(p => p.slice(0, -1))} style={{ flex: 1, padding: '8px', fontSize: '12px', cursor: 'pointer', borderRadius: '8px', border: '1px solid #eee', color: '#ff4d4f', background: '#fff' }}>핀 취소</button>
+                  {/* 💡 수정된 버튼: deleteSelectedPin 연결 */}
+                  <button onClick={deleteSelectedPin} style={{ flex: 1, padding: '8px', fontSize: '12px', cursor: 'pointer', borderRadius: '8px', border: '1px solid #eee', color: connectSource !== null ? '#ff4d4f' : '#ccc', background: '#fff', fontWeight: 'bold' }}>핀 취소</button>
                   <button onClick={() => setConnections(c => c.slice(0, -1))} style={{ flex: 1, padding: '8px', fontSize: '12px', cursor: 'pointer', borderRadius: '8px', border: '1px solid #eee', color: '#1890ff', background: '#fff' }}>선 취소</button>
                 </div>
 
@@ -270,14 +319,7 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
                   })}
                 </div>
 
-                <button 
-                  onClick={clearAll} 
-                  style={{ 
-                    marginTop: '20px', width: '100%', padding: '12px', borderRadius: '10px', 
-                    cursor: 'pointer', background: '#1a1a1a', color: 'white', 
-                    border: 'none', fontWeight: 'bold', fontSize: '13px' 
-                  }}
-                >
+                <button onClick={clearAll} style={{ marginTop: '20px', width: '100%', padding: '12px', borderRadius: '10px', cursor: 'pointer', background: '#1a1a1a', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '13px' }}>
                   전체 초기화
                 </button>
               </>
@@ -285,7 +327,6 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
           </div>
         </div>
 
-        {/* 오른쪽 상세 정보 패널 (가격 & 사진) */}
         {connectSource !== null && path[connectSource] && (
           <div style={{ width: '380px', background: 'white', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)', zIndex: 11, display: 'flex', flexDirection: 'column', animation: 'slideIn 0.3s ease-out' }}>
             <div style={{ padding: '24px', borderBottom: '1px solid #f0f0f0', position: 'relative' }}>
@@ -293,7 +334,6 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
               
               <h2 style={{ margin: '0 0 10px 0', fontSize: '20px', fontWeight: 'bold', color: '#111' }}>{path[connectSource].name}</h2>
               
-              {/* 가격 정보 표시 */}
               {path[connectSource].priceLevel !== undefined ? (
                 <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '14px', color: '#34a853', fontWeight: 'bold', background: '#e6f4ea', padding: '2px 8px', borderRadius: '4px' }}>
@@ -301,7 +341,7 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
                   </span>
                 </div>
               ) : (
-                <div style={{ fontSize: '12px', color: '#bbb' }}>
+                <div style={{ fontSize: '12px', color: '#bbb', marginBottom: '12px' }}>
                   가격 정보가 등록되지 않은 장소입니다.
                 </div>
               )}
