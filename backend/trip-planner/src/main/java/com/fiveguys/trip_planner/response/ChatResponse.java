@@ -7,14 +7,17 @@ public class ChatResponse {
     private String originalMessage;
     private boolean executable;
     private ToolCallDto toolCall;
+    private TripRecommendationResponse recommendation;
 
     public ChatResponse() {
     }
 
-    public ChatResponse(String originalMessage, boolean executable, ToolCallDto toolCall) {
+    public ChatResponse(String originalMessage, boolean executable, ToolCallDto toolCall,
+                        TripRecommendationResponse recommendation) {
         this.originalMessage = originalMessage;
         this.executable = executable;
         this.toolCall = toolCall;
+        this.recommendation = recommendation;
     }
 
     public String getOriginalMessage() {
@@ -29,6 +32,10 @@ public class ChatResponse {
         return toolCall;
     }
 
+    public TripRecommendationResponse getRecommendation() {
+        return recommendation;
+    }
+
     public void setOriginalMessage(String originalMessage) {
         this.originalMessage = originalMessage;
     }
@@ -39,5 +46,9 @@ public class ChatResponse {
 
     public void setToolCall(ToolCallDto toolCall) {
         this.toolCall = toolCall;
+    }
+
+    public void setRecommendation(TripRecommendationResponse recommendation) {
+        this.recommendation = recommendation;
     }
 }

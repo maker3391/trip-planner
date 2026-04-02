@@ -6,6 +6,7 @@ import com.fiveguys.trip_planner.dto.ToolCallArguments;
 import com.fiveguys.trip_planner.dto.ToolCallDto;
 import com.fiveguys.trip_planner.exception.LlmCallException;
 import com.fiveguys.trip_planner.response.ChatResponse;
+import com.fiveguys.trip_planner.response.TripRecommendationResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -15,19 +16,25 @@ public class ChatService {
     private static final String SUPPORTED_TOOL = "recommend_trip_course";
 
     private final OpenAiClient openAiClient;
+    private final ToolExecutorService toolExecutorService;
 
-    public ChatService(OpenAiClient openAiClient) {
+    public ChatService(OpenAiClient openAiClient,
+                       ToolExecutorService toolExecutorService) {
         this.openAiClient = openAiClient;
+        this.toolExecutorService = toolExecutorService;
     }
 
     public ChatResponse chat(ChatRequest request) {
         ToolCallDto toolCall = openAiClient.requestToolCall(request.getMessage());
         validateToolCall(toolCall);
 
+        TripRecommendationResponse recommendation = toolExecutorService.execute(toolCall);
+
         return new ChatResponse(
                 request.getMessage(),
                 true,
-                toolCall
+                toolCall,
+                recommendation
         );
     }
 
