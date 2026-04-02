@@ -15,7 +15,7 @@ public class PlaceService {
     private final PlaceRepository placeRepository;
 
     @Transactional
-    public com.fiveguys.trip_planner.dto.PlaceResponseDto.PlaceResponseDto createPlace(PlaceRequestDto requestDto) {
+    public PlaceResponseDto createPlace(PlaceRequestDto requestDto) {
         Place place = new Place();
         place.setName(requestDto.getName());
         place.setAddress(requestDto.getAddress());
@@ -27,6 +27,6 @@ public class PlaceService {
 
         Place savePlace = placeRepository.save(place);
 
-        return new PlaceResponseDto.PlaceResponseDto(savePlace);
+        return new PlaceResponseDto(savePlace);
     }
 }

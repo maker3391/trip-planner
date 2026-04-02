@@ -16,10 +16,9 @@ public class GooglePlaceService {
     public List<GooglePlaceResponse.Candidate> search(String keyword) {
         GooglePlaceResponse response = googlePlaceClient.searchPlace(keyword);
 
-        if(response == null || response.getCandidates() == null) {
+        if(response == null || response.getPlaces() == null) {
             return List.of();
         }
-
-        return response.getCandidates();
+        return response.getPlaces();
     }
 }

@@ -2,15 +2,54 @@ import { AppBar, Toolbar, Button } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
 import { CalculatorService } from "./calculator";
 import Calculator from "./Calculator.tsx";
+import { getMe } from "../api/aauth.ts";
+
+interface UserInfo {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  status: string;
+}
 
 export default function Header() {
   const navigate = useNavigate();
   const [openTutorial, setOpenTutorial] = useState(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        setUser(null);
+        return;
+      }
+
+      try {
+        const userData = await getMe();
+        setUser(userData);
+      } catch (error) {
+        console.error("사용자 정보 조회 실패:", error);
+        localStorage.removeItem("accessToken");
+        setUser(null);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    setUser(null);
+    alert("로그아웃되었습니다.");
+    navigate("/login");
+  };
 
   return (
     <>
@@ -37,6 +76,27 @@ export default function Header() {
                 <ShoppingCartOutlinedIcon />
               </button>
             </span>
+            {user ? (
+              <>
+                <Button
+                  className="header-login-btn"
+                  onClick={() => navigate("/mypage")}
+                >
+                  {user.name}님
+                </Button>
+                <Button className="header-login-btn" onClick={handleLogout}>
+                  로그아웃
+                </Button>
+              </>
+            ) : (
+              <Button
+                className="header-login-btn"
+                onClick={() => navigate("/login")}
+              >
+                로그인
+              </Button>
+            )}
+            <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
             <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
               로그인
             </Button>

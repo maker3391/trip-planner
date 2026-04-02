@@ -34,6 +34,12 @@ export default function LoginPage() {
     // 여기서 실제 API 호출(axios 등)을 진행하면 됩니다.
   };
 
+  // 🔥 핵심: 구글 로그인 이동 함수
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  };
+
+
   return (
     <div className="login-page">
       <Header />
@@ -81,7 +87,7 @@ export default function LoginPage() {
             <img src={KakaoIcon} alt="카카오 아이콘" className="social-icon"/>
             <span className="social-button-text">Kakao 계정으로 진행하기</span>
           </button>
-          <button className="social-button" onClick={() => console.log("구글 로그인 클릭")}>
+          <button className="social-button" onClick={handleGoogleLogin}>
             <img src={GoogleIcon} alt="구글 아이콘" className="social-icon"/>
             <span className="social-button-text">Google 계정으로 진행하기</span>
           </button>
