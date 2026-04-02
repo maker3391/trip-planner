@@ -40,7 +40,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+=======
+//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+>>>>>>> 6ad00fb435562434a2039e27aed16821f34d1193
 =======
 //                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
