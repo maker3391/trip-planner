@@ -22,7 +22,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(unique = true, length = 100)
     private String email;
 
     @Column(length = 255)
@@ -68,7 +68,7 @@ public class User {
     public static User createOAuthUser(String email, String name, String provider, String providerId) {
         User user = new User();
         user.setEmail(email);
-        user.setPassword("OAUTH2_TEMP_PASSWORD");
+        user.setPassword(null);
         user.setName(name);
         user.setPhone(null);
         user.setRole("USER");

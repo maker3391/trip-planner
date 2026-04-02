@@ -28,9 +28,15 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                                         Authentication authentication) throws IOException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String email = (String) oAuth2User.getAttributes().get("email");
 
-        User user = userRepository.findByEmail(email)
+        String provider = (String) oAuth2User.getAttributes().get("provider");
+        String providerId = (String) oAuth2User.getAttributes().get("providerId");
+
+        if (provider == null || provider.isBlank() || providerId == null || providerId.isBlank()) {
+            throw new IllegalArgumentException("OAuth2 로그인 사용자 식별 정보를 찾을 수 없습니다.");
+        }
+
+        User user = userRepository.findByProviderAndProviderId(provider, providerId)
                 .orElseThrow(() -> new IllegalArgumentException("OAuth2 로그인 사용자 정보를 찾을 수 없습니다."));
 
         String accessToken = jwtTokenProvider.createAccessToken(user);

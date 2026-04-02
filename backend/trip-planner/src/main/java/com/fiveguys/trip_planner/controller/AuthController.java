@@ -34,6 +34,10 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<UserMeResponse> me(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("인증된 사용자 정보를 찾을 수 없습니다.");
+        }
+
         return ResponseEntity.ok(
                 new UserMeResponse(
                         user.getId(),

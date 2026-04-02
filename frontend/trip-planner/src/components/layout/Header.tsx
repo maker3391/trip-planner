@@ -18,9 +18,11 @@ interface UserInfo {
 }
 
 export default function Header() {
+  // 초기화
   const navigate = useNavigate();
   const [openTutorial, setOpenTutorial] = useState(false);
   const [user, setUser] = useState<UserInfo | null>(null);
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -29,6 +31,8 @@ export default function Header() {
       if (!token) {
         setUser(null);
         return;
+      } else {
+        fetchUser();
       }
 
       try {
@@ -46,6 +50,8 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("isLoggedIn");
     setUser(null);
     alert("로그아웃되었습니다.");
     navigate("/login");
@@ -76,32 +82,34 @@ export default function Header() {
                 <ShoppingCartOutlinedIcon />
               </button>
             </span>
-            {user ? (
+            {localStorage.getItem("isLoggedIn") ? (
               <>
                 <Button
                   className="header-login-btn"
                   onClick={() => navigate("/mypage")}
                 >
-                  {user.name}님
+                  {user?.name}님
                 </Button>
                 <Button className="header-login-btn" onClick={handleLogout}>
                   로그아웃
                 </Button>
               </>
             ) : (
-              <Button
-                className="header-login-btn"
-                onClick={() => navigate("/login")}
-              >
-                로그인
-              </Button>
+              <>
+                <Button
+                  className="header-login-btn"
+                  onClick={() => navigate("/login")}
+                >
+                  로그인
+                </Button>
+                <Button
+                  className="header-login-signup-btn"
+                  onClick={() => navigate("/signup")}>
+                  회원가입
+                </Button>
+              </>
             )}
-            <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
-              로그인
-            </Button>
-            <Button className="header-login-signup-btn" onClick={() => navigate("/signup")}>
-              회원가입
-            </Button>
+
           </div>
         </Toolbar>
       </AppBar>
