@@ -1,16 +1,16 @@
 package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.dto.LoginRequest;
-import com.fiveguys.trip_planner.response.MessageResponse;
 import com.fiveguys.trip_planner.dto.SignupRequest;
-import com.fiveguys.trip_planner.response.SignupResponse;
-import com.fiveguys.trip_planner.response.TokenResponse;
 import com.fiveguys.trip_planner.entity.RefreshToken;
 import com.fiveguys.trip_planner.entity.User;
 import com.fiveguys.trip_planner.exception.DuplicateEmailException;
 import com.fiveguys.trip_planner.exception.InvalidLoginException;
 import com.fiveguys.trip_planner.repository.RefreshTokenRepository;
 import com.fiveguys.trip_planner.repository.UserRepository;
+import com.fiveguys.trip_planner.response.MessageResponse;
+import com.fiveguys.trip_planner.response.SignupResponse;
+import com.fiveguys.trip_planner.response.TokenResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -92,15 +92,24 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("저장된 RefreshToken이 없습니다. 다시 로그인해주세요."));
 
         if (!savedRefreshToken.getToken().equals(refreshTokenValue)) {
-            throw new IllegalArgumentException("RefreshToken이 일치하지 않습니다.");
+            throw new IllegalArgumentException("이미 무효화된 RefreshToken입니다. 다시 로그인해주세요.");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
 
         String newAccessToken = jwtTokenProvider.createAccessToken(user);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(user);
 
-        return new TokenResponse(newAccessToken, refreshTokenValue);
+        RefreshToken newRefreshTokenEntity = RefreshToken.create(
+                user.getId(),
+                newRefreshToken,
+                jwtTokenProvider.getRefreshTokenExpiration()
+        );
+
+        refreshTokenRepository.save(newRefreshTokenEntity);
+
+        return new TokenResponse(newAccessToken, newRefreshToken);
     }
 
     public MessageResponse logout(User user) {
