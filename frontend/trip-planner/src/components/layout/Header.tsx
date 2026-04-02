@@ -7,7 +7,7 @@ import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
 import { CalculatorService } from "./calculator";
 import Calculator from "./Calculator.tsx";
-import { getMe } from "../api/aauth.ts";
+import { getMe } from "../api/auth.ts";
 
 interface UserInfo {
   id: number;
@@ -96,7 +96,6 @@ export default function Header() {
                 로그인
               </Button>
             )}
-            <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
             <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
               로그인
             </Button>
