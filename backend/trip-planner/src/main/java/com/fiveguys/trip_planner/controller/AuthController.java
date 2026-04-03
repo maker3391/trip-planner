@@ -1,5 +1,8 @@
 package com.fiveguys.trip_planner.controller;
 
+import com.fiveguys.trip_planner.dto.ChangeNicknameRequest;
+import com.fiveguys.trip_planner.dto.ChangePasswordRequest;
+import com.fiveguys.trip_planner.dto.ChangePhoneRequest;
 import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.response.MessageResponse;
 import com.fiveguys.trip_planner.dto.RefreshTokenRequest;
@@ -43,6 +46,8 @@ public class AuthController {
                         user.getId(),
                         user.getEmail(),
                         user.getName(),
+                        user.getNickname(),
+                        user.getPhone(),
                         user.getRole(),
                         user.getStatus()
                 )
@@ -57,5 +62,29 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<MessageResponse> logout(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(authService.logout(user));
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<MessageResponse> changePassword(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        return ResponseEntity.ok(authService.changePassword(user, request));
+    }
+
+    @PatchMapping("/me/nickname")
+    public ResponseEntity<MessageResponse> changeNickname(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody ChangeNicknameRequest request
+    ) {
+        return ResponseEntity.ok(authService.changeNickname(user, request));
+    }
+
+    @PatchMapping("/me/phone")
+    public ResponseEntity<MessageResponse> changePhone(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody ChangePhoneRequest request
+    ) {
+        return ResponseEntity.ok(authService.changePhone(user, request));
     }
 }

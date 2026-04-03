@@ -31,7 +31,10 @@ public class User {
     @Column(nullable = false, length = 50)
     private String name;
 
-    @Column(length = 30)
+    @Column(unique = true, nullable = false, length = 30)
+    private String nickname;
+
+    @Column(unique = true, length = 30)
     private String phone;
 
     @Column(nullable = false, length = 20)
@@ -54,11 +57,12 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public static User createUser(String email, String encodedPassword, String name, String phone) {
+    public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
         User user = new User();
         user.setEmail(email);
         user.setPassword(encodedPassword);
         user.setName(name);
+        user.setNickname(nickname);
         user.setPhone(phone);
         user.setRole("USER");
         user.setStatus("ACTIVE");
@@ -70,6 +74,7 @@ public class User {
         user.setEmail(email);
         user.setPassword(null);
         user.setName(name);
+        user.setNickname(name);
         user.setPhone(null);
         user.setRole("USER");
         user.setStatus("ACTIVE");
