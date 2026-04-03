@@ -1,7 +1,8 @@
 package com.fiveguys.trip_planner.dto;
 
-public class KakaoPlaceDto {
+public class RecommendedPlaceDto {
 
+    private String source;
     private String placeId;
     private String placeName;
     private String categoryName;
@@ -11,13 +12,15 @@ public class KakaoPlaceDto {
     private String placeUrl;
     private String longitude;
     private String latitude;
+    private Integer rank;
 
-    public KakaoPlaceDto() {
+    public RecommendedPlaceDto() {
     }
 
-    public KakaoPlaceDto(String placeId, String placeName, String categoryName,
-                         String addressName, String roadAddressName, String phone,
-                         String placeUrl, String longitude, String latitude) {
+    public RecommendedPlaceDto(String source, String placeId, String placeName, String categoryName,
+                               String addressName, String roadAddressName, String phone,
+                               String placeUrl, String longitude, String latitude, Integer rank) {
+        this.source = source;
         this.placeId = placeId;
         this.placeName = placeName;
         this.categoryName = categoryName;
@@ -27,6 +30,15 @@ public class KakaoPlaceDto {
         this.placeUrl = placeUrl;
         this.longitude = longitude;
         this.latitude = latitude;
+        this.rank = rank;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public String getPlaceId() {
@@ -99,5 +111,13 @@ public class KakaoPlaceDto {
 
     public void setLatitude(String latitude) {
         this.latitude = latitude;
+    }
+
+    public Integer getRank() {
+        return rank;
+    }
+
+    public void setRank(Integer rank) {
+        this.rank = rank;
     }
 }
