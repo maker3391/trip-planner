@@ -23,6 +23,20 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(DuplicateNicknameException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateNickname(DuplicateNicknameException e, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                new ErrorResponse(LocalDateTime.now(), 409, "CONFLICT", e.getMessage(), request.getRequestURI())
+        );
+    }
+
+    @ExceptionHandler(DuplicatePhoneException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicatePhone(DuplicatePhoneException e, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                new ErrorResponse(LocalDateTime.now(), 409, "CONFLICT", e.getMessage(), request.getRequestURI())
+        );
+    }
+
     @ExceptionHandler(InvalidLoginException.class)
     public ResponseEntity<ErrorResponse> handleLogin(InvalidLoginException e, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(

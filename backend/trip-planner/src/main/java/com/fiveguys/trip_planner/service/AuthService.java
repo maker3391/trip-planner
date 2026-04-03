@@ -1,10 +1,15 @@
 package com.fiveguys.trip_planner.service;
 
+import com.fiveguys.trip_planner.dto.ChangeNicknameRequest;
+import com.fiveguys.trip_planner.dto.ChangePasswordRequest;
+import com.fiveguys.trip_planner.dto.ChangePhoneRequest;
 import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.entity.RefreshToken;
 import com.fiveguys.trip_planner.entity.User;
 import com.fiveguys.trip_planner.exception.DuplicateEmailException;
+import com.fiveguys.trip_planner.exception.DuplicateNicknameException;
+import com.fiveguys.trip_planner.exception.DuplicatePhoneException;
 import com.fiveguys.trip_planner.exception.InvalidLoginException;
 import com.fiveguys.trip_planner.repository.RefreshTokenRepository;
 import com.fiveguys.trip_planner.repository.UserRepository;
@@ -26,8 +31,19 @@ public class AuthService {
 
     public SignupResponse signup(SignupRequest request) {
 
+        String normalizedNickname = normalizeNickname(request.nickname());
+        String normalizedPhone = normalizePhone(request.phone());
+
         if (userRepository.existsByEmail(request.email())) {
             throw new DuplicateEmailException("이미 사용중인 이메일입니다.");
+        }
+
+        if (userRepository.existsByNickname(normalizedNickname)) {
+            throw new DuplicateNicknameException("이미 사용중인 닉네임입니다.");
+        }
+
+        if (normalizedPhone != null && userRepository.existsByPhone(normalizedPhone)) {
+            throw new DuplicatePhoneException("이미 사용중인 전화번호입니다.");
         }
 
         String encodedPassword = passwordEncoder.encode(request.password());
@@ -36,7 +52,8 @@ public class AuthService {
                 request.email(),
                 encodedPassword,
                 request.name(),
-                request.phone()
+                normalizedNickname,
+                normalizedPhone
         );
 
         User saved = userRepository.save(user);
@@ -45,6 +62,7 @@ public class AuthService {
                 saved.getId(),
                 saved.getEmail(),
                 saved.getName(),
+                saved.getNickname(),
                 saved.getRole(),
                 "회원가입 완료"
         );
@@ -120,5 +138,98 @@ public class AuthService {
         refreshTokenRepository.deleteById(String.valueOf(user.getId()));
 
         return new MessageResponse("로그아웃 완료");
+    }
+
+    public MessageResponse changePassword(User user, ChangePasswordRequest request) {
+        validateAuthenticatedUser(user);
+
+        if (user.getPassword() == null) {
+            throw new IllegalArgumentException("소셜 로그인 계정은 비밀번호를 변경할 수 없습니다.");
+        }
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        return new MessageResponse("비밀번호 변경 완료");
+    }
+
+    public MessageResponse changeNickname(User user, ChangeNicknameRequest request) {
+        validateAuthenticatedUser(user);
+
+        String newNickname = normalizeNickname(request.nickname());
+
+        if (newNickname.equals(user.getNickname())) {
+            throw new IllegalArgumentException("현재 사용 중인 닉네임과 같습니다.");
+        }
+
+        if (userRepository.existsByNicknameAndIdNot(newNickname, user.getId())) {
+            throw new DuplicateNicknameException("이미 사용중인 닉네임입니다.");
+        }
+
+        user.setNickname(newNickname);
+        userRepository.save(user);
+
+        return new MessageResponse("닉네임 변경 완료");
+    }
+
+    public MessageResponse changePhone(User user, ChangePhoneRequest request) {
+        validateAuthenticatedUser(user);
+
+        String newPhone = normalizePhone(request.phone());
+
+        if (user.getPhone() != null && newPhone.equals(user.getPhone())) {
+            throw new IllegalArgumentException("현재 사용 중인 전화번호와 같습니다.");
+        }
+
+        if (userRepository.existsByPhoneAndIdNot(newPhone, user.getId())) {
+            throw new DuplicatePhoneException("이미 사용중인 전화번호입니다.");
+        }
+
+        user.setPhone(newPhone);
+        userRepository.save(user);
+
+        return new MessageResponse("전화번호 변경 완료");
+    }
+
+    private void validateAuthenticatedUser(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("인증된 사용자만 요청할 수 있습니다.");
+        }
+    }
+
+    private String normalizeNickname(String nickname) {
+        String normalized = nickname == null ? null : nickname.trim();
+
+        if (normalized == null || normalized.isBlank()) {
+            throw new IllegalArgumentException("닉네임은 비어 있을 수 없습니다.");
+        }
+
+        return normalized;
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return null;
+        }
+
+        String digitsOnly = phone.replaceAll("\\D", "");
+
+        if (!digitsOnly.matches("^01[0-9]\\d{7,8}$")) {
+            throw new IllegalArgumentException("올바른 phone 형식이어야 합니다.");
+        }
+
+        if (digitsOnly.length() == 10) {
+            return digitsOnly.replaceFirst("(\\d{3})(\\d{3})(\\d{4})", "$1-$2-$3");
+        }
+
+        return digitsOnly.replaceFirst("(\\d{3})(\\d{4})(\\d{4})", "$1-$2-$3");
     }
 }
