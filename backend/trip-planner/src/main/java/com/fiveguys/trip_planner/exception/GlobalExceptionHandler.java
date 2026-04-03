@@ -72,6 +72,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(LlmCallException.class)
+    public ResponseEntity<ErrorResponse> handleLlmCallException(LlmCallException e, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        400,
+                        "BAD_REQUEST",
+                        e.getMessage(),
+                        request.getRequestURI()
+                )
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
