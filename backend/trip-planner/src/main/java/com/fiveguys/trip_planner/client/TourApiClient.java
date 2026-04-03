@@ -5,11 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiveguys.trip_planner.config.TourApiProperties;
 import com.fiveguys.trip_planner.dto.RecommendedPlaceDto;
 import com.fiveguys.trip_planner.exception.LlmCallException;
+import com.fiveguys.trip_planner.service.RecommendationCacheService;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.Duration;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,21 +19,71 @@ import java.util.List;
 @Component
 public class TourApiClient {
 
+    private static final Duration HUB_CACHE_TTL = Duration.ofMinutes(20);
+    private static final Duration RELATED_CACHE_TTL = Duration.ofMinutes(20);
+
     private final TourApiProperties tourApiProperties;
     private final ObjectMapper objectMapper;
+    private final RecommendationCacheService recommendationCacheService;
+    private final RestClient restClient;
 
     public TourApiClient(TourApiProperties tourApiProperties,
-                         ObjectMapper objectMapper) {
+                         ObjectMapper objectMapper,
+                         RecommendationCacheService recommendationCacheService) {
         this.tourApiProperties = tourApiProperties;
         this.objectMapper = objectMapper;
+        this.recommendationCacheService = recommendationCacheService;
+        this.restClient = RestClient.create();
     }
 
     public List<RecommendedPlaceDto> getHubPlaces(String areaCd, String signguCd) {
-        return fetchHubWithFallback(areaCd, signguCd);
+        String cacheKey = buildHubCacheKey(areaCd, signguCd);
+
+        List<RecommendedPlaceDto> cached = recommendationCacheService.get(cacheKey);
+        if (cached != null) {
+            System.out.println("[TourAPI][HUB] CACHE HIT key=" + cacheKey);
+            return new ArrayList<>(cached);
+        }
+
+        List<RecommendedPlaceDto> result = fetchHubWithFallback(areaCd, signguCd);
+        recommendationCacheService.put(cacheKey, new ArrayList<>(result), HUB_CACHE_TTL);
+        return result;
     }
 
     public List<RecommendedPlaceDto> getRelatedPlacesByKeyword(String areaCd, String signguCd, String keyword) {
-        return fetchRelatedWithFallback(areaCd, signguCd, keyword);
+        String cacheKey = buildRelatedCacheKey(areaCd, signguCd, keyword);
+
+        List<RecommendedPlaceDto> cached = recommendationCacheService.get(cacheKey);
+        if (cached != null) {
+            System.out.println("[TourAPI][RELATED] CACHE HIT key=" + cacheKey);
+            return new ArrayList<>(cached);
+        }
+
+        List<RecommendedPlaceDto> result = fetchRelatedWithFallback(areaCd, signguCd, keyword);
+        recommendationCacheService.put(cacheKey, new ArrayList<>(result), RELATED_CACHE_TTL);
+        return result;
+    }
+
+    public String getBaseYmVersionKey() {
+        return String.join("-", buildBaseYmCandidates());
+    }
+
+    private String buildHubCacheKey(String areaCd, String signguCd) {
+        return "tour:hub:" + areaCd + ":" + signguCd + ":" + getBaseYmVersionKey();
+    }
+
+    private String buildRelatedCacheKey(String areaCd, String signguCd, String keyword) {
+        return "tour:related:" + areaCd + ":" + signguCd + ":" + normalizeKeyword(keyword) + ":" + getBaseYmVersionKey();
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return "";
+        }
+
+        return keyword.trim()
+                .toLowerCase()
+                .replaceAll("\\s+", " ");
     }
 
     private List<RecommendedPlaceDto> fetchHubWithFallback(String areaCd, String signguCd) {
@@ -62,10 +114,7 @@ public class TourApiClient {
         List<String> candidates = new ArrayList<>();
         candidates.add(YearMonth.now().minusMonths(1).toString().replace("-", ""));
         candidates.add(YearMonth.now().minusMonths(2).toString().replace("-", ""));
-        candidates.add(YearMonth.now().minusMonths(3).toString().replace("-", ""));
         addIfAbsent(candidates, "202504");
-        addIfAbsent(candidates, "202404");
-        addIfAbsent(candidates, "202401");
         return candidates;
     }
 
@@ -77,11 +126,6 @@ public class TourApiClient {
 
     private List<RecommendedPlaceDto> callHubApi(String areaCd, String signguCd, String baseYm) {
         try {
-            System.out.println("[TourAPI][HUB] hubBaseUrl=" + tourApiProperties.getHubBaseUrl());
-            System.out.println("[TourAPI][HUB] serviceKey exists=" + StringUtils.hasText(tourApiProperties.getServiceKey()));
-            System.out.println("[TourAPI][HUB] mobileOs=" + tourApiProperties.getMobileOs());
-            System.out.println("[TourAPI][HUB] mobileApp=" + tourApiProperties.getMobileApp());
-
             String uri = UriComponentsBuilder
                     .fromUriString(tourApiProperties.getHubBaseUrl() + "/areaBasedList1")
                     .queryParam("serviceKey", tourApiProperties.getServiceKey())
@@ -96,14 +140,10 @@ public class TourApiClient {
                     .build(false)
                     .toUriString();
 
-            System.out.println("[TourAPI][HUB] request uri=" + uri);
-
-            String rawResponse = RestClient.create().get()
+            String rawResponse = restClient.get()
                     .uri(uri)
                     .retrieve()
                     .body(String.class);
-
-            System.out.println("[TourAPI][HUB] raw response=" + rawResponse);
 
             if (!StringUtils.hasText(rawResponse)) {
                 return List.of();
@@ -179,7 +219,7 @@ public class TourApiClient {
                     .build(false)
                     .toUriString();
 
-            String rawResponse = RestClient.create().get()
+            String rawResponse = restClient.get()
                     .uri(uri)
                     .retrieve()
                     .body(String.class);

@@ -1,58 +1,277 @@
 package com.fiveguys.trip_planner.service;
 
+import com.fiveguys.trip_planner.dto.RegionTarget;
+import com.fiveguys.trip_planner.dto.ResolvedRegion;
+import com.fiveguys.trip_planner.exception.LlmCallException;
+import jakarta.annotation.PostConstruct;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @Service
 public class AreaCodeService {
 
-    private static final Map<String, String> AREA_CODE_MAP = Map.ofEntries(
-            Map.entry("서울", "11"),
-            Map.entry("부산", "26"),
-            Map.entry("대구", "27"),
-            Map.entry("인천", "28"),
-            Map.entry("광주", "29"),
-            Map.entry("대전", "30"),
-            Map.entry("울산", "31"),
-            Map.entry("세종", "36"),
-            Map.entry("경기", "41"),
-            Map.entry("충북", "43"),
-            Map.entry("충남", "44"),
-            Map.entry("전남", "46"),
-            Map.entry("경북", "47"),
-            Map.entry("경남", "48"),
-            Map.entry("제주", "50"),
-            Map.entry("강원", "51"),
-            Map.entry("전북", "52")
-    );
+    private static final String CSV_PATH = "regions.csv";
 
-    private static final Map<String, List<String>> SIGNGU_CODE_MAP = Map.ofEntries(
-            Map.entry("서울", List.of("11110","11140","11170","11200","11215","11230","11260","11290","11305","11320","11350","11380","11410","11440","11470","11500","11530","11545","11560","11590","11620","11650","11680","11710","11740")),
-            Map.entry("부산", List.of("26110","26140","26170","26200","26230","26260","26290","26320","26350","26380","26410","26440","26470","26500","26530","26710")),
-            Map.entry("대구", List.of("27110","27140","27170","27200","27230","27260","27290","27710","27720")),
-            Map.entry("인천", List.of("28110","28140","28177","28185","28200","28237","28245","28260","28710","28720")),
-            Map.entry("광주", List.of("29110","29140","29155","29170","29200")),
-            Map.entry("대전", List.of("30110","30140","30170","30200","30230")),
-            Map.entry("울산", List.of("31110","31140","31170","31200","31710")),
-            Map.entry("세종", List.of("36110")),
-            Map.entry("경기", List.of("41111","41113","41115","41117","41131","41133","41135","41150","41171","41173","41192","41194","41196","41210","41220","41250","41271","41273","41281","41285","41287","41290","41310","41360","41370","41390","41410","41430","41450","41461","41463","41465","41480","41500","41550","41570","41590","41610","41630","41650","41670","41800","41820","41830")),
-            Map.entry("충북", List.of("43111","43112","43113","43114","43130","43150","43720","43730","43740","43745","43750","43760","43770","43800")),
-            Map.entry("충남", List.of("44131","44133","44150","44180","44200","44210","44230","44250","44270","44710","44760","44770","44790","44800","44810","44825")),
-            Map.entry("전남", List.of("46110","46130","46150","46170","46230","46710","46720","46730","46770","46780","46790","46800","46810","46820","46830","46840","46860","46870","46880","46890","46900","46910")),
-            Map.entry("경북", List.of("47111","47113","47130","47150","47170","47190","47210","47230","47250","47280","47290","47730","47750","47760","47770","47820","47830","47840","47850","47900","47920","47930","47940")),
-            Map.entry("경남", List.of("48121","48123","48125","48127","48129","48170","48220","48240","48250","48270","48310","48330","48720","48730","48740","48820","48840","48850","48860","48870","48880","48890")),
-            Map.entry("제주", List.of("50110","50130")),
-            Map.entry("강원", List.of("51110","51130","51150","51170","51190","51210","51230","51720","51730","51750","51760","51770","51780","51790","51800","51810","51820","51830")),
-            Map.entry("전북", List.of("52111","52113","52130","52140","52180","52190","52210","52710","52720","52730","52740","52750","52770","52790","52800"))
-    );
+    private final Map<String, String> areaCodeByAreaName = new HashMap<>();
+    private final Map<String, List<RegionTarget>> targetsByAreaName = new HashMap<>();
+    private final Map<String, RegionTarget> sigunguByName = new HashMap<>();
+    private final Map<String, String> areaAliasToCanonical = new HashMap<>();
 
-    public String getAreaCode(String destination) {
-        return AREA_CODE_MAP.get(destination);
+    @PostConstruct
+    public void init() {
+        loadCsv();
+        buildAreaAliases();
     }
 
-    public List<String> getSignguCodes(String destination) {
-        return SIGNGU_CODE_MAP.getOrDefault(destination, List.of());
+    public ResolvedRegion resolve(String destination) {
+        if (!StringUtils.hasText(destination)) {
+            throw new LlmCallException("여행 목적지는 필수입니다.");
+        }
+
+        String normalized = normalize(destination);
+
+        RegionTarget sigunguTarget = sigunguByName.get(normalized);
+        if (sigunguTarget != null) {
+            return new ResolvedRegion(
+                    destination,
+                    normalized,
+                    List.of(sigunguTarget),
+                    true,
+                    sigunguTarget.getSigunguName()
+            );
+        }
+
+        if ("전라도".equals(normalized)) {
+            return resolveMultiArea(destination, normalized, List.of("전남", "전북"));
+        }
+
+        if ("경상도".equals(normalized)) {
+            return resolveMultiArea(destination, normalized, List.of("경남", "경북"));
+        }
+
+        if ("충청도".equals(normalized)) {
+            return resolveMultiArea(destination, normalized, List.of("충남", "충북"));
+        }
+
+        String canonicalArea = areaAliasToCanonical.get(normalized);
+        if (canonicalArea != null) {
+            List<RegionTarget> targets = targetsByAreaName.getOrDefault(canonicalArea, List.of());
+            return new ResolvedRegion(
+                    destination,
+                    normalized,
+                    targets,
+                    false,
+                    null
+            );
+        }
+
+        throw new LlmCallException("현재는 시/도 또는 구/군 단위 지역명만 지원합니다. 예: 부산, 강원도, 해운대구, 강릉시");
+    }
+
+    public List<RegionTarget> getTargetsByAreaName(String areaName) {
+        return new ArrayList<>(targetsByAreaName.getOrDefault(areaName, List.of()));
+    }
+
+    public RegionTarget getSigunguTarget(String sigunguName) {
+        if (!StringUtils.hasText(sigunguName)) {
+            return null;
+        }
+        return sigunguByName.get(normalize(sigunguName));
+    }
+
+    private ResolvedRegion resolveMultiArea(String originalInput,
+                                            String normalizedInput,
+                                            List<String> canonicalAreas) {
+        List<RegionTarget> mergedTargets = new ArrayList<>();
+
+        for (String canonicalArea : canonicalAreas) {
+            mergedTargets.addAll(targetsByAreaName.getOrDefault(canonicalArea, List.of()));
+        }
+
+        return new ResolvedRegion(
+                originalInput,
+                normalizedInput,
+                mergedTargets,
+                false,
+                null
+        );
+    }
+
+    private void loadCsv() {
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(new ClassPathResource(CSV_PATH).getInputStream(), StandardCharsets.UTF_8))) {
+
+            String line = br.readLine();
+            if (line == null) {
+                throw new IllegalStateException("regions.csv is empty.");
+            }
+
+            while ((line = br.readLine()) != null) {
+                if (!StringUtils.hasText(line)) {
+                    continue;
+                }
+
+                String[] tokens = line.split(",", -1);
+                if (tokens.length < 4) {
+                    continue;
+                }
+
+                String areaCd = tokens[0].trim();
+                String areaNm = tokens[1].trim();
+                String sigunguCd = tokens[2].trim();
+                String sigunguNm = tokens[3].trim();
+
+                String canonicalAreaName = toCanonicalAreaName(areaNm);
+
+                areaCodeByAreaName.putIfAbsent(canonicalAreaName, areaCd);
+
+                RegionTarget target = new RegionTarget(
+                        canonicalAreaName,
+                        areaCd,
+                        sigunguNm,
+                        sigunguCd
+                );
+
+                targetsByAreaName
+                        .computeIfAbsent(canonicalAreaName, k -> new ArrayList<>())
+                        .add(target);
+
+                registerSigungu(sigunguNm, target);
+            }
+
+        } catch (Exception e) {
+            throw new IllegalStateException("regions.csv loading failed.", e);
+        }
+    }
+
+    private void registerSigungu(String sigunguNm, RegionTarget target) {
+        sigunguByName.put(normalize(sigunguNm), target);
+
+        String aliasWithoutSuffix = removeSigunguSuffix(sigunguNm);
+        if (StringUtils.hasText(aliasWithoutSuffix) && aliasWithoutSuffix.length() >= 2) {
+            sigunguByName.putIfAbsent(normalize(aliasWithoutSuffix), target);
+        }
+    }
+
+    private void buildAreaAliases() {
+        registerAreaAlias("서울", "서울");
+        registerAreaAlias("서울시", "서울");
+        registerAreaAlias("서울특별시", "서울");
+
+        registerAreaAlias("부산", "부산");
+        registerAreaAlias("부산시", "부산");
+        registerAreaAlias("부산광역시", "부산");
+
+        registerAreaAlias("대구", "대구");
+        registerAreaAlias("대구시", "대구");
+        registerAreaAlias("대구광역시", "대구");
+
+        registerAreaAlias("인천", "인천");
+        registerAreaAlias("인천시", "인천");
+        registerAreaAlias("인천광역시", "인천");
+
+        registerAreaAlias("광주", "광주");
+        registerAreaAlias("광주시", "광주");
+        registerAreaAlias("광주광역시", "광주");
+
+        registerAreaAlias("대전", "대전");
+        registerAreaAlias("대전시", "대전");
+        registerAreaAlias("대전광역시", "대전");
+
+        registerAreaAlias("울산", "울산");
+        registerAreaAlias("울산시", "울산");
+        registerAreaAlias("울산광역시", "울산");
+
+        registerAreaAlias("세종", "세종");
+        registerAreaAlias("세종시", "세종");
+        registerAreaAlias("세종특별자치시", "세종");
+
+        registerAreaAlias("경기", "경기");
+        registerAreaAlias("경기도", "경기");
+
+        registerAreaAlias("강원", "강원");
+        registerAreaAlias("강원도", "강원");
+        registerAreaAlias("강원특별자치도", "강원");
+
+        registerAreaAlias("충북", "충북");
+        registerAreaAlias("충청북도", "충북");
+
+        registerAreaAlias("충남", "충남");
+        registerAreaAlias("충청남도", "충남");
+
+        registerAreaAlias("전북", "전북");
+        registerAreaAlias("전라북도", "전북");
+        registerAreaAlias("전북특별자치도", "전북");
+
+        registerAreaAlias("전남", "전남");
+        registerAreaAlias("전라남도", "전남");
+
+        registerAreaAlias("경북", "경북");
+        registerAreaAlias("경상북도", "경북");
+
+        registerAreaAlias("경남", "경남");
+        registerAreaAlias("경상남도", "경남");
+
+        registerAreaAlias("제주", "제주");
+        registerAreaAlias("제주도", "제주");
+        registerAreaAlias("제주특별자치도", "제주");
+    }
+
+    private void registerAreaAlias(String alias, String canonical) {
+        areaAliasToCanonical.put(normalize(alias), canonical);
+    }
+
+    private String removeSigunguSuffix(String sigunguNm) {
+        String value = sigunguNm.trim();
+        if (value.endsWith("시") || value.endsWith("군") || value.endsWith("구")) {
+            return value.substring(0, value.length() - 1);
+        }
+        return value;
+    }
+
+    private String toCanonicalAreaName(String areaNm) {
+        String normalized = normalize(areaNm);
+
+        if (normalized.contains("서울")) return "서울";
+        if (normalized.contains("부산")) return "부산";
+        if (normalized.contains("대구")) return "대구";
+        if (normalized.contains("인천")) return "인천";
+        if (normalized.contains("광주")) return "광주";
+        if (normalized.contains("대전")) return "대전";
+        if (normalized.contains("울산")) return "울산";
+        if (normalized.contains("세종")) return "세종";
+        if (normalized.contains("경기")) return "경기";
+        if (normalized.contains("강원")) return "강원";
+        if (normalized.contains("충청북")) return "충북";
+        if (normalized.contains("충청남")) return "충남";
+        if (normalized.contains("전라북") || normalized.contains("전북")) return "전북";
+        if (normalized.contains("전라남")) return "전남";
+        if (normalized.contains("경상북")) return "경북";
+        if (normalized.contains("경상남")) return "경남";
+        if (normalized.contains("제주")) return "제주";
+
+        throw new IllegalStateException("Unsupported area name: " + areaNm);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.trim()
+                .replaceAll("\\s+", "")
+                .replace("특별시", "")
+                .replace("광역시", "")
+                .replace("특별자치시", "")
+                .replace("특별자치도", "")
+                .replace("자치시", "")
+                .replace("자치도", "")
+                .toLowerCase();
     }
 }
