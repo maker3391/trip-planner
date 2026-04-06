@@ -5,6 +5,7 @@ import SignupPage from "../../pages/SignupPage";
 import MyPage from "../../pages/MyPage";
 import OAuth2CallbackPage from "../../pages/OAuth2CallbackPage";
 import CommunityPage from "../../pages/CommunityPage";
+import CommunityWritePage from "../../pages/CommunityWritePage";
 import TripListPage from "../../pages/TripListPage";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -29,6 +30,7 @@ export default function Router() {
             </ProtectedRoute>
           }
         />
+        <Route path="/community/write" element={<CommunityWritePage />} />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         <Route
           path="trip-list"

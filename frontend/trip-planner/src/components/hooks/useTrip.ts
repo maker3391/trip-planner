@@ -19,7 +19,7 @@ export const useTrips = () => {
     // [enabled]: 쿼리 자동 실행 여부.
     // 현재 false로 설정되어 있어 컴포넌트가 마운트될 때 자동으로 API를 호출하지 않습니다.
     // 주로 특정 버튼을 클릭했을 때(refetch() 호출 시)만 실행하고 싶을 때 사용합니다.
-    enabled: false,
+    // enabled: false,
   });
 };
 
@@ -44,3 +44,21 @@ export const useCreateTrip = () => {
     }
   });
 }
+
+// 특정 여행 상세 조회 훅
+export const useGetTrip = (tripId: number | string | null) => {
+  return useQuery({
+    // [queryKey]: id별로 캐시를 따로 관리해야 하므로 id를 키에 포함
+    queryKey: ["trips", tripId],
+    
+    // [queryFn]: tripId가 있을 때만 해당 id로 상세 데이터를 가져옵니다.
+    queryFn: async () => {
+      const response = await client.get(`/trips/${tripId}`);
+      return response.data; // TripPlanResponse 타입의 데이터가 반환됨
+    },
+
+    // [enabled]: tripId가 존재할 때만 쿼리를 자동으로 실행하도록 설정합니다.
+    // id가 null이거나 undefined면 호출하지 않습니다.
+    enabled: !!tripId,
+  });
+};
