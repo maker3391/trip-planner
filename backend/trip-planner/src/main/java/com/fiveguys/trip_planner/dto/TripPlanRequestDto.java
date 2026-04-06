@@ -6,7 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.List;
-
+//프론트 -> 백
 @Getter @Setter
 @NoArgsConstructor
 public class TripPlanRequestDto {

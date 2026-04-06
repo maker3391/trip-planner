@@ -2,66 +2,107 @@ package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.client.OpenAiClient;
 import com.fiveguys.trip_planner.dto.ChatRequest;
-import com.fiveguys.trip_planner.dto.ToolCallArguments;
-import com.fiveguys.trip_planner.dto.ToolCallDto;
-import com.fiveguys.trip_planner.exception.LlmCallException;
+import com.fiveguys.trip_planner.dto.DayPlanDraft;
+import com.fiveguys.trip_planner.dto.RecommendationDraft;
+import com.fiveguys.trip_planner.dto.RecommendationItemDraft;
 import com.fiveguys.trip_planner.response.ChatResponse;
-import com.fiveguys.trip_planner.response.TripRecommendationResponse;
+import com.fiveguys.trip_planner.response.DayPlanResponse;
+import com.fiveguys.trip_planner.response.RecommendationContentResponse;
+import com.fiveguys.trip_planner.response.RecommendationItemResponse;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ChatService {
 
-    private static final String SUPPORTED_TOOL = "recommend_trip_course";
-
     private final OpenAiClient openAiClient;
-    private final ToolExecutorService toolExecutorService;
+    private final RecommendationValidationService validationService;
+    private final RecommendationNormalizationService normalizationService;
+    private final RecommendationCacheService recommendationCacheService;
+    private final RecommendationCacheKeyGenerator cacheKeyGenerator;
 
     public ChatService(OpenAiClient openAiClient,
-                       ToolExecutorService toolExecutorService) {
+                       RecommendationValidationService validationService,
+                       RecommendationNormalizationService normalizationService,
+                       RecommendationCacheService recommendationCacheService,
+                       RecommendationCacheKeyGenerator cacheKeyGenerator) {
         this.openAiClient = openAiClient;
-        this.toolExecutorService = toolExecutorService;
+        this.validationService = validationService;
+        this.normalizationService = normalizationService;
+        this.recommendationCacheService = recommendationCacheService;
+        this.cacheKeyGenerator = cacheKeyGenerator;
     }
 
     public ChatResponse chat(ChatRequest request) {
-        ToolCallDto toolCall = openAiClient.requestToolCall(request.getMessage());
-        validateToolCall(toolCall);
+        String cacheKey = cacheKeyGenerator.generate(request.getMessage());
 
-        TripRecommendationResponse recommendation = toolExecutorService.execute(toolCall);
+        ChatResponse cached = recommendationCacheService.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
+        RecommendationDraft draft = openAiClient.generateRecommendationDraft(request.getMessage());
+
+        validationService.validate(draft);
+
+        RecommendationDraft normalized = normalizationService.normalize(draft);
+
+        validationService.validate(normalized);
+
+        ChatResponse response = toResponse(request.getMessage(), normalized);
+
+        recommendationCacheService.put(cacheKey, response);
+
+        return response;
+    }
+
+    private ChatResponse toResponse(String originalMessage, RecommendationDraft draft) {
+        RecommendationContentResponse content = new RecommendationContentResponse(
+                toDayPlanResponses(draft.getDayPlans()),
+                toItemResponses(draft.getItems())
+        );
 
         return new ChatResponse(
-                request.getMessage(),
-                true,
-                toolCall,
-                recommendation
+                originalMessage,
+                draft.getIntent(),
+                draft.getDestination(),
+                draft.getDays(),
+                content
         );
     }
 
-    private void validateToolCall(ToolCallDto toolCall) {
-        if (toolCall == null) {
-            throw new LlmCallException("도구 호출 정보가 존재하지 않습니다.");
+    private List<DayPlanResponse> toDayPlanResponses(List<DayPlanDraft> dayPlans) {
+        List<DayPlanResponse> responses = new ArrayList<>();
+        if (dayPlans == null) {
+            return responses;
         }
 
-        if (!"tool_call".equals(toolCall.getType())) {
-            throw new LlmCallException("도구 호출 타입이 올바르지 않습니다.");
+        for (DayPlanDraft dayPlan : dayPlans) {
+            responses.add(new DayPlanResponse(
+                    dayPlan.getDay(),
+                    null,
+                    dayPlan.getPlaces()
+            ));
+        }
+        return responses;
+    }
+
+    private List<RecommendationItemResponse> toItemResponses(List<RecommendationItemDraft> items) {
+        List<RecommendationItemResponse> responses = new ArrayList<>();
+        if (items == null) {
+            return responses;
         }
 
-        if (!SUPPORTED_TOOL.equals(toolCall.getTool())) {
-            throw new LlmCallException("지원하지 않는 도구 호출입니다.");
+        for (RecommendationItemDraft item : items) {
+            responses.add(new RecommendationItemResponse(
+                    item.getName(),
+                    null,
+                    null
+            ));
         }
-
-        ToolCallArguments arguments = toolCall.getArguments();
-        if (arguments == null) {
-            throw new LlmCallException("도구 호출 인자가 존재하지 않습니다.");
-        }
-
-        if (!StringUtils.hasText(arguments.getDestination())) {
-            throw new LlmCallException("여행 목적지는 필수입니다.");
-        }
-
-        if (arguments.getDays() == null || arguments.getDays() < 1) {
-            throw new LlmCallException("여행 일수는 1일 이상이어야 합니다.");
-        }
+        return responses;
     }
 }

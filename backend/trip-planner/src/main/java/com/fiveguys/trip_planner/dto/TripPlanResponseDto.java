@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
+//백 -> 프론트
 @Getter
 public class TripPlanResponseDto {
     private final Long id;
