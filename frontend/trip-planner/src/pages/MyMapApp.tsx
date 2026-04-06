@@ -8,17 +8,18 @@ import {
   Polyline
 } from '@vis.gl/react-google-maps';
 
-// --- 1. 인터페이스 정의 ---
-interface PlacePoint {
+// --- 1. 인터페이스 정의 (export를 붙여야 MainPage에서 읽을 수 있습니다) ---
+export interface PlacePoint {
   lat: number;
   lng: number;
   name: string;
   address: string;
+  customTitle?: string;
   placeId?: string;
   photos?: string[];
 }
 
-interface Connection {
+export interface Connection {
   from: number;
   to: number;
 }
@@ -35,7 +36,15 @@ interface MapControllerProps {
   lineColor: string;
 }
 
-// --- 2. 지도 컨트롤러 컴포넌트 ---
+interface MyMapAppProps {
+  searchKeyword: string;
+  path: PlacePoint[];
+  setPath: React.Dispatch<React.SetStateAction<PlacePoint[]>>;
+  connections: Connection[];
+  setConnections: React.Dispatch<React.SetStateAction<Connection[]>>;
+}
+
+// --- 2. 지도 컨트롤러 컴포넌트 (파일 내부에 위치) ---
 function MapController({ 
   searchKeyword, path, connections, onMapClick, onConnect, selectedSource, 
   pinColor, selectedPinColor, lineColor 
@@ -69,13 +78,14 @@ function MapController({
 
   useEffect(() => {
     if (!map) return;
-    const clickListener = map.addListener('click', (e: any) => {
+    const clickListener = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+      const poiEvent = e as google.maps.IconMouseEvent;
       if (!e.latLng) return;
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
-      if (e.placeId) {
+      if (poiEvent.placeId) {
         const service = new google.maps.places.PlacesService(document.createElement('div'));
-        service.getDetails({ placeId: e.placeId, fields: ['name', 'formatted_address', 'photos', 'place_id'], language: 'ko' }, (place, status) => {
+        service.getDetails({ placeId: poiEvent.placeId, fields: ['name', 'formatted_address', 'photos', 'place_id'], language: 'ko' }, (place, status) => {
           if (status === google.maps.places.PlacesServiceStatus.OK && place) {
             onMapClick({ lat, lng, name: place.name || "장소", address: place.formatted_address || "", placeId: place.place_id, photos: place.photos?.map(p => p.getUrl({ maxWidth: 400 })) });
           }
@@ -85,7 +95,7 @@ function MapController({
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng }, language: 'ko' }, (results, status) => {
           if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
-            onMapClick({ lat, lng, name: results[0].formatted_address.split(' ').slice(-2).join(' '), address: results[0].formatted_address });
+            onMapClick({ lat, lng, name: results[0].formatted_address.split(' ').slice(-2).join(' '), address: results[0].formatted_address, placeId: results[0].place_id });
           }
         });
       }
@@ -124,17 +134,14 @@ function MapController({
 }
 
 // --- 3. 메인 애플리케이션 컴포넌트 ---
-export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
-  const [path, setPath] = useState<PlacePoint[]>([]);
-  const [connections, setConnections] = useState<Connection[]>([]);
+export default function MyMapApp({ 
+  searchKeyword, path, setPath, connections, setConnections 
+}: MyMapAppProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [connectSource, setConnectSource] = useState<number | null>(null);
-  
-  // 색상 상태
   const [pinColor, setPinColor] = useState("#000000");
   const [selectedPinColor, setSelectedPinColor] = useState("#4285F4");
   const [lineColor, setLineColor] = useState("#FF4D4F");
-
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
 
@@ -144,7 +151,7 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
       setConnectSource(nextPath.length - 1); 
       return nextPath;
     });
-  }, []);
+  }, [setPath]);
 
   const handleConnect = (idx: number) => {
     if (connectSource === null) {
@@ -152,18 +159,15 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
     } else if (connectSource === idx) {
       setConnectSource(null);
     } else {
-      // 중복 체크 로직
       const isAlreadyConnected = connections.some(conn => 
         (conn.from === connectSource && conn.to === idx) || 
         (conn.from === idx && conn.to === connectSource)
       );
-
       if (isAlreadyConnected) {
         alert("이미 연결된 경로입니다.");
         setConnectSource(null);
         return;
       }
-
       setConnections(prev => [...prev, { from: connectSource, to: idx }]);
       setConnectSource(null);
     }
@@ -225,7 +229,6 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
 
             {!isCollapsed && (
               <>
-                {/* 색상 선택 UI */}
                 <div style={{ display: 'flex', gap: '5px', marginBottom: '15px', padding: '10px', background: '#f8f9fa', borderRadius: '12px', justifyContent: 'space-between' }}>
                   <ColorPickerItem label="기본 핀" value={pinColor} onChange={setPinColor} />
                   <ColorPickerItem label="선택 핀" value={selectedPinColor} onChange={setSelectedPinColor} />
@@ -259,21 +262,19 @@ export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
           </div>
         </div>
 
-        {/* 오른쪽 상세 패널 (사진 포함) */}
+        {/* 오른쪽 상세 패널 */}
         {connectSource !== null && path[connectSource] && (
           <div style={{ width: '380px', background: 'white', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)', zIndex: 11, display: 'flex', flexDirection: 'column', animation: 'slideIn 0.3s ease-out' }}>
             <div style={{ padding: '24px', borderBottom: '1px solid #f0f0f0', position: 'relative' }}>
               <button onClick={() => setConnectSource(null)} style={{ position: 'absolute', right: '20px', top: '20px', border: 'none', background: '#eee', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer' }}>×</button>
               <h2 style={{ margin: '0 0 10px 0', fontSize: '20px', fontWeight: 'bold' }}>{path[connectSource].name}</h2>
-              <a href={`https://map.naver.com/v5/search/${path[connectSource].name}?c=${path[connectSource].lng},${path[connectSource].lat},15,0,0,0,dh`} target="_blank" rel="noreferrer" style={{ display: 'inline-block', padding: '6px 12px', backgroundColor: '#03C75A', color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', marginBottom: '10px' }}>N 네이버 지도 확인</a>
               <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{path[connectSource].address}</p>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-              <h4 style={{ fontSize: '14px', marginBottom: '12px' }}>🖼️ 장소 사진</h4>
               {path[connectSource].photos && path[connectSource].photos!.length > 0 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   {path[connectSource].photos?.map((url, i) => (
-                    <img key={i} src={url} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <img key={i} src={url} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px' }} alt="place" />
                   ))}
                 </div>
               ) : <p style={{ color: '#ccc', fontSize: '12px' }}>사진이 없습니다.</p>}
