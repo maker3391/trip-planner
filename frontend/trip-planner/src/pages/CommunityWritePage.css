@@ -1,0 +1,134 @@
+/* 글쓰기 폼 컨테이너 */
+.community-post-form {
+    background: #fff;
+    border-top: 2px solid #222;
+    padding-top: 30px;
+}
+
+/* 상단 드롭다운 행 */
+.form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: flex-end;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+}
+
+.form-group select, .form-group input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group select:focus, .form-group input:focus {
+    border-color: #ffc107;
+}
+
+/* 여정 입력창 특화 스타일 */
+.route-inputs {
+    background: #f0f7ff;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e0eaff;
+}
+
+.route-arrow {
+    padding-bottom: 10px;
+    color: #4A90E2;
+    font-weight: bold;
+}
+
+/* 메인 입력 영역 */
+.form-main-area {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.post-input-title {
+    border: none;
+    padding: 20px;
+    font-size: 20px;
+    font-weight: 700;
+    outline: none;
+    border-bottom: 1px solid #f2f2f2;
+}
+
+.post-input-content {
+    border: none;
+    padding: 20px;
+    font-size: 16px;
+    min-height: 400px; /* 본문 영역 확보 */
+    resize: none;
+    outline: none;
+    line-height: 1.6;
+}
+
+.post-input-tags {
+    border: none;
+    padding: 15px 20px;
+    font-size: 14px;
+    color: #4A90E2;
+    outline: none;
+    border-top: 1px solid #f2f2f2;
+    background-color: #fafafa;
+}
+
+/* 하단 버튼 영역 */
+.community-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.cancel-button {
+    padding: 12px 25px;
+    background-color: #eee;
+    color: #666;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.cancel-button:hover {
+    background-color: #ddd;
+}
+
+.write-button {
+    padding: 12px 40px;
+    background-color: #ffc107;
+    color: #222;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.write-button:hover {
+    background-color: #e6af06;
+    transform: translateY(-2px);
+}
