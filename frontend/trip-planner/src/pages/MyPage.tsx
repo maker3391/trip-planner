@@ -26,6 +26,9 @@ export default function MyPage() {
   const [openEdit, setOpenEdit] = useState(false);
   const {data: tripList, isLoading, isError} = useTrips();
 
+  console.log("현재 tripList의 타입:", typeof tripList);
+  console.log("현재 tripList의 내용:", tripList);
+
   const [editForm, setEditForm] = useState({
     phone: "",
     address: "",
@@ -193,17 +196,23 @@ export default function MyPage() {
           <div className="mypage-trip-list">
             {isLoading && <p>여행 데이터를 불러오는 중입니다... ✈️</p>}
             {isError && <p>데이터를 불러오는데 실패했습니다. 🥲</p>}
-            {!isLoading && !isError && (!tripList || tripList.length === 0) && (
-              <p>아직 작성된 여행 계획이 없습니다. 지도를 클릭해 새 여행을 만들어보세요!</p>
+            
+            {Array.isArray(tripList) ? (
+              tripList.length === 0 ? (
+                <p>아직 작성된 여행 계획이 없습니다. 지도를 클릭해 새 여행을 만들어보세요!</p>
+              ) : (
+                tripList.map((trip: TripPlanResponse) => (
+                  <div key={trip.id} className="mypage-trip-card">
+                    <h3>{trip.title}</h3>
+                    <p>목적지 : {trip.destination}</p>
+                    <p>여행 기간 : {trip.startDate} ~ {trip.endDate}</p>
+                    <button className="mypage-detail-btn">상세보기</button>
+                  </div>
+                ))
+              )
+            ) : (
+              !isLoading && <p style={{color: 'red'}}>현재 로그인이 만료되었거나 데이터를 불러올 수 없습니다. 다시 로그인해 주세요.</p>
             )}
-            {tripList?.map((trip: TripPlanResponse) => (
-              <div key={trip.id} className="mypage-trip-card">
-                <h3>{trip.title}</h3>
-                <p>목적지 : {trip.destination}</p>
-                <p>여행 기간 : {trip.startDate} ~ {trip.endDate}</p>
-                <button className="mypage-detail-btn">상세보기</button>
-              </div>
-            ))}
           </div>
         </section>
       </main>
