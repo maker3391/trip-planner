@@ -73,6 +73,10 @@ public class RecommendationValidationService {
     }
 
     private void validateItemsOnly(RecommendationDraft draft) {
+        if (draft.getDayPlans() != null && !draft.getDayPlans().isEmpty()) {
+            throw new LlmCallException("맛집 또는 숙소 추천에서는 dayPlans가 비어 있어야 합니다.");
+        }
+
         if (draft.getItems() == null || draft.getItems().isEmpty()) {
             throw new LlmCallException("추천 결과가 비어 있습니다.");
         }

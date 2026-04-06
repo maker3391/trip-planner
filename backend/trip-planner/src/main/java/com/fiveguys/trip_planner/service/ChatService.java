@@ -11,7 +11,6 @@ import com.fiveguys.trip_planner.response.RecommendationContentResponse;
 import com.fiveguys.trip_planner.response.RecommendationItemResponse;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,24 +18,39 @@ import java.util.List;
 public class ChatService {
 
     private final OpenAiClient openAiClient;
+    private final RecommendationIntentResolverService intentResolverService;
+    private final TourApiRecommendationService tourApiRecommendationService;
     private final RecommendationValidationService validationService;
     private final RecommendationNormalizationService normalizationService;
+    private final RecommendationQualityService qualityService;
     private final RecommendationCacheService recommendationCacheService;
     private final RecommendationCacheKeyGenerator cacheKeyGenerator;
 
     public ChatService(OpenAiClient openAiClient,
+                       RecommendationIntentResolverService intentResolverService,
+                       TourApiRecommendationService tourApiRecommendationService,
                        RecommendationValidationService validationService,
                        RecommendationNormalizationService normalizationService,
+                       RecommendationQualityService qualityService,
                        RecommendationCacheService recommendationCacheService,
                        RecommendationCacheKeyGenerator cacheKeyGenerator) {
         this.openAiClient = openAiClient;
+        this.intentResolverService = intentResolverService;
+        this.tourApiRecommendationService = tourApiRecommendationService;
         this.validationService = validationService;
         this.normalizationService = normalizationService;
+        this.qualityService = qualityService;
         this.recommendationCacheService = recommendationCacheService;
         this.cacheKeyGenerator = cacheKeyGenerator;
     }
 
     public ChatResponse chat(ChatRequest request) {
+        String intent = intentResolverService.resolve(request.getMessage());
+
+        if ("RESTAURANT_RECOMMENDATION".equals(intent) || "STAY_RECOMMENDATION".equals(intent)) {
+            return tourApiRecommendationService.recommend(request);
+        }
+
         String cacheKey = cacheKeyGenerator.generate(request.getMessage());
 
         ChatResponse cached = recommendationCacheService.get(cacheKey);
@@ -45,15 +59,15 @@ public class ChatService {
         }
 
         RecommendationDraft draft = openAiClient.generateRecommendationDraft(request.getMessage());
-
         validationService.validate(draft);
 
         RecommendationDraft normalized = normalizationService.normalize(draft);
-
         validationService.validate(normalized);
 
-        ChatResponse response = toResponse(request.getMessage(), normalized);
+        RecommendationDraft adjusted = qualityService.adjust(request.getMessage(), normalized);
+        validationService.validate(adjusted);
 
+        ChatResponse response = toResponse(request.getMessage(), adjusted);
         recommendationCacheService.put(cacheKey, response);
 
         return response;
@@ -87,6 +101,7 @@ public class ChatService {
                     dayPlan.getPlaces()
             ));
         }
+
         return responses;
     }
 
@@ -98,11 +113,10 @@ public class ChatService {
 
         for (RecommendationItemDraft item : items) {
             responses.add(new RecommendationItemResponse(
-                    item.getName(),
-                    null,
-                    null
+                    item.getName()
             ));
         }
+
         return responses;
     }
 }

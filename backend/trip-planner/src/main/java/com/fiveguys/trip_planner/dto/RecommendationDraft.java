@@ -7,6 +7,7 @@ public class RecommendationDraft {
 
     private String intent;
     private String destination;
+    private String detailArea;
     private Integer days;
     private List<DayPlanDraft> dayPlans = new ArrayList<>();
     private List<RecommendationItemDraft> items = new ArrayList<>();
@@ -26,6 +27,20 @@ public class RecommendationDraft {
         this.items = items;
     }
 
+    public RecommendationDraft(String intent,
+                               String destination,
+                               String detailArea,
+                               Integer days,
+                               List<DayPlanDraft> dayPlans,
+                               List<RecommendationItemDraft> items) {
+        this.intent = intent;
+        this.destination = destination;
+        this.detailArea = detailArea;
+        this.days = days;
+        this.dayPlans = dayPlans;
+        this.items = items;
+    }
+
     public String getIntent() {
         return intent;
     }
@@ -40,6 +55,14 @@ public class RecommendationDraft {
 
     public void setDestination(String destination) {
         this.destination = destination;
+    }
+
+    public String getDetailArea() {
+        return detailArea;
+    }
+
+    public void setDetailArea(String detailArea) {
+        this.detailArea = detailArea;
     }
 
     public Integer getDays() {
