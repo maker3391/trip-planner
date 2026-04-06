@@ -8,13 +8,13 @@ import com.fiveguys.trip_planner.exception.LlmCallException;
 import com.fiveguys.trip_planner.service.RecommendationPromptBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-import java.util.List;
 import java.util.Map;
 
 @Component
@@ -23,16 +23,16 @@ public class OpenAiClient {
     private static final Logger log = LoggerFactory.getLogger(OpenAiClient.class);
 
     private final RestClient restClient;
-    private final OpenAiProperties openAiProperties;
+    private final OpenAiProperties properties;
     private final ObjectMapper objectMapper;
     private final RecommendationPromptBuilder promptBuilder;
 
-    public OpenAiClient(RestClient openAiRestClient,
-                        OpenAiProperties openAiProperties,
+    public OpenAiClient(@Qualifier("openAiRestClient") RestClient restClient,
+                        OpenAiProperties properties,
                         ObjectMapper objectMapper,
                         RecommendationPromptBuilder promptBuilder) {
-        this.restClient = openAiRestClient;
-        this.openAiProperties = openAiProperties;
+        this.restClient = restClient;
+        this.properties = properties;
         this.objectMapper = objectMapper;
         this.promptBuilder = promptBuilder;
     }
@@ -41,195 +41,109 @@ public class OpenAiClient {
         try {
             String prompt = promptBuilder.build(userMessage);
 
-            Map<String, Object> requestBody = Map.of(
-                    "model", openAiProperties.getModel(),
+            Map<String, Object> body = Map.of(
+                    "model", properties.getModel(),
                     "input", prompt,
-                    "tools", List.of(
-                            Map.of(
-                                    "type", "web_search_preview",
-                                    "search_context_size", "low"
-                            )
-                    ),
                     "reasoning", Map.of(
                             "effort", "low"
                     ),
                     "text", Map.of(
                             "format", Map.of(
-                                    "type", "json_schema",
-                                    "name", "recommendation_draft",
-                                    "strict", true,
-                                    "schema", buildSchema()
+                                    "type", "json_object"
                             )
                     ),
-                    "max_output_tokens", openAiProperties.getMaxOutputTokens()
+                    "max_output_tokens", properties.getMaxOutputTokens()
             );
 
-            String rawResponse = restClient.post()
+            String raw = restClient.post()
                     .uri("/responses")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + openAiProperties.getApiKey())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey())
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
-                    .body(requestBody)
+                    .body(body)
                     .retrieve()
                     .body(String.class);
 
-            if (rawResponse == null || rawResponse.isBlank()) {
-                throw new LlmCallException("추천 결과가 비어 있습니다. 잠시 후 다시 시도해주세요.");
+            if (raw == null || raw.isBlank()) {
+                throw new LlmCallException("추천 결과가 비어 있습니다.");
             }
 
-            log.info("OpenAI raw response: {}", rawResponse);
+            log.info("OpenAI raw: {}", raw);
 
-            String jsonText = extractJsonText(rawResponse);
-            log.info("Extracted recommendation JSON: {}", jsonText);
+            String json = extractJson(raw);
 
-            return objectMapper.readValue(jsonText, RecommendationDraft.class);
+            return objectMapper.readValue(json, RecommendationDraft.class);
 
         } catch (HttpClientErrorException e) {
-            log.error("OpenAI 요청 실패: status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
-            throw new LlmCallException(resolveOpenAiErrorMessage(e), e);
-
+            throw new LlmCallException(resolveErrorMessage(e), e);
         } catch (LlmCallException e) {
             throw e;
-
         } catch (Exception e) {
-            log.error("LLM 호출 또는 응답 파싱 중 오류가 발생했습니다.", e);
-            throw new LlmCallException("추천 결과를 처리하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", e);
+            throw new LlmCallException("추천 결과 처리 중 오류가 발생했습니다.", e);
         }
     }
 
-    private String resolveOpenAiErrorMessage(HttpClientErrorException e) {
+    private String resolveErrorMessage(HttpClientErrorException e) {
         String body = e.getResponseBodyAsString();
 
         try {
             JsonNode root = objectMapper.readTree(body);
             String apiMessage = root.path("error").path("message").asText("");
-            String param = root.path("error").path("param").asText("");
 
-            if (apiMessage.contains("cannot be used with reasoning.effort 'minimal'")) {
-                return "추천 요청 옵션이 올바르지 않습니다. 웹 검색 설정과 추론 설정이 충돌했습니다.";
+            if (apiMessage.contains("Web Search cannot be used with JSON mode")) {
+                return "웹 검색과 JSON 모드는 함께 사용할 수 없습니다.";
             }
 
-            if ("tools[0].search_context_size".equals(param)) {
-                return "웹 검색 컨텍스트 크기 설정이 올바르지 않습니다. low, medium, high 중 하나를 사용해야 합니다.";
-            }
-
-            if (apiMessage.contains("Invalid schema")) {
-                return "추천 결과 형식 설정이 올바르지 않습니다. JSON 스키마를 다시 확인해주세요.";
+            if (apiMessage.contains("temperature")) {
+                return "현재 모델에서는 temperature 옵션을 사용할 수 없습니다.";
             }
 
             if (apiMessage.contains("max_output_tokens")) {
-                return "추천 결과 생성 중 응답 길이 제한에 도달했습니다. 출력 토큰 설정을 늘려주세요.";
-            }
-
-            if (apiMessage.contains("tools")) {
-                return "추천 요청 도구 설정이 올바르지 않습니다. 웹 검색 도구 설정을 확인해주세요.";
+                return "출력 토큰 설정이 올바르지 않습니다.";
             }
 
             if (!apiMessage.isBlank()) {
                 return "추천 요청 처리 중 오류가 발생했습니다: " + apiMessage;
             }
-
-        } catch (Exception parseException) {
-            log.warn("OpenAI 에러 본문 파싱 실패: {}", body, parseException);
+        } catch (Exception ignored) {
         }
 
-        return "추천 요청 처리 중 외부 AI 호출 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        return "AI 호출 중 오류가 발생했습니다.";
     }
 
-    private Map<String, Object> buildSchema() {
-        return Map.of(
-                "type", "object",
-                "additionalProperties", false,
-                "properties", Map.of(
-                        "intent", Map.of(
-                                "type", "string",
-                                "enum", List.of(
-                                        "TRAVEL_ITINERARY",
-                                        "RESTAURANT_RECOMMENDATION",
-                                        "STAY_RECOMMENDATION"
-                                )
-                        ),
-                        "destination", Map.of(
-                                "type", "string"
-                        ),
-                        "days", Map.of(
-                                "type", List.of("integer", "null")
-                        ),
-                        "dayPlans", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "day", Map.of("type", "integer"),
-                                                "places", Map.of(
-                                                        "type", "array",
-                                                        "items", Map.of("type", "string")
-                                                )
-                                        ),
-                                        "required", List.of("day", "places")
-                                )
-                        ),
-                        "items", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "name", Map.of("type", "string")
-                                        ),
-                                        "required", List.of("name")
-                                )
-                        )
-                ),
-                "required", List.of("intent", "destination", "days", "dayPlans", "items")
-        );
-    }
-
-    private String extractJsonText(String rawResponse) throws Exception {
-        JsonNode root = objectMapper.readTree(rawResponse);
+    private String extractJson(String raw) throws Exception {
+        JsonNode root = objectMapper.readTree(raw);
 
         String status = root.path("status").asText();
         if ("incomplete".equals(status)) {
             String reason = root.path("incomplete_details").path("reason").asText();
 
             if ("max_output_tokens".equals(reason)) {
-                throw new LlmCallException("추천 결과 생성 중 응답 길이 제한에 도달했습니다. 출력 토큰 설정을 늘려주세요.");
+                throw new LlmCallException("추천 결과 생성 중 출력 길이 제한에 도달했습니다. max_output_tokens 값을 늘려주세요.");
             }
 
-            throw new LlmCallException("추천 결과 생성이 중간에 종료되었습니다. 잠시 후 다시 시도해주세요.");
+            throw new LlmCallException("추천 결과 생성이 중간에 종료되었습니다.");
         }
 
-        JsonNode outputTextNode = root.path("output_text");
-        if (hasUsableText(outputTextNode)) {
-            return outputTextNode.asText();
-        }
-
-        JsonNode outputNode = root.path("output");
-        if (outputNode.isArray()) {
-            for (JsonNode item : outputNode) {
-                JsonNode contentNode = item.path("content");
-                if (!contentNode.isArray()) {
+        JsonNode output = root.path("output");
+        if (output.isArray()) {
+            for (JsonNode item : output) {
+                JsonNode content = item.path("content");
+                if (!content.isArray()) {
                     continue;
                 }
 
-                for (JsonNode contentItem : contentNode) {
-                    if ("output_text".equals(contentItem.path("type").asText())
-                            && hasUsableText(contentItem.path("text"))) {
-                        return contentItem.path("text").asText();
+                for (JsonNode c : content) {
+                    if ("output_text".equals(c.path("type").asText())) {
+                        String text = c.path("text").asText();
+                        if (!text.isBlank()) {
+                            return text;
+                        }
                     }
                 }
             }
         }
 
-        throw new LlmCallException("추천 결과에서 JSON 본문을 추출하지 못했습니다.");
-    }
-
-    private boolean hasUsableText(JsonNode node) {
-        return node != null
-                && !node.isMissingNode()
-                && !node.isNull()
-                && node.isTextual()
-                && !node.asText().isBlank();
+        throw new LlmCallException("JSON 응답을 추출하지 못했습니다.");
     }
 }

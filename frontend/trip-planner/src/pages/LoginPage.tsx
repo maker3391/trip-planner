@@ -5,6 +5,7 @@ import KakaoIcon from "../assets/icons/Kakao.png";
 import GoogleIcon from "../assets/icons/google.png";
 import LogoIcon from "../assets/icons/logo.png";
 import "./LoginPage.css";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   // 1. 입력 데이터를 관리할 State 생성
@@ -12,6 +13,8 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+
+  const navigate = useNavigate();
 
   // 2. 입력값이 변경될 때 호출되는 핸들러
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -45,11 +48,33 @@ export default function LoginPage() {
         window.location.href = "/"; 
     } else {
         console.error("로그인 실패");
+        // 3. 로그인 실패 시 사용자에게 알림 (선택 사항)
+        handleLoginFailure(response.status);
       }
     } catch (error) {
       console.error("네트워크 오류:", error);
     }
   };
+
+  const handleLoginFailure = (status: number) => {
+    let message = "로그인에 실패했습니다. 다시 시도해주세요.";
+
+    switch (status) {
+      case 400:
+        message = "잘못된 요청입니다. 입력한 정보를 확인해주세요.";
+        break;
+      case 401:
+        message = "이메일 또는 비밀번호가 올바르지 않습니다.";
+        break;
+      case 500:
+        message = "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        break;
+      default:
+        message = `로그인에 실패했습니다. (상태 코드: ${status})`;
+    }
+    alert(message);
+  };
+  
 
   // 🔥 핵심: 구글 로그인 이동 함수
   const handleGoogleLogin = () => {
@@ -114,7 +139,7 @@ export default function LoginPage() {
           </button>
 
           <p className="login-signup">
-            계정이 없으신가요? <span>지금 가입하세요</span>
+            계정이 없으신가요? <span onClick={() => navigate("/signup")}>지금 가입하세요</span>
           </p>
         </div>
       </div>
