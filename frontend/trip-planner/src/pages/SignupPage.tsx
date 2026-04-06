@@ -37,6 +37,10 @@ export default function SignupPage() {
       alert("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
       return;
     }
+
+    if (formData.nickname === "") {
+      formData.nickname = formData.name; // 닉네임이 비어있으면 이름으로 대체
+    }
     
     if (formData.password.length < 8) {
       alert("비밀번호는 최소 8자 이상이어야 합니다.");
@@ -46,10 +50,6 @@ export default function SignupPage() {
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
       alert("이메일 형식이 올바르지 않습니다.");
       return;
-    }
-
-    if (formData.nickname === "") {
-      formData.nickname = formData.name; // 닉네임이 비어있으면 이름으로 대체
     }
 
     // [Step 2] 백엔드 서버와 통신 시작
@@ -114,7 +114,6 @@ export default function SignupPage() {
         break;
     }
     alert(message);
-  };
   };
 
   return (
