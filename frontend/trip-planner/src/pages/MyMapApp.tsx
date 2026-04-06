@@ -14,6 +14,7 @@ export interface PlacePoint {
   lng: number;
   name: string;
   address: string;
+  customTitle?: string;
   placeId?: string;
   photos?: string[];
 }
@@ -77,13 +78,14 @@ function MapController({
 
   useEffect(() => {
     if (!map) return;
-    const clickListener = map.addListener('click', (e: any) => {
+    const clickListener = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+      const poiEvent = e as google.maps.IconMouseEvent;
       if (!e.latLng) return;
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
-      if (e.placeId) {
+      if (poiEvent.placeId) {
         const service = new google.maps.places.PlacesService(document.createElement('div'));
-        service.getDetails({ placeId: e.placeId, fields: ['name', 'formatted_address', 'photos', 'place_id'], language: 'ko' }, (place, status) => {
+        service.getDetails({ placeId: poiEvent.placeId, fields: ['name', 'formatted_address', 'photos', 'place_id'], language: 'ko' }, (place, status) => {
           if (status === google.maps.places.PlacesServiceStatus.OK && place) {
             onMapClick({ lat, lng, name: place.name || "장소", address: place.formatted_address || "", placeId: place.place_id, photos: place.photos?.map(p => p.getUrl({ maxWidth: 400 })) });
           }
