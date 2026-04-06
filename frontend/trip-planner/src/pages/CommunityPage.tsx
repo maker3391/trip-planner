@@ -12,9 +12,7 @@ export default function CommunityPage() {
                 {/* 커뮤니티 게시글 리스트, 게시글 작성 폼 등 추가 예정 */}
 
                 <ul>
-                    <li>게시글 1</li>
-                    <li>게시글 2</li>
-                    <li>게시글 3</li>
+                    
                 </ul>
             </div>
         </div>
