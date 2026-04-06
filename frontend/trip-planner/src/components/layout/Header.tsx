@@ -67,6 +67,7 @@ export default function Header() {
             <span>여행 계획</span>
             <span>패스</span>
             <span>좌석 예약</span>
+            <span onClick={() => navigate("/community")}>커뮤니티</span>
             <span onClick={() => setOpenTutorial(true)}>도움말</span>
           </nav>
 
