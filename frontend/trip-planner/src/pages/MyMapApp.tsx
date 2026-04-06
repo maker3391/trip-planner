@@ -262,13 +262,28 @@ export default function MyMapApp({
           </div>
         </div>
 
-        {/* 오른쪽 상세 패널 */}
+       {/* 오른쪽 상세 정보 패널 */}
         {connectSource !== null && path[connectSource] && (
           <div style={{ width: '380px', background: 'white', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)', zIndex: 11, display: 'flex', flexDirection: 'column', animation: 'slideIn 0.3s ease-out' }}>
             <div style={{ padding: '24px', borderBottom: '1px solid #f0f0f0', position: 'relative' }}>
               <button onClick={() => setConnectSource(null)} style={{ position: 'absolute', right: '20px', top: '20px', border: 'none', background: '#eee', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer' }}>×</button>
-              <h2 style={{ margin: '0 0 10px 0', fontSize: '20px', fontWeight: 'bold' }}>{path[connectSource].name}</h2>
-              <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>{path[connectSource].address}</p>
+              <h2 style={{ margin: '0 0 10px 0', fontSize: '20px', fontWeight: 'bold', color: '#111' }}>{path[connectSource].name}</h2>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <a 
+                  href={`https://map.naver.com/v5/search/${path[connectSource].name}?c=${path[connectSource].lng},${path[connectSource].lat},15,0,0,0,dh`}
+                  target="_blank" 
+                  rel="noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    width: 'fit-content', padding: '6px 12px', backgroundColor: '#03C75A', color: 'white',
+                    borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold'
+                  }}
+                >
+                  <span>N</span> 네이버 지도에서 정보 확인
+                </a>
+              </div>
+              <p style={{ fontSize: '13px', color: '#666', lineHeight: '1.4', margin: 0 }}>{path[connectSource].address}</p>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
               {path[connectSource].photos && path[connectSource].photos!.length > 0 ? (
@@ -295,3 +310,4 @@ function ColorPickerItem({ label, value, onChange }: { label: string, value: str
     </div>
   );
 }
+//

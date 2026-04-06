@@ -1,7 +1,7 @@
 import { AppBar, Toolbar, Button } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
 import { CalculatorService } from "./calculator";
@@ -36,6 +36,7 @@ export default function Header() {
           return;
         }
 
+      try {
         const userData = await getMe();
         console.log("getMe 응답:", userData);
         setUser(userData);
