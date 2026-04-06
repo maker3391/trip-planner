@@ -1,6 +1,8 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import Header from "../components/layout/Header";
 import { getMe } from "../components/api/auth.ts";
+import { useTrips } from "../components/hooks/useTrip.ts";
+import { TripPlanResponse } from "../types/trip.ts";
 import "./MyPage.css";
 
 interface UserInfo {
@@ -11,17 +13,18 @@ interface UserInfo {
   phone?: string;
   address?: string;
 }
-
-interface TripItem {
-  id: number;
-  title: string;
-  destination: string;
-  date: string;
-}
+// 이제 TripPlanResponse 가져와서 사용할거라서 주석 했습니다.
+// interface TripItem {
+//   id: number;
+//   title: string;
+//   destination: string;
+//   date: string;
+// }
 
 export default function MyPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
+  const {data: tripList, isLoading, isError} = useTrips();
 
   const [editForm, setEditForm] = useState({
     phone: "",
@@ -31,26 +34,6 @@ export default function MyPage() {
     confirmPassword: "",
   });
 
-  const tripList: TripItem[] = [
-    {
-      id: 1,
-      title: "부산 2박 3일",
-      destination: "부산",
-      date: "2026.04.10 - 2026.04.12",
-    },
-    {
-      id: 2,
-      title: "서울 당일치기",
-      destination: "서울",
-      date: "2026.04.18",
-    },
-    {
-      id: 3,
-      title: "제주도 가족여행",
-      destination: "제주",
-      date: "2026.05.01 - 2026.05.04",
-    },
-  ];
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -208,11 +191,16 @@ export default function MyPage() {
           <h2 className="mypage-section-title">내 여행 계획</h2>
 
           <div className="mypage-trip-list">
-            {tripList.map((trip) => (
+            {isLoading && <p>여행 데이터를 불러오는 중입니다... ✈️</p>}
+            {isError && <p>데이터를 불러오는데 실패했습니다. 🥲</p>}
+            {!isLoading && !isError && (!tripList || tripList.length === 0) && (
+              <p>아직 작성된 여행 계획이 없습니다. 지도를 클릭해 새 여행을 만들어보세요!</p>
+            )}
+            {tripList?.map((trip: TripPlanResponse) => (
               <div key={trip.id} className="mypage-trip-card">
                 <h3>{trip.title}</h3>
-                <p>{trip.destination}</p>
-                <p>{trip.date}</p>
+                <p>목적지 : {trip.destination}</p>
+                <p>여행 기간 : {trip.startDate} ~ {trip.endDate}</p>
                 <button className="mypage-detail-btn">상세보기</button>
               </div>
             ))}

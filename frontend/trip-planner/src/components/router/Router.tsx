@@ -4,7 +4,6 @@ import LoginPage from "../../pages/LoginPage";
 import SignupPage from "../../pages/SignupPage";
 import MyPage from "../../pages/MyPage";
 import OAuth2CallbackPage from "../../pages/OAuth2CallbackPage";
-
 import CommunityPage from "../../pages/CommunityPage";
 
 export default function Router() {
