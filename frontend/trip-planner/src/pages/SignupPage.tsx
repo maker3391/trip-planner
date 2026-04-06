@@ -27,7 +27,9 @@ export default function SignupPage() {
   };
 
   // 3. 회원가입 버튼 클릭 시 호출되는 핸들러
-  const handleSubmit = () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!formData.email || !formData.password || !passwordConfirm || !formData.name) {
       alert("필수 내용을 모두 입력해주세요.");
       return;
