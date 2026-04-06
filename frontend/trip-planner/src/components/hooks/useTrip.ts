@@ -44,3 +44,21 @@ export const useCreateTrip = () => {
     }
   });
 }
+
+// 특정 여행 상세 조회 훅
+export const useGetTrip = (tripId: number | string | null) => {
+  return useQuery({
+    // [queryKey]: id별로 캐시를 따로 관리해야 하므로 id를 키에 포함
+    queryKey: ["trips", tripId],
+    
+    // [queryFn]: tripId가 있을 때만 해당 id로 상세 데이터를 가져옵니다.
+    queryFn: async () => {
+      const response = await client.get(`/trips/${tripId}`);
+      return response.data; // TripPlanResponse 타입의 데이터가 반환됨
+    },
+
+    // [enabled]: tripId가 존재할 때만 쿼리를 자동으로 실행하도록 설정합니다.
+    // id가 null이거나 undefined면 호출하지 않습니다.
+    enabled: !!tripId,
+  });
+};
