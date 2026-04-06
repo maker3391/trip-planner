@@ -1,105 +1,58 @@
 import { AppBar, Toolbar, Button } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
 import { CalculatorService } from "./calculator";
 import Calculator from "./Calculator.tsx";
-import { getMe } from "../api/auth.ts";
-import ProfileDropdown from "../profile/ProfileDropdown.tsx";
-
-interface UserInfo {
-  id: number;
-  email: string;
-  name?: string;
-  nickname?: string;
-  phone?: string;
-  role?: string;
-  status?: string;
-}
+import tplanner from "../../assets/icons/tplanner2.png";
 
 export default function Header() {
   const navigate = useNavigate();
   const [openTutorial, setOpenTutorial] = useState(false);
-  const [openProfile, setOpenProfile] = useState(false);
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const profileRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("accessToken");
-
-        if (!token || token === "undefined") {
-          setUser(null);
-          return;
-        }
-
-      try {
-        const userData = await getMe();
-        console.log("getMe 응답:", userData);
-        setUser(userData);
-      } catch (error) {
-        console.error("사용자 정보 조회 실패:", error);
-        setUser(null);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target as Node)
-      ) {
-        setOpenProfile(false);
-      }
-    };
-
-    if (openProfile) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [openProfile]);
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.setItem("isLoggedIn", "false");
-    setUser(null);
-    setOpenProfile(false);
     alert("로그아웃되었습니다.");
     navigate("/login");
   };
 
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const handleTripListClick = () => {
+    if (!isLoggedIn) {
+      alert("로그인 후 이용 가능합니다.");
+      navigate("/login");
+      return;
+    }
+
+    navigate("/trip-list");
+  };
 
   return (
     <>
       <AppBar position="static" elevation={0} className="header">
         <Toolbar className="header-toolbar">
           <div className="header-logo" onClick={() => navigate("/")}>
-            TPlanner
+            <img src={tplanner} alt="TPlanner" className="header-logo-img" />
           </div>
 
           <nav className="header-nav">
-            <span>여행 계획</span>
-            <span>여행 목록</span>
+            <span onClick={() => navigate("/")}>여행 계획</span>
+            <span onClick={handleTripListClick}>여행 목록</span>
             <span>친구 찾기</span>
             <span onClick={() => setOpenTutorial(true)}>도움말</span>
           </nav>
 
-          <div className="header-actions" ref={profileRef}>
+          <div className="header-actions">
             <span className="header-icon">
               <button
+                type="button"
                 onClick={CalculatorService.openCalculator}
-                style={{ background: "none", border: "none", cursor: "pointer" }}
+                className="header-icon-btn"
               >
                 <ShoppingCartOutlinedIcon />
               </button>
@@ -113,21 +66,6 @@ export default function Header() {
                 >
                   마이페이지
                 </Button>
-
-                <Button
-                  className="header-login-btn"
-                  onClick={() => setOpenProfile((prev) => !prev)}
-                >
-                  내 프로필
-                </Button>
-
-                {openProfile && (
-                  <ProfileDropdown
-                    user={user}
-                    onClose={() => setOpenProfile(false)}
-                  />
-                )}
-
                 <Button className="header-login-btn" onClick={handleLogout}>
                   로그아웃
                 </Button>

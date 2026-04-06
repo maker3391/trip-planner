@@ -4,70 +4,71 @@
 }
 
 .mypage-body {
-  max-width: 1100px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 40px 20px 60px;
 }
 
-/* 프로필 카드 */
-.mypage-profile-card {
+.mypage-intro-card {
   background: #fff;
   border-radius: 20px;
   padding: 28px;
   border: 1px solid #f1df9a;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-}
-
-.mypage-profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
 }
 
 .mypage-badge {
+  display: inline-block;
   background: #fff1b8;
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
+  margin-bottom: 12px;
 }
 
 .mypage-title {
   font-size: 32px;
   font-weight: 800;
+  margin: 0;
 }
 
 .mypage-welcome {
   font-size: 18px;
-  margin-top: 6px;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  color: #1f1f1f;
 }
 
 .mypage-email {
   color: #777;
-  margin-top: 4px;
+  margin: 0;
 }
 
-/* 버튼 */
-.mypage-edit-btn {
-  background: #f7c53a;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-weight: 700;
-  cursor: pointer;
+.mypage-description {
+  margin-top: 14px;
+  color: #555;
+  line-height: 1.5;
 }
 
-.mypage-edit-btn:hover {
-  transform: translateY(-1px);
-}
-
-/* 수정 카드 */
 .mypage-edit-card {
   background: #fff;
   border-radius: 20px;
   padding: 24px;
-  margin-top: 20px;
   border: 1px solid #f1df9a;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+}
+
+.mypage-section-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 20px;
+  color: #1f1f1f;
+}
+
+.password-section-title {
+  margin-top: 28px;
 }
 
 .mypage-edit-grid {
@@ -85,54 +86,57 @@
   grid-column: 1 / -1;
 }
 
+.mypage-form-group label {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #333;
+}
+
 .mypage-form-group input {
-  height: 44px;
-  padding: 10px;
+  height: 46px;
+  padding: 0 14px;
   border-radius: 10px;
   border: 1px solid #ddd;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mypage-form-group input:focus {
+  border-color: #f7c53a;
+  box-shadow: 0 0 0 3px rgba(247, 197, 58, 0.15);
+}
+
+.mypage-form-group input[readonly] {
+  background-color: #f8f8f8;
+  color: #666;
+  cursor: not-allowed;
 }
 
 .mypage-edit-actions {
-  margin-top: 20px;
+  margin-top: 24px;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-}
-
-.mypage-cancel-btn {
-  background: #eee;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
 }
 
 .mypage-save-btn {
   background: #f7c53a;
   border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-}
-
-/* 여행 */
-.mypage-trip-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.mypage-trip-card {
-  background: #fff;
-  padding: 18px;
-  border-radius: 16px;
-  border: 1px solid #eee;
-}
-
-.mypage-detail-btn {
-  margin-top: 10px;
-  width: 100%;
-  height: 40px;
-  background: #f7c53a;
-  border: none;
   border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.mypage-save-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+@media (max-width: 768px) {
+  .mypage-edit-grid {
+    grid-template-columns: 1fr;
+  }
 }
