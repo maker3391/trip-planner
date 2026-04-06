@@ -3,7 +3,6 @@ import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import GuidePopup from "../components/guide/GuidePopup";
 import MyMapApp, { PlacePoint, Connection } from "./MyMapApp"; // MyMapApp에서 타입 가져오기
-
 import { useCreateTrip } from "../components/hooks/useTrip";
 import { TripPlanRequest } from "../types/trip";
 import "./MainPage.css";
@@ -16,20 +15,12 @@ export default function MainPage() {
   const [path, setPath] = useState<PlacePoint[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
 
-  // --- 2. ID 생성 및 저장 로직 ---
-  
-  // 위경도를 조합해 고유 ID 생성 (예: "35.123456_129.123456")
-  const getPointId = (p: PlacePoint) => 
-    `${p.lat.toFixed(6)}_${p.lng.toFixed(6)}`;
-
-  const handleSaveToBackend = async () => {
-    if (path.length === 0) {
   const createTripMutation = useCreateTrip();
 
   // --- 2. ID 생성 및 저장 로직 ---
-
+  
   // 위경도를 조합해 고유 ID 생성 (예: "35.123456_129.123456")
-  // const getPointId = (p: PlacePoint) =>
+  // const getPointId = (p: PlacePoint) => 
   //   `${p.lat.toFixed(6)}_${p.lng.toFixed(6)}`;
 
 
