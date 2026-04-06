@@ -5,6 +5,7 @@ import KakaoIcon from "../assets/icons/Kakao.png";
 import GoogleIcon from "../assets/icons/google.png";
 import LogoIcon from "../assets/icons/logo.png";
 import "./SignupPage.css";
+import { useNavigate } from "react-router-dom";
 
 export default function SignupPage() {
   // 1. 입력 데이터를 관리할 State 생성
@@ -16,6 +17,7 @@ export default function SignupPage() {
     phone: "",
   });
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const navigate = useNavigate();
 
   // 2. 입력값이 변경될 때 호출되는 핸들러
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -199,7 +201,7 @@ export default function SignupPage() {
           </button>
 
           <p className="signup-login">
-            이미 계정이 있으신가요? <span>지금 로그인하세요</span>
+            이미 계정이 있으신가요? <span onClick={() => navigate("/login")}>지금 로그인하세요</span>
           </p>
         </div>
       </div>

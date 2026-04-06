@@ -147,14 +147,14 @@
   box-sizing: border-box;
 }
 
-.signup-signup {
+.signup-login {
   margin-top: 28px;
   font-size: 14px;
   color: #555555;
   text-align: center;
 }
 
-.signup-signup span {
+.signup-login span {
   font-weight: 700;
   text-decoration: underline;
   cursor: pointer;
