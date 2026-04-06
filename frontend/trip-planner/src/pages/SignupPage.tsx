@@ -12,6 +12,7 @@ export default function SignupPage() {
     email: "",
     password: "",
     name: "",
+    nickname: "",
     phone: "",
   });
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -36,10 +37,84 @@ export default function SignupPage() {
       alert("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
       return;
     }
+    
+    if (formData.password.length < 8) {
+      alert("비밀번호는 최소 8자 이상이어야 합니다.");
+      return;
+    }
 
-    console.log("회원가입 시도 데이터:", formData);
-    alert(`회원가입 시도: ${formData.email}`);
-    // 여기서 실제 API 호출(axios 등)을 진행하면 됩니다.
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      alert("이메일 형식이 올바르지 않습니다.");
+      return;
+    }
+
+    if (formData.nickname === "") {
+      formData.nickname = formData.name; // 닉네임이 비어있으면 이름으로 대체
+    }
+
+    // [Step 2] 백엔드 서버와 통신 시작
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData), // passwordConfirm 제외, formData만 전송
+      });
+
+      if (response.ok) {
+        // ✅ 회원가입 성공 처리
+        const data = await response.json(); 
+
+        // 서버에서 토큰을 함께 내려주는 경우 (자동 로그인 처리)
+        if (data.accessToken && data.refreshToken) {
+          localStorage.setItem("accessToken", data.accessToken);
+          localStorage.setItem("refreshToken", data.refreshToken);
+          
+          alert("회원가입 및 로그인이 완료되었습니다!");
+          window.location.href = "/"; // 가입 후 메인 페이지로 이동
+        } else {
+          // 토큰이 없는 경우 (로그인 페이지로 유도)
+          alert("회원가입이 성공했습니다! 로그인 해주세요.");
+          window.location.href = "/login";
+        }
+      } else {
+        // ❌ 서버 에러 응답 처리 (400, 409, 500 등)
+        // 서버에서 보내주는 구체적인 에러 메시지가 있는지 확인합니다.
+        try {
+          const errorDetail = await response.json();
+          alert(`실패: ${errorDetail.message || "입력 정보를 확인해주세요."}`);
+        } catch {
+          handleSignupFailure(response.status);
+        }
+      }
+    } catch (error) {
+      // ❌ 네트워크 연결 오류 (서버 통신 불가)
+      console.error("네트워크 오류 발생:", error);
+      handleSignupFailure(0);
+    }
+  };
+
+  /**
+   * HTTP 상태 코드에 따른 에러 메시지 처리
+   */
+  const handleSignupFailure = (status: number) => {
+    let message = "회원가입에 실패했습니다. 다시 시도해주세요.";
+
+    switch (status) {
+      case 400:
+        message = "입력 형식이 올바르지 않습니다. 모든 항목을 올바르게 채웠는지 확인해주세요.";
+        break;
+      case 409:
+        message = "이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.";
+        break;
+      case 500:
+        message = "서버 내부에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        break;
+      case 0:
+        message = "서버와 연결할 수 없습니다. 인터넷 연결이나 서버 상태를 확인해주세요.";
+        break;
+    }
+    alert(message);
+  };
   };
 
   return (
@@ -64,6 +139,14 @@ export default function SignupPage() {
             name="email"
             placeholder="* 이메일"
             value={formData.email}
+            onChange={handleChange}
+          />
+          <input
+            className="signup-input"
+            type="text"
+            name="nickname"
+            placeholder="* 닉네임"
+            value={formData.nickname}
             onChange={handleChange}
           />
           <input
