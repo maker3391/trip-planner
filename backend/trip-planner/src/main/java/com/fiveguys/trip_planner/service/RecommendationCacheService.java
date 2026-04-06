@@ -9,6 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class RecommendationCacheService {
 
+    private static final Duration DEFAULT_TTL = Duration.ofHours(12);
+
     private static class CacheEntry {
         private final Object value;
         private final long expiresAtMillis;
@@ -44,8 +46,18 @@ public class RecommendationCacheService {
         return (T) entry.getValue();
     }
 
+    public void put(String key, Object value) {
+        cache.put(key, new CacheEntry(
+                value,
+                System.currentTimeMillis() + DEFAULT_TTL.toMillis()
+        ));
+    }
+
     public void put(String key, Object value, Duration ttl) {
-        cache.put(key, new CacheEntry(value, System.currentTimeMillis() + ttl.toMillis()));
+        cache.put(key, new CacheEntry(
+                value,
+                System.currentTimeMillis() + ttl.toMillis()
+        ));
     }
 
     public void evict(String key) {
