@@ -4,10 +4,8 @@ import LoginPage from "../../pages/LoginPage";
 import SignupPage from "../../pages/SignupPage";
 import MyPage from "../../pages/MyPage";
 import OAuth2CallbackPage from "../../pages/OAuth2CallbackPage";
-<<<<<<< HEAD
+
 import CommunityPage from "../../pages/CommunityPage";
-=======
->>>>>>> b2ebd79ead4ec1dbe07571ee3cae880e9935a240
 
 export default function Router() {
   return (
