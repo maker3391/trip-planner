@@ -95,7 +95,7 @@ function MapController({
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng }, language: 'ko' }, (results, status) => {
           if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
-            onMapClick({ lat, lng, name: results[0].formatted_address.split(' ').slice(-2).join(' '), address: results[0].formatted_address });
+            onMapClick({ lat, lng, name: results[0].formatted_address.split(' ').slice(-2).join(' '), address: results[0].formatted_address, placeId: results[0].place_id });
           }
         });
       }
