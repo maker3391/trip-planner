@@ -19,7 +19,7 @@ export const useTrips = () => {
     // [enabled]: 쿼리 자동 실행 여부.
     // 현재 false로 설정되어 있어 컴포넌트가 마운트될 때 자동으로 API를 호출하지 않습니다.
     // 주로 특정 버튼을 클릭했을 때(refetch() 호출 시)만 실행하고 싶을 때 사용합니다.
-    enabled: false,
+    // enabled: false,
   });
 };
 

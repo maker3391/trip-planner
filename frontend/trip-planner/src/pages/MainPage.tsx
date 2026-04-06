@@ -18,9 +18,9 @@ export default function MainPage() {
   const createTripMutation = useCreateTrip();
 
   // --- 2. ID 생성 및 저장 로직 ---
-  
+
   // 위경도를 조합해 고유 ID 생성 (예: "35.123456_129.123456")
-  // const getPointId = (p: PlacePoint) => 
+  // const getPointId = (p: PlacePoint) =>
   //   `${p.lat.toFixed(6)}_${p.lng.toFixed(6)}`;
 
 
@@ -114,33 +114,37 @@ export default function MainPage() {
         
         <main className="map-area" style={{ flexGrow: 1, position: 'relative' }}>
           
-          {/* --- 3. 저장 버튼 UI --- */}
-          <button 
-            onClick={handleSaveToBackend}
-            className="save-button"
-            style={{
-              position: 'absolute',
-              top: '20px',
-              right: '20px',
-              zIndex: 100,
-              padding: '12px 24px',
-              backgroundColor: '#4285F4',
-              color: 'white',
-              border: 'none',
-              borderRadius: '30px',
-              fontWeight: 'bold',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'transform 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <span style={{ fontSize: '18px' }}>💾</span> 서버에 저장하기
-          </button>
+          {/* --- 하단 버튼 그룹 --- */}
+          <div style={{
+            position: 'absolute', bottom: '30px', left: '30px',
+            zIndex: 100, display: 'flex', gap: '12px'
+          }}>
+            {/* 저장 버튼 */}
+            <button
+              onClick={handleSaveToBackend}
+              style={{
+                padding: '14px 28px', backgroundColor: '#1a1a1a', color: 'white',
+                border: 'none', borderRadius: '12px', fontWeight: 'bold',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '10px'
+              }}
+            >
+              <span>💾</span> 저장하기
+            </button>
+
+            {/* 불러오기 테스트 버튼 (필요 시 제거) */}
+            <button
+              onClick={() => fetchTripExample(1)} // 임의의 ID 1번 로드 예시
+              style={{
+                padding: '14px 28px', backgroundColor: '#4285F4', color: 'white',
+                border: 'none', borderRadius: '12px', fontWeight: 'bold',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '10px'
+              }}
+            >
+              <span>📂</span> 불러오기
+            </button>
+          </div>
 
           <div className="map-placeholder" style={{ width: '100%', height: '100%' }}>
             {/* 상태와 변경 함수를 자식(MyMapApp)에게 전달 */}
