@@ -1,22 +1,25 @@
 package com.fiveguys.trip_planner.response;
 
-import com.fiveguys.trip_planner.dto.ToolCallDto;
-
 public class ChatResponse {
 
     private String originalMessage;
-    private boolean executable;
-    private ToolCallDto toolCall;
-    private TripRecommendationResponse recommendation;
+    private String intent;
+    private String destination;
+    private Integer days;
+    private RecommendationContentResponse recommendation;
 
     public ChatResponse() {
     }
 
-    public ChatResponse(String originalMessage, boolean executable, ToolCallDto toolCall,
-                        TripRecommendationResponse recommendation) {
+    public ChatResponse(String originalMessage,
+                        String intent,
+                        String destination,
+                        Integer days,
+                        RecommendationContentResponse recommendation) {
         this.originalMessage = originalMessage;
-        this.executable = executable;
-        this.toolCall = toolCall;
+        this.intent = intent;
+        this.destination = destination;
+        this.days = days;
         this.recommendation = recommendation;
     }
 
@@ -24,31 +27,39 @@ public class ChatResponse {
         return originalMessage;
     }
 
-    public boolean isExecutable() {
-        return executable;
-    }
-
-    public ToolCallDto getToolCall() {
-        return toolCall;
-    }
-
-    public TripRecommendationResponse getRecommendation() {
-        return recommendation;
-    }
-
     public void setOriginalMessage(String originalMessage) {
         this.originalMessage = originalMessage;
     }
 
-    public void setExecutable(boolean executable) {
-        this.executable = executable;
+    public String getIntent() {
+        return intent;
     }
 
-    public void setToolCall(ToolCallDto toolCall) {
-        this.toolCall = toolCall;
+    public void setIntent(String intent) {
+        this.intent = intent;
     }
 
-    public void setRecommendation(TripRecommendationResponse recommendation) {
+    public String getDestination() {
+        return destination;
+    }
+
+    public void setDestination(String destination) {
+        this.destination = destination;
+    }
+
+    public Integer getDays() {
+        return days;
+    }
+
+    public void setDays(Integer days) {
+        this.days = days;
+    }
+
+    public RecommendationContentResponse getRecommendation() {
+        return recommendation;
+    }
+
+    public void setRecommendation(RecommendationContentResponse recommendation) {
         this.recommendation = recommendation;
     }
 }

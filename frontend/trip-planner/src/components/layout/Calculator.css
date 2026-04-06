@@ -1,24 +1,27 @@
 /* Calculator.css */
 
-/* 장바구니 팝업 (우측 하단 플로팅 팝업 형태) */
+/* 1. 플로팅 팝업 컨테이너 */
 .calc-popup-container {
   position: fixed;
   bottom: 40px;
   right: 40px;
-  width: 320px;
+  width: 380px; /* 조금 더 여유 있는 너비 */
   background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-radius: 16px; /* 더 둥글게 */
+  /* 더 부드러운 고급 그림자 효과 */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   z-index: 9999;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: 'Pretendard', sans-serif;
+  font-family: 'Pretendard', -apple-system, sans-serif; /* 가독성 좋은 폰트 */
+  transition: all 0.3s ease; /* 팝업 등장 시 부드럽게 */
 }
 
+/* 2. 헤더 영역 */
 .calc-header {
-  background-color: #ffca28; /* TPlanner UI 포인트 컬러 */
-  padding: 16px;
+  background-color: #ffca28; /* 포인트 컬러 */
+  padding: 18px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -26,127 +29,236 @@
 
 .calc-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px; /* 조금 더 크게 */
   color: #333;
+  font-weight: 700;
 }
 
 .calc-close-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 24px;
   cursor: pointer;
+  color: rgba(0, 0, 0, 0.5); /* 너무 진하지 않게 */
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.calc-close-btn:hover {
   color: #333;
 }
 
+/* 3. 바디 영역 (리스트) */
 .calc-body {
-  padding: 16px;
-  max-height: 250px;
+  padding: 24px 20px; /* 여백을 충분히 */
+  max-height: 320px;
   overflow-y: auto;
+}
+
+/* 스크롤바 커스텀 (깔끔하게) */
+.calc-body::-webkit-scrollbar {
+  width: 6px;
+}
+.calc-body::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+.calc-body::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 .calc-empty {
   text-align: center;
-  color: #888;
-  font-size: 14px;
+  color: #999;
+  font-size: 15px;
+  padding: 40px 0;
 }
 
 .calc-list {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 0 20px 0; /* 버튼과의 간격 */
 }
 
-.calc-list-item {
+/* 4. 리스트 아이템 레이아웃 (한 줄 배치) */
+.calc-item {
   display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
+  align-items: center;
+  gap: 10px; /* 요소 사이 간격 확보 */
+  padding: 12px 0; /* 세로 여백 늘림 */
+  border-bottom: 1px solid #f0f0f0; /* 더 연한 선 */
+}
+
+/* 리스트 내 입력창 공통 스타일 */
+.calc-item input {
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0; /* 연한 테두리 */
+  border-radius: 8px; /* 모서리를 더 둥글게 */
   font-size: 14px;
+  color: #333;
+  outline: none;
+  transition: all 0.2s;
 }
 
-.calc-item-cat {
-  color: #ff9800;
-  margin-right: 6px;
-  font-weight: bold;
+.calc-item input:focus {
+  border-color: #ffca28;
+  box-shadow: 0 0 0 3px rgba(255, 202, 40, 0.15); /* 포커스 효과 추가 */
 }
 
-.calc-footer {
-  padding: 16px;
-  background-color: #f9f9f9;
-  border-top: 1px solid #eee;
+/* 일정명 입력창 (더 넓게) */
+.calc-item input[type="text"]:first-of-type {
+  flex: 2.2; /* 너비 비율 조정 */
+  min-width: 0;
 }
 
-.calc-total {
-  display: flex;
-  justify-content: space-between;
-  font-size: 16px;
-  margin-bottom: 12px;
+/* 금액 입력창 */
+.calc-item input[type="text"]:last-of-type {
+  flex: 1; /* 너비 비율 조정 */
+  text-align: right;
+  min-width: 0;
 }
 
-.calc-btn-reset {
-  width: 100%;
-  padding: 10px;
-  background-color: #e0e0e0;
+/* 원 단위 */
+.calc-item span {
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* 삭제 버튼 (스크린샷처럼 깔끔하게) */
+.item-delete-btn {
+  background-color: #ff5252;
+  color: white;
   border: none;
   border-radius: 6px;
-  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
   font-weight: bold;
-  color: #555;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.item-delete-btn:hover {
+  background-color: #e53935;
+}
+
+/* 5. 추가 버튼 */
+.addButton {
+  width: 100%;
+  padding: 14px;
+  background-color: #ffca28;
+  border: none;
+  border-radius: 10px; /* 더 둥글게 */
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  color: #333;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(255, 202, 40, 0.2); /* 은은한 그림자 */
+}
+
+.addButton:hover {
+  background-color: #fbc02d;
+  transform: translateY(-1px); /* 살짝 떠오르는 효과 */
+}
+
+/* 6. 푸터 영역 (예산 및 합계) */
+.calc-footer {
+  padding: 24px 20px;
+  background-color: #fafafa; /* 아주 연한 회색 배경 */
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 예산 입력 행 */
+.calc-budget-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px; /* 간격 넓힘 */
+}
+
+.calc-budget-row span {
+  font-size: 16px;
+  font-weight: 600;
+  color: #444;
+}
+
+/* 예산 입력창 박스 */
+.budget-input-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #fff; /* 입력창 배경은 하얗게 */
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 6px 14px;
+  width: 200px;
+  transition: border-color 0.2s;
+}
+
+.budget-input-wrapper:focus-within {
+  border-color: #ffca28; /* 포커스 시 테두리 색상 변경 */
+}
+
+.budget-input-wrapper input {
+  border: none;
+  width: 100%;
+  text-align: right;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  outline: none;
+  padding: 0;
+}
+
+/* "원" 글자 */
+.currency-label {
+  margin-left: 10px;
+  color: #666;
+  font-size: 14px;
+  font-weight: normal !important;
+}
+
+/* 총 잔액 행 */
+.calc-balance-row {
+  display: flex;
+  justify-content: space-between; /* 좌우 정렬 */
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.balance-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #444;
+}
+
+.balance-amount {
+  font-size: 20px; /* 더 크게 강조 */
+  font-weight: 800;
+  color: #000;
+}
+
+/* 초기화 버튼 (넓고 깔끔하게) */
+.calc-btn-reset {
+  width: 100%;
+  padding: 15px;
+  background-color: #eeeeee;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  color: #777;
+  transition: all 0.2s;
 }
 
 .calc-btn-reset:hover {
-  background-color: #d5d5d5;
-}
-
-/* 확인 팝업 (화면 중앙 오버레이) */
-.calc-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-.calc-confirm-popup {
-  background-color: white;
-  padding: 24px;
-  border-radius: 12px;
-  width: 300px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.calc-confirm-popup h3 {
-  margin-top: 0;
-  color: #333;
-}
-
-.calc-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.calc-btn-confirm {
-  flex: 1;
-  padding: 10px;
-  background-color: #ffca28;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.calc-btn-cancel {
-  flex: 1;
-  padding: 10px;
-  background-color: #eee;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  background-color: #e2e2e2;
+  color: #555;
 }
