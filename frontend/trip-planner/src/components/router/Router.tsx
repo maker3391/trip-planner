@@ -4,10 +4,10 @@ import LoginPage from "../../pages/LoginPage";
 import SignupPage from "../../pages/SignupPage";
 import MyPage from "../../pages/MyPage";
 import OAuth2CallbackPage from "../../pages/OAuth2CallbackPage";
-<<<<<<< HEAD
 import CommunityPage from "../../pages/CommunityPage";
-=======
->>>>>>> b2ebd79ead4ec1dbe07571ee3cae880e9935a240
+import CommunityWritePage from "../../pages/CommunityWritePage";
+import TripListPage from "../../pages/TripListPage";
+import ProtectedRoute from "./ProtectedRoute";
 
 export default function Router() {
   return (
@@ -22,8 +22,24 @@ export default function Router() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/community" element={<CommunityPage />} />
-        <Route path="/mypage" element={<MyPage />} />
+        <Route
+          path="/mypage"
+          element={
+            <ProtectedRoute>
+              <MyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/community/write" element={<CommunityWritePage />} />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+        <Route
+          path="trip-list"
+          element={
+            <ProtectedRoute>
+              <TripListPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

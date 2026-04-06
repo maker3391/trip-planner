@@ -14,83 +14,143 @@ public class RecommendationCacheKeyGenerator {
 
     private static final Pattern NIGHTS_DAYS_PATTERN = Pattern.compile("(\\d+)\\s*박\\s*(\\d+)\\s*일");
     private static final Pattern DAYS_ONLY_PATTERN = Pattern.compile("(\\d+)\\s*일");
+    private static final Pattern NIGHTS_ONLY_PATTERN = Pattern.compile("(\\d+)\\s*박");
+    private static final Pattern ENGLISH_DAYS_PATTERN = Pattern.compile("(\\d+)\\s*(day|days)");
+    private static final Pattern ENGLISH_NIGHTS_DAYS_PATTERN = Pattern.compile("(\\d+)\\s*(night|nights)\\s*(\\d+)\\s*(day|days)");
 
-    private static final Map<String, String> REGION_ALIASES = new LinkedHashMap<>();
+    private static final Map<String, String> DESTINATION_ALIASES = new LinkedHashMap<>();
+
+    private final DetailAreaParsingService detailAreaParsingService;
 
     static {
-        REGION_ALIASES.put("서울특별시", "서울");
-        REGION_ALIASES.put("서울시", "서울");
-        REGION_ALIASES.put("서울", "서울");
+        putAliases("서울",
+                "서울", "서울시", "서울특별시",
+                "seoul", "seoul city", "seoul special city", "seoul, south korea");
 
-        REGION_ALIASES.put("부산광역시", "부산");
-        REGION_ALIASES.put("부산시", "부산");
-        REGION_ALIASES.put("부산", "부산");
+        putAliases("부산",
+                "부산", "부산시", "부산광역시",
+                "busan", "busan city", "busan metropolitan city", "busan, south korea");
 
-        REGION_ALIASES.put("대구광역시", "대구");
-        REGION_ALIASES.put("대구시", "대구");
-        REGION_ALIASES.put("대구", "대구");
+        putAliases("대구",
+                "대구", "대구시", "대구광역시",
+                "daegu", "daegu city", "daegu metropolitan city");
 
-        REGION_ALIASES.put("인천광역시", "인천");
-        REGION_ALIASES.put("인천시", "인천");
-        REGION_ALIASES.put("인천", "인천");
+        putAliases("인천",
+                "인천", "인천시", "인천광역시",
+                "incheon", "incheon city", "incheon metropolitan city");
 
-        REGION_ALIASES.put("광주광역시", "광주");
-        REGION_ALIASES.put("광주시", "광주");
-        REGION_ALIASES.put("광주", "광주");
+        putAliases("광주",
+                "광주", "광주시", "광주광역시",
+                "gwangju", "gwangju city", "gwangju metropolitan city");
 
-        REGION_ALIASES.put("대전광역시", "대전");
-        REGION_ALIASES.put("대전시", "대전");
-        REGION_ALIASES.put("대전", "대전");
+        putAliases("대전",
+                "대전", "대전시", "대전광역시",
+                "daejeon", "daejeon city", "daejeon metropolitan city");
 
-        REGION_ALIASES.put("울산광역시", "울산");
-        REGION_ALIASES.put("울산시", "울산");
-        REGION_ALIASES.put("울산", "울산");
+        putAliases("울산",
+                "울산", "울산시", "울산광역시",
+                "ulsan", "ulsan city", "ulsan metropolitan city");
 
-        REGION_ALIASES.put("세종특별자치시", "세종");
-        REGION_ALIASES.put("세종시", "세종");
-        REGION_ALIASES.put("세종", "세종");
+        putAliases("세종",
+                "세종", "세종시", "세종특별자치시",
+                "sejong", "sejong city");
 
-        REGION_ALIASES.put("경기도", "경기");
-        REGION_ALIASES.put("경기", "경기");
+        putAliases("제주",
+                "제주", "제주시", "제주도", "제주특별자치도",
+                "jeju", "jeju island", "jeju-do");
 
-        REGION_ALIASES.put("강원특별자치도", "강원");
-        REGION_ALIASES.put("강원도", "강원");
-        REGION_ALIASES.put("강원", "강원");
+        putAliases("경기",
+                "경기", "경기도",
+                "gyeonggi", "gyeonggi-do");
 
-        REGION_ALIASES.put("충청북도", "충북");
-        REGION_ALIASES.put("충북", "충북");
+        putAliases("강원",
+                "강원", "강원도", "강원특별자치도",
+                "gangwon", "gangwon-do");
 
-        REGION_ALIASES.put("충청남도", "충남");
-        REGION_ALIASES.put("충남", "충남");
+        putAliases("충북",
+                "충북", "충청북도",
+                "chungbuk", "chungcheongbuk-do");
 
-        REGION_ALIASES.put("전북특별자치도", "전북");
-        REGION_ALIASES.put("전라북도", "전북");
-        REGION_ALIASES.put("전북", "전북");
+        putAliases("충남",
+                "충남", "충청남도", "충청도",
+                "chungnam", "chungcheongnam-do");
 
-        REGION_ALIASES.put("전라남도", "전남");
-        REGION_ALIASES.put("전남", "전남");
+        putAliases("전북",
+                "전북", "전라북도", "전북특별자치도",
+                "jeonbuk", "jeollabuk-do");
 
-        REGION_ALIASES.put("경상북도", "경북");
-        REGION_ALIASES.put("경북", "경북");
+        putAliases("전남",
+                "전남", "전라남도", "전라도",
+                "jeonnam", "jeollanam-do");
 
-        REGION_ALIASES.put("경상남도", "경남");
-        REGION_ALIASES.put("경남", "경남");
+        putAliases("경북",
+                "경북", "경상북도",
+                "gyeongbuk", "gyeongsangbuk-do");
 
-        REGION_ALIASES.put("제주특별자치도", "제주");
-        REGION_ALIASES.put("제주도", "제주");
-        REGION_ALIASES.put("제주", "제주");
+        putAliases("경남",
+                "경남", "경상남도", "경상도",
+                "gyeongnam", "gyeongsangnam-do");
+
+        putAliases("여수",
+                "여수", "여수시",
+                "yeosu", "yeosu-si");
+
+        putAliases("순천",
+                "순천", "순천시",
+                "suncheon", "suncheon-si");
+
+        putAliases("목포",
+                "목포", "목포시",
+                "mokpo", "mokpo-si");
+
+        putAliases("전주",
+                "전주", "전주시",
+                "jeonju", "jeonju-si");
+
+        putAliases("군산",
+                "군산", "군산시",
+                "gunsan", "gunsan-si");
+
+        putAliases("강릉",
+                "강릉", "강릉시",
+                "gangneung", "gangneung-si");
+
+        putAliases("속초",
+                "속초", "속초시",
+                "sokcho", "sokcho-si");
+
+        putAliases("춘천",
+                "춘천", "춘천시",
+                "chuncheon", "chuncheon-si");
+
+        putAliases("경주",
+                "경주", "경주시",
+                "gyeongju", "gyeongju-si");
+
+        putAliases("포항",
+                "포항", "포항시",
+                "pohang", "pohang-si");
+    }
+
+    public RecommendationCacheKeyGenerator(DetailAreaParsingService detailAreaParsingService) {
+        this.detailAreaParsingService = detailAreaParsingService;
     }
 
     public String generate(String message) {
-        String normalizedMessage = normalizeMessage(message);
+        String normalizedMessage = normalize(message);
 
         String intent = resolveIntent(normalizedMessage);
-        String destination = resolveDestination(normalizedMessage);
+        String detailArea = detailAreaParsingService.extractDetailArea(message);
+        String destination = resolveDestination(normalizedMessage, detailArea);
         Integer days = resolveDays(normalizedMessage);
 
         StringBuilder key = new StringBuilder("recommendation");
         key.append(":").append(intent);
         key.append(":").append(destination);
+
+        if (StringUtils.hasText(detailArea)) {
+            key.append(":").append(normalize(detailArea).replace(" ", "_"));
+        }
 
         if (days != null) {
             key.append(":").append(days);
@@ -111,25 +171,46 @@ public class RecommendationCacheKeyGenerator {
         return "TRAVEL_ITINERARY";
     }
 
-    private String resolveDestination(String message) {
-        for (Map.Entry<String, String> entry : REGION_ALIASES.entrySet()) {
-            if (message.contains(normalizeMessage(entry.getKey()))) {
-                return entry.getValue();
+    private String resolveDestination(String message, String detailArea) {
+        if (StringUtils.hasText(detailArea)) {
+            String parentCity = detailAreaParsingService.resolveParentCity(detailArea);
+            if (StringUtils.hasText(parentCity)) {
+                return parentCity;
             }
         }
 
-        return "unknown";
+        return DESTINATION_ALIASES.entrySet().stream()
+                .filter(entry -> message.contains(entry.getKey()))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse("unknown");
     }
 
     private Integer resolveDays(String message) {
-        Matcher nightsDaysMatcher = NIGHTS_DAYS_PATTERN.matcher(message);
-        if (nightsDaysMatcher.find()) {
-            return parseIntSafely(nightsDaysMatcher.group(2));
+        Matcher m1 = ENGLISH_NIGHTS_DAYS_PATTERN.matcher(message);
+        if (m1.find()) {
+            return parseIntSafely(m1.group(3));
         }
 
-        Matcher daysOnlyMatcher = DAYS_ONLY_PATTERN.matcher(message);
-        if (daysOnlyMatcher.find()) {
-            return parseIntSafely(daysOnlyMatcher.group(1));
+        Matcher m2 = NIGHTS_DAYS_PATTERN.matcher(message);
+        if (m2.find()) {
+            return parseIntSafely(m2.group(2));
+        }
+
+        Matcher m3 = ENGLISH_DAYS_PATTERN.matcher(message);
+        if (m3.find()) {
+            return parseIntSafely(m3.group(1));
+        }
+
+        Matcher m4 = DAYS_ONLY_PATTERN.matcher(message);
+        if (m4.find()) {
+            return parseIntSafely(m4.group(1));
+        }
+
+        Matcher m5 = NIGHTS_ONLY_PATTERN.matcher(message);
+        if (m5.find()) {
+            Integer nights = parseIntSafely(m5.group(1));
+            return nights != null ? nights + 1 : null;
         }
 
         return null;
@@ -152,7 +233,25 @@ public class RecommendationCacheKeyGenerator {
         return false;
     }
 
-    private String normalizeMessage(String value) {
+    private String normalize(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+
+        return Normalizer.normalize(value, Normalizer.Form.NFKC)
+                .toLowerCase()
+                .replaceAll("[^가-힣a-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private static void putAliases(String canonical, String... aliases) {
+        for (String alias : aliases) {
+            DESTINATION_ALIASES.put(normalizeStatic(alias), canonical);
+        }
+    }
+
+    private static String normalizeStatic(String value) {
         if (!StringUtils.hasText(value)) {
             return "";
         }
