@@ -5,7 +5,6 @@ import SignupPage from "../../pages/SignupPage";
 import MyPage from "../../pages/MyPage";
 import OAuth2CallbackPage from "../../pages/OAuth2CallbackPage";
 
-
 export default function Router() {
   return (
     <BrowserRouter
