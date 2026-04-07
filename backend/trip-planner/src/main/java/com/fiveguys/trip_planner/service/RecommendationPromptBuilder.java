@@ -21,7 +21,6 @@ public class RecommendationPromptBuilder {
         return """
                 Return JSON only.
 
-                Required JSON structure:
                 {
                   "intent": "TRAVEL_ITINERARY",
                   "destination": "string",
@@ -37,20 +36,15 @@ public class RecommendationPromptBuilder {
                 }
 
                 Rules:
-                - use Korean place names and Korean destination names
+                - use Korean place names
                 - destination must be in South Korea
-                - intent must always be TRAVEL_ITINERARY
-                - if a detailed area such as 서면, 남포동, 해운대, 홍대, 강남 is specified, destination must be the parent city and detailArea must be the exact detailed area
-                - if no detailed area is specified, detailArea must be null
+                - intent must be TRAVEL_ITINERARY
+                - if detailed area exists, destination must be the parent city and detailArea must be that area
+                - if no detailed area exists, detailArea must be null
                 - "2박3일" means days=3
-                - days is required
                 - dayPlans count must equal days
-                - each dayPlan must be an object with fields day and places
-                - each places has 2 to 4 strings
+                - each day must have 2 to 4 places
                 - items must be []
-                - when detailArea is specified, prioritize places in or near that detailArea
-                - do not broaden to the entire city unless necessary
-                - no nested arrays for dayPlans
                 - no markdown
                 - no explanation
                 """ + detailRule + """
@@ -66,10 +60,10 @@ public class RecommendationPromptBuilder {
 
         return """
                 
-                Detected detailed area from user message:
+                Focus area:
                 - parent city: %s
                 - detail area: %s
-                - keep itinerary focused on %s and nearby spots
+                - prioritize places in or near %s
                 """.formatted(parentCity, detailArea, detailArea);
     }
 }

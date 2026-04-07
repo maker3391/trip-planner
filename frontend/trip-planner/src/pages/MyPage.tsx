@@ -1,8 +1,6 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import Header from "../components/layout/Header";
 import { getMe } from "../components/api/auth.ts";
-import { useTrips } from "../components/hooks/useTrip.ts";
-import { TripPlanResponse } from "../types/trip.ts";
 import "./MyPage.css";
 
 interface UserInfo {
@@ -16,13 +14,6 @@ interface UserInfo {
   role?: string;
   status?: string;
 }
-// 이제 TripPlanResponse 가져와서 사용할거라서 주석 했습니다.
-// interface TripItem {
-//   id: number;
-//   title: string;
-//   destination: string;
-//   date: string;
-// }
 
 interface EditForm {
   email: string;
@@ -36,9 +27,8 @@ interface EditForm {
 
 export default function MyPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [openEdit, setOpenEdit] = useState(false);
-  const {data: tripList, isLoading, isError} = useTrips();
 
+<<<<<<< HEAD
   // const [editForm, setEditForm] = useState({
   // const [form, setForm] = useState<EditForm>({
   //   email: "",
@@ -50,7 +40,17 @@ export default function MyPage() {
   //   newPassword: "",
   //   newPasswordConfirm: "",
   // });
-
+=======
+  const [form, setForm] = useState<EditForm>({
+    email: "",
+    name: "",
+    nickname: "",
+    phone: "",
+    currentPassword: "",
+    newPassword: "",
+    newPasswordConfirm: "",
+  });
+>>>>>>> 57e35a566af0b9287a77a1627382b512b3a3b0d5
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -235,44 +235,6 @@ export default function MyPage() {
             >
               저장
             </button>
-              <div className="mypage-edit-actions">
-                <button
-                  className="mypage-cancel-btn"
-                  onClick={() => setOpenEdit(false)}
-                >
-                  취소
-                </button>
-                <button className="mypage-save-btn" onClick={handleSave}>
-                  저장
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section className="mypage-trips">
-          <h2 className="mypage-section-title">내 여행 계획</h2>
-
-          <div className="mypage-trip-list">
-            {isLoading && <p>여행 데이터를 불러오는 중입니다... ✈️</p>}
-            {isError && <p>데이터를 불러오는데 실패했습니다. 🥲</p>}
-
-            {Array.isArray(tripList) ? (
-              tripList.length === 0 ? (
-                <p>아직 작성된 여행 계획이 없습니다. 지도를 클릭해 새 여행을 만들어보세요!</p>
-              ) : (
-                tripList.map((trip: TripPlanResponse) => (
-                  <div key={trip.id} className="mypage-trip-card">
-                    <h3>{trip.title}</h3>
-                    <p>목적지 : {trip.destination}</p>
-                    <p>여행 기간 : {trip.startDate} ~ {trip.endDate}</p>
-                    <button className="mypage-detail-btn">상세보기</button>
-                  </div>
-                ))
-              )
-            ) : (
-              !isLoading && <p style={{color: 'red'}}>현재 로그인이 만료되었거나 데이터를 불러올 수 없습니다. 다시 로그인해 주세요.</p>
-            )}
           </div>
         </section>
       </main>
