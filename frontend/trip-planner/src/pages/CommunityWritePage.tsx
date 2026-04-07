@@ -1,11 +1,11 @@
 import React, { useState, useRef, useMemo } from "react";
 import Header from "../components/layout/Header.tsx";
 import { useNavigate } from "react-router-dom";
+import client from "../components/api/client.ts";
+// npm install react-quill 해야합니다.
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./CommunityWritePage.css";
-import { getMe } from "../components/api/auth.ts";
-import { Message } from "@mui/icons-material";
 
 // 💡 1. 폰트 크기를 숫자로 조절하기 위한 Quill 설정
 const Size = Quill.import("attributors/style/size");
@@ -85,19 +85,20 @@ export default function CommunityWritePage() {
         if (!localStorage.getItem("isLoggedIn")) {
             alert("로그인이 필요한 서비스 입니다.");
             navigate("/api/auth/login");
+            return;
         }
             
         try {
-            const response = await fetch("/api/community/posts", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
+            const response = await client.post(
+                "/community/posts",
+                formData
+            );
 
-            if (response.ok) {
+            if (response.status === 201) {
                 alert('게시글이 성공적으로 등록되었습니다!');
-                navigate("/community");
+                window.location.href = "/community"; 
             }
+
         } catch (error) {
             console.error("등록 실패:", error);
         }

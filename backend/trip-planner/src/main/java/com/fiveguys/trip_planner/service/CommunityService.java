@@ -8,6 +8,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +39,7 @@ public class CommunityService {
                 .content(safeContent)
                 .departure(request.getDeparture())
                 .arrival(request.getArrival())
-                .tags(String.valueOf(request.getTags()))
+                .tags(request.getTags())
                 .rating(request.getRating())
                 .build();
 
@@ -72,10 +75,12 @@ public class CommunityService {
     }
 
     private boolean isPlanCategory(String category) {
+        if (category == null) return false; // 🔥 추가
         return category.equals("여행플랜 공유") || category.equals("당일치기 친구 찾기");
     }
 
     private boolean isRatingCategory(String category) {
+        if (category == null) return false; // 🔥 추가
         return category.equals("맛집게시판")
                 || category.equals("사진게시판")
                 || category.equals("후기게시판");
@@ -83,5 +88,12 @@ public class CommunityService {
 
     private boolean isEmpty(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    public Page<Community> getPosts(int page, int size) {
+        // 최신 글이 먼저 나오도록 정렬
+        return communityRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
+        );
     }
 }

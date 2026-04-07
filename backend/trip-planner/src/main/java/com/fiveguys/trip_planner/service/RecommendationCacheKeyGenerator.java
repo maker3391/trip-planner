@@ -32,19 +32,19 @@ public class RecommendationCacheKeyGenerator {
         String intent = intentResolverService.resolve(message);
         RegionResolverService.ResolvedRegion resolvedRegion = regionResolverService.resolve(message);
 
-        String destination = resolvedRegion.getCity();
+        String destination = resolveEffectiveDestination(
+                resolvedRegion.getCity(),
+                resolvedRegion.getDistrict()
+        );
+
         String district = resolvedRegion.getDistrict();
         String neighborhood = resolvedRegion.getNeighborhood();
         String detailArea = resolvedRegion.getDetailName();
 
-        if (!StringUtils.hasText(destination) && StringUtils.hasText(district)) {
-            destination = district;
-        }
-
         Integer days = resolveDays(normalizedMessage);
         String subtype = resolveSubtype(intent, normalizedMessage);
 
-        StringBuilder key = new StringBuilder("recommendation:v4");
+        StringBuilder key = new StringBuilder("recommendation:v7");
         key.append(":").append(intent);
         key.append(":").append(safeSegment(destination));
 
@@ -65,6 +65,18 @@ public class RecommendationCacheKeyGenerator {
         }
 
         return key.toString();
+    }
+
+    private String resolveEffectiveDestination(String destination, String district) {
+        if (isCityOrCounty(district)) {
+            return district;
+        }
+        return destination;
+    }
+
+    private boolean isCityOrCounty(String value) {
+        return StringUtils.hasText(value)
+                && (value.endsWith("시") || value.endsWith("군"));
     }
 
     private String resolveSubtype(String intent, String message) {

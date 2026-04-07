@@ -21,81 +21,48 @@ public class RegionResolverService {
 
     public ResolvedRegion resolve(String message) {
         String normalizedMessage = normalize(message);
+        List<String> tokens = tokenize(message);
 
-        RegionRecord province = findBestMatch(normalizedMessage, "CTPRVN", null, null);
-        RegionRecord district = findBestMatch(normalizedMessage, "SIG", null, null);
+        RegionRecord province = findBestProvince(normalizedMessage, tokens);
+        String provinceName = province != null ? province.getName() : "";
 
-        String resolvedCity = province != null ? province.getName() : "";
+        RegionRecord district = findBestDistrict(normalizedMessage, tokens, provinceName);
         String resolvedDistrict = district != null ? district.getName() : "";
 
-        if (!StringUtils.hasText(resolvedCity) && district != null) {
-            if (isMetroStyleDistrict(district)) {
-                resolvedCity = district.getCity();
-            } else {
-                resolvedCity = district.getName();
-            }
-        }
+        String resolvedCity = resolveCity(provinceName, district);
 
-        RegionRecord narrowedDistrict = null;
-        if (StringUtils.hasText(resolvedCity)) {
-            narrowedDistrict = findBestMatch(
-                    normalizedMessage,
-                    "SIG",
-                    isProvinceLike(resolvedCity) ? resolvedCity : "",
-                    null
-            );
-        }
-
-        if (narrowedDistrict != null) {
-            resolvedDistrict = narrowedDistrict.getName();
-
-            if (!StringUtils.hasText(resolvedCity)) {
-                resolvedCity = isMetroStyleDistrict(narrowedDistrict)
-                        ? narrowedDistrict.getCity()
-                        : narrowedDistrict.getName();
-            }
-        }
-
-        RegionRecord neighborhood = findBestNeighborhood(normalizedMessage, resolvedCity, resolvedDistrict);
-
-        if (neighborhood == null && StringUtils.hasText(resolvedCity)) {
-            neighborhood = findBestMatch(
-                    normalizedMessage,
-                    "EMD",
-                    isProvinceLike(resolvedCity) ? resolvedCity : "",
-                    null
-            );
-        }
-
+        RegionRecord neighborhood = findBestNeighborhood(normalizedMessage, tokens, provinceName, resolvedDistrict);
         String resolvedNeighborhood = neighborhood != null ? neighborhood.getName() : "";
 
         if (!StringUtils.hasText(resolvedDistrict) && neighborhood != null && StringUtils.hasText(neighborhood.getParent())) {
             resolvedDistrict = neighborhood.getParent();
         }
 
-        if (!StringUtils.hasText(resolvedCity) && neighborhood != null) {
-            if (StringUtils.hasText(neighborhood.getCity())) {
+        if (!StringUtils.hasText(resolvedCity)) {
+            if (StringUtils.hasText(resolvedDistrict) && isCityOrCounty(resolvedDistrict)) {
+                resolvedCity = resolvedDistrict;
+            } else if (neighborhood != null && StringUtils.hasText(neighborhood.getCity())) {
                 resolvedCity = neighborhood.getCity();
-            }
-        }
-
-        if (StringUtils.hasText(resolvedCity) && StringUtils.hasText(resolvedDistrict)) {
-            if (isProvinceLike(resolvedCity)) {
-                String districtCity = districtCityOf(resolvedDistrict);
-                if (StringUtils.hasText(districtCity) && !normalize(districtCity).equals(normalize(resolvedCity))) {
-                    resolvedDistrict = "";
-                    resolvedNeighborhood = "";
-                }
+            } else if (StringUtils.hasText(provinceName)) {
+                resolvedCity = provinceName;
             }
         }
 
         if (StringUtils.hasText(resolvedNeighborhood) && StringUtils.hasText(resolvedDistrict)) {
-            RegionRecord verifiedNeighborhood = findNeighborhoodByNameCityParent(
+            RegionRecord verified = findNeighborhoodByNameAndParentAndProvince(
                     resolvedNeighborhood,
-                    resolvedCity,
-                    resolvedDistrict
+                    resolvedDistrict,
+                    provinceName
             );
-            if (verifiedNeighborhood == null) {
+            if (verified == null) {
+                resolvedNeighborhood = "";
+            }
+        }
+
+        if (StringUtils.hasText(resolvedDistrict) && isDistrictOnly(resolvedDistrict) && StringUtils.hasText(provinceName)) {
+            RegionRecord verifiedDistrict = findDistrictByNameAndProvince(resolvedDistrict, provinceName);
+            if (verifiedDistrict == null) {
+                resolvedDistrict = "";
                 resolvedNeighborhood = "";
             }
         }
@@ -110,23 +77,119 @@ public class RegionResolverService {
         );
     }
 
-    private RegionRecord findBestNeighborhood(String normalizedMessage, String resolvedCity, String resolvedDistrict) {
-        String cityFilter = isProvinceLike(resolvedCity) ? resolvedCity : "";
-        String parentFilter = StringUtils.hasText(resolvedDistrict) ? resolvedDistrict : "";
+    public boolean hasExplicitTopLevelArea(String message) {
+        String normalizedMessage = normalize(message);
+        List<String> tokens = tokenize(message);
 
-        RegionRecord exactParentMatch = findBestMatch(normalizedMessage, "EMD", cityFilter, parentFilter);
-        if (exactParentMatch != null) {
-            return exactParentMatch;
+        for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
+            if (!"CTPRVN".equals(region.getLevel()) && !"SIG".equals(region.getLevel())) {
+                continue;
+            }
+
+            String name = region.getName();
+            String normalizedName = normalize(name);
+            String strippedName = stripSuffix(normalizedName);
+
+            if ("CTPRVN".equals(region.getLevel())) {
+                if (tokens.contains(normalizedName)
+                        || (StringUtils.hasText(strippedName) && tokens.contains(strippedName))
+                        || isExactPhraseHit(normalizedMessage, normalizedName)) {
+                    return true;
+                }
+            }
+
+            if ("SIG".equals(region.getLevel()) && isCityOrCounty(name)) {
+                if (tokens.contains(normalizedName)
+                        || (StringUtils.hasText(strippedName) && tokens.contains(strippedName))
+                        || isExactPhraseHit(normalizedMessage, normalizedName)) {
+                    return true;
+                }
+            }
         }
 
-        if (StringUtils.hasText(parentFilter)) {
-            return findBestMatch(normalizedMessage, "EMD", "", parentFilter);
-        }
-
-        return findBestMatch(normalizedMessage, "EMD", cityFilter, null);
+        return false;
     }
 
-    private RegionRecord findNeighborhoodByNameCityParent(String neighborhoodName, String city, String parent) {
+    private RegionRecord findBestProvince(String normalizedMessage, List<String> tokens) {
+        return findBestMatch(normalizedMessage, tokens, "CTPRVN", null, null);
+    }
+
+    private RegionRecord findBestDistrict(String normalizedMessage, List<String> tokens, String provinceName) {
+        RegionRecord byProvince = null;
+
+        if (StringUtils.hasText(provinceName)) {
+            byProvince = findBestMatch(normalizedMessage, tokens, "SIG", provinceName, null);
+        }
+
+        if (byProvince != null) {
+            return byProvince;
+        }
+
+        return findBestMatch(normalizedMessage, tokens, "SIG", null, null);
+    }
+
+    private RegionRecord findBestNeighborhood(String normalizedMessage,
+                                              List<String> tokens,
+                                              String provinceName,
+                                              String districtName) {
+        if (StringUtils.hasText(districtName)) {
+            RegionRecord exact = findBestMatch(normalizedMessage, tokens, "EMD", provinceName, districtName);
+            if (exact != null) {
+                return exact;
+            }
+        }
+
+        if (StringUtils.hasText(provinceName)) {
+            RegionRecord byProvince = findBestMatch(normalizedMessage, tokens, "EMD", provinceName, null);
+            if (byProvince != null) {
+                return byProvince;
+            }
+        }
+
+        return null;
+    }
+
+    private String resolveCity(String provinceName, RegionRecord district) {
+        if (district == null) {
+            return provinceName;
+        }
+
+        String districtName = district.getName();
+
+        if (isCityOrCounty(districtName)) {
+            return districtName;
+        }
+
+        if (StringUtils.hasText(district.getCity())) {
+            return district.getCity();
+        }
+
+        return provinceName;
+    }
+
+    private RegionRecord findDistrictByNameAndProvince(String districtName, String provinceName) {
+        for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
+            if (!"SIG".equals(region.getLevel())) {
+                continue;
+            }
+
+            if (!normalize(region.getName()).equals(normalize(districtName))) {
+                continue;
+            }
+
+            if (StringUtils.hasText(provinceName) && !normalize(region.getCity()).equals(normalize(provinceName))) {
+                continue;
+            }
+
+            return region;
+        }
+
+        return null;
+    }
+
+    private RegionRecord findNeighborhoodByNameAndParentAndProvince(String neighborhoodName,
+                                                                    String parentName,
+                                                                    String provinceName) {
         for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
             if (!"EMD".equals(region.getLevel())) {
                 continue;
@@ -136,16 +199,12 @@ public class RegionResolverService {
                 continue;
             }
 
-            if (StringUtils.hasText(city) && StringUtils.hasText(region.getCity())) {
-                if (!normalize(region.getCity()).equals(normalize(city))) {
-                    continue;
-                }
+            if (StringUtils.hasText(parentName) && !normalize(region.getParent()).equals(normalize(parentName))) {
+                continue;
             }
 
-            if (StringUtils.hasText(parent) && StringUtils.hasText(region.getParent())) {
-                if (!normalize(region.getParent()).equals(normalize(parent))) {
-                    continue;
-                }
+            if (StringUtils.hasText(provinceName) && !normalize(region.getCity()).equals(normalize(provinceName))) {
+                continue;
             }
 
             return region;
@@ -155,6 +214,7 @@ public class RegionResolverService {
     }
 
     private RegionRecord findBestMatch(String normalizedMessage,
+                                       List<String> tokens,
                                        String level,
                                        String cityFilter,
                                        String parentFilter) {
@@ -165,96 +225,115 @@ public class RegionResolverService {
                 continue;
             }
 
-            if (StringUtils.hasText(cityFilter) && StringUtils.hasText(region.getCity())) {
-                if (!normalize(region.getCity()).equals(normalize(cityFilter))) {
-                    continue;
-                }
+            if (StringUtils.hasText(cityFilter) && !normalize(region.getCity()).equals(normalize(cityFilter))) {
+                continue;
             }
 
-            if (StringUtils.hasText(parentFilter) && StringUtils.hasText(region.getParent())) {
-                if (!normalize(region.getParent()).equals(normalize(parentFilter))) {
-                    continue;
-                }
+            if (StringUtils.hasText(parentFilter) && !normalize(region.getParent()).equals(normalize(parentFilter))) {
+                continue;
             }
 
-            String normalizedName = normalize(region.getName());
-            String strippedName = stripSuffix(normalizedName);
-
-            if (normalizedMessage.contains(normalizedName) || normalizedMessage.contains(strippedName)) {
+            if (matchesRegion(normalizedMessage, tokens, region)) {
                 candidates.add(region);
             }
         }
 
         return candidates.stream()
                 .max(Comparator
-                        .comparingInt((RegionRecord region) -> matchScore(normalizedMessage, region))
-                        .thenComparingInt(region -> stripSuffix(normalize(region.getName())).length())
+                        .comparingInt((RegionRecord region) -> matchScore(normalizedMessage, tokens, region))
                         .thenComparingInt(region -> normalize(region.getName()).length()))
                 .orElse(null);
     }
 
-    private int matchScore(String normalizedMessage, RegionRecord region) {
+    private boolean matchesRegion(String normalizedMessage, List<String> tokens, RegionRecord region) {
+        String level = region.getLevel();
         String normalizedName = normalize(region.getName());
         String strippedName = stripSuffix(normalizedName);
 
-        int score = 0;
-
-        if (normalizedMessage.contains(normalizedName)) {
-            score += 20;
-        }
-
-        if (normalizedMessage.contains(strippedName)) {
-            score += 12;
-        }
-
-        if (StringUtils.hasText(region.getParent()) && normalizedMessage.contains(normalize(region.getParent()))) {
-            score += 8;
-        }
-
-        if (StringUtils.hasText(region.getCity()) && normalizedMessage.contains(normalize(region.getCity()))) {
-            score += 6;
-        }
-
-        return score;
-    }
-
-    private boolean isMetroStyleDistrict(RegionRecord district) {
-        return district != null
-                && StringUtils.hasText(district.getCity())
-                && normalize(district.getCity()).equals(normalize(district.getParent()));
-    }
-
-    private boolean isProvinceLike(String value) {
-        if (!StringUtils.hasText(value)) {
-            return false;
-        }
-
-        String normalized = normalize(value);
-
-        for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
-            if (!"CTPRVN".equals(region.getLevel())) {
-                continue;
-            }
-
-            if (normalize(region.getName()).equals(normalized)) {
+        if ("CTPRVN".equals(level) || "SIG".equals(level)) {
+            if (tokens.contains(normalizedName)) {
                 return true;
             }
+
+            if (StringUtils.hasText(strippedName) && tokens.contains(strippedName)) {
+                return true;
+            }
+
+            return isExactPhraseHit(normalizedMessage, normalizedName);
+        }
+
+        if ("EMD".equals(level)) {
+            if (tokens.contains(normalizedName)) {
+                return true;
+            }
+
+            return isExactPhraseHit(normalizedMessage, normalizedName);
         }
 
         return false;
     }
 
-    private String districtCityOf(String districtName) {
-        for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
-            if (!"SIG".equals(region.getLevel())) {
-                continue;
-            }
+    private int matchScore(String normalizedMessage, List<String> tokens, RegionRecord region) {
+        String normalizedName = normalize(region.getName());
+        String strippedName = stripSuffix(normalizedName);
+        int score = 0;
 
-            if (normalize(region.getName()).equals(normalize(districtName))) {
-                return region.getCity();
+        if (tokens.contains(normalizedName)) {
+            score += 100;
+        }
+
+        if (!"EMD".equals(region.getLevel()) && StringUtils.hasText(strippedName) && tokens.contains(strippedName)) {
+            score += 70;
+        }
+
+        if (isExactPhraseHit(normalizedMessage, normalizedName)) {
+            score += 20;
+        }
+
+        if (StringUtils.hasText(region.getParent()) && tokens.contains(normalize(region.getParent()))) {
+            score += 12;
+        }
+
+        if (StringUtils.hasText(region.getCity()) && tokens.contains(normalize(region.getCity()))) {
+            score += 10;
+        }
+
+        return score;
+    }
+
+    private boolean isExactPhraseHit(String normalizedMessage, String normalizedName) {
+        if (!StringUtils.hasText(normalizedMessage) || !StringUtils.hasText(normalizedName)) {
+            return false;
+        }
+
+        String paddedMessage = " " + normalizedMessage + " ";
+        String paddedName = " " + normalizedName + " ";
+
+        return paddedMessage.contains(paddedName);
+    }
+
+    private List<String> tokenize(String message) {
+        String normalized = normalize(message);
+        if (!StringUtils.hasText(normalized)) {
+            return List.of();
+        }
+
+        List<String> result = new ArrayList<>();
+        for (String token : normalized.split("\\s+")) {
+            if (StringUtils.hasText(token)) {
+                result.add(token);
             }
         }
-        return "";
+        return result;
+    }
+
+    private boolean isCityOrCounty(String value) {
+        return StringUtils.hasText(value)
+                && (value.endsWith("시") || value.endsWith("군"));
+    }
+
+    private boolean isDistrictOnly(String value) {
+        return StringUtils.hasText(value) && value.endsWith("구");
     }
 
     private String stripSuffix(String value) {
@@ -268,7 +347,8 @@ public class RegionResolverService {
 
         return Normalizer.normalize(value, Normalizer.Form.NFKC)
                 .toLowerCase(Locale.ROOT)
-                .replaceAll("\\s+", "")
+                .replaceAll("[^가-힣a-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
                 .trim();
     }
 

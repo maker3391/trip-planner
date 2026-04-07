@@ -5,7 +5,6 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
 
 @Schema(description = "커뮤니티 게시글 등록 및 수정 요청 객체")
 @Getter
@@ -37,7 +36,7 @@ public class CommunityRequest {
 
     // 🔥 핵심 변경
     @Schema(description = "태그 리스트", example = "[\"국밥\", \"부산여행\", \"혼밥\"]")
-    private List<String> tags;
+    private String tags;
 
     // 🔥 범위 제한
     @Schema(description = "평점 (0~5점)", example = "5", minimum = "0", maximum = "5")
