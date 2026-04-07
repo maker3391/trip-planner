@@ -39,14 +39,17 @@ public class OpenAiClient {
 
     public RecommendationDraft generateRecommendationDraft(String userMessage) {
         try {
+            long start = System.currentTimeMillis();
+
             String prompt = promptBuilder.build(userMessage);
+            log.info("[OPENAI REQUEST] promptLength={}, model={}, maxOutputTokens={}",
+                    prompt.length(),
+                    properties.getModel(),
+                    properties.getMaxOutputTokens());
 
             Map<String, Object> body = Map.of(
                     "model", properties.getModel(),
                     "input", prompt,
-                    "reasoning", Map.of(
-                            "effort", "low"
-                    ),
                     "text", Map.of(
                             "format", Map.of(
                                     "type", "json_object"
@@ -64,11 +67,14 @@ public class OpenAiClient {
                     .retrieve()
                     .body(String.class);
 
+            long end = System.currentTimeMillis();
+            log.info("[OPENAI RESPONSE] elapsedMs={}", (end - start));
+
             if (raw == null || raw.isBlank()) {
                 throw new LlmCallException("추천 결과가 비어 있습니다.");
             }
 
-            log.info("OpenAI raw: {}", raw);
+            log.debug("OpenAI raw: {}", raw);
 
             String json = extractJson(raw);
 
