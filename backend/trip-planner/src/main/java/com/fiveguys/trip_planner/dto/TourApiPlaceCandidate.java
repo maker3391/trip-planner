@@ -1,11 +1,23 @@
 package com.fiveguys.trip_planner.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Tour API 장소 후보 정보 객체")
 public class TourApiPlaceCandidate {
 
+    @Schema(description = "장소 제목(명칭)", example = "한라산 국립공원")
     private String title;
+
+    @Schema(description = "기본 주소", example = "제주특별자치도 제주시 1100로")
     private String addr1;
+
+    @Schema(description = "상세 주소", example = "관음사 탐방로")
     private String addr2;
+
+    @Schema(description = "대표 이미지 URL", example = "https://example.com/images/hallasan.jpg")
     private String firstImage;
+
+    @Schema(description = "관광지 고유 콘텐츠 ID", example = "123456")
     private String contentId;
 
     public TourApiPlaceCandidate() {
