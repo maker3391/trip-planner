@@ -2,12 +2,15 @@ package com.fiveguys.trip_planner.controller;
 
 import com.fiveguys.trip_planner.dto.CommunityRequest;
 import com.fiveguys.trip_planner.service.CommunityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "💬 커뮤니티 API", description = "여행 정보 공유 및 게시글 관리를 담당합니다.")
 @RestController
 @RequestMapping("/api/community")
 @RequiredArgsConstructor
@@ -15,6 +18,7 @@ public class CommunityController {
 
     private final CommunityService communityService;
 
+    @Operation(summary = "게시글 등록", description = "제목, 내용, 카테고리 등을 입력받아 커뮤니티에 새로운 글을 작성합니다.")
     @PostMapping("/posts")
     public ResponseEntity<?> createPost(@RequestBody CommunityRequest request) {
 
