@@ -13,6 +13,7 @@ public class ParsedRegion {
 
     @Schema(description = "세부 지역(동/읍/면 등)", example = "영통구")
     private final String district;
+    private final String neighborhood;
 
     @Schema(description = "지역 범위(예: PROVINCE, CITY, DISTRICT)", example = "CITY")
     private final RegionScope scope;
@@ -23,11 +24,13 @@ public class ParsedRegion {
     public ParsedRegion(String province,
                         String city,
                         String district,
+                        String neighborhood,
                         RegionScope scope,
                         String displayDestination) {
         this.province = province;
         this.city = city;
         this.district = district;
+        this.neighborhood = neighborhood;
         this.scope = scope;
         this.displayDestination = displayDestination;
     }
@@ -42,6 +45,10 @@ public class ParsedRegion {
 
     public String getDistrict() {
         return district;
+    }
+
+    public String getNeighborhood() {
+        return neighborhood;
     }
 
     public RegionScope getScope() {

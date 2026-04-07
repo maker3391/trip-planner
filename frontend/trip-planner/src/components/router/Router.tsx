@@ -2,10 +2,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainPage from "../../pages/MainPage";
 import LoginPage from "../../pages/LoginPage";
 import SignupPage from "../../pages/SignupPage";
-import MyPage from "../../pages/MyPage";
+// import MyPage from "../../pages/MyPage";
 import OAuth2CallbackPage from "../../pages/OAuth2CallbackPage";
 import CommunityPage from "../../pages/CommunityPage";
 import CommunityWritePage from "../../pages/CommunityWritePage";
+import TripListPage from "../../pages/TripListPage";
+import ProtectedRoute from "./ProtectedRoute";
 
 export default function Router() {
   return (
@@ -20,9 +22,24 @@ export default function Router() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/community" element={<CommunityPage />} />
+        {/* <Route
+          path="/mypage"
+          element={
+            <ProtectedRoute>
+              <MyPage />
+            </ProtectedRoute>
+          }
+        /> */}
         <Route path="/community/write" element={<CommunityWritePage />} />
-        <Route path="/mypage" element={<MyPage />} />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+        <Route
+          path="trip-list"
+          element={
+            <ProtectedRoute>
+              <TripListPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

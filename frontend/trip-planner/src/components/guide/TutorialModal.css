@@ -1,68 +1,189 @@
-.tutorial-title {
-  font-weight: 800 !important;
+.tutorial-paper {
+  border-radius: 28px !important;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18) !important;
+  border: 1px solid #efefef;
+}
+
+.tutorial-title-wrap {
+  padding: 28px 28px 18px !important;
+  background: linear-gradient(180deg, #fffdf7 0%, #ffffff 100%);
+}
+
+.tutorial-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background-color: #f7b500;
   color: #1f1f1f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  margin-bottom: 14px;
+}
+
+.tutorial-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.5px;
+  color: #1f1f1f;
+  word-break: keep-all;
+}
+
+.tutorial-subtitle {
+  margin: 12px 0 0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #5a5a5a;
+  word-break: keep-all;
+}
+
+.tutorial-dialog-content {
+  padding: 22px 24px 10px !important;
+  border-top: 1px solid #f2f2f2 !important;
+  border-bottom: 1px solid #f2f2f2 !important;
 }
 
 .tutorial-content {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 6px 2px;
+  gap: 14px;
 }
 
 .tutorial-step {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  background-color: #fafafa;
+  gap: 16px;
+  background: #fcfcfc;
   border: 1px solid #ececec;
-  border-radius: 14px;
-  padding: 16px;
+  border-radius: 20px;
+  padding: 18px 18px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+    border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.tutorial-step:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  border-color: #e6dfc8;
+}
+
+.tutorial-step-clickable {
+  cursor: pointer;
+  background: linear-gradient(180deg, #fffdf6 0%, #fff9e8 100%);
+  border: 1px solid #f0df9d;
+}
+
+.tutorial-step-clickable:hover {
+  background: linear-gradient(180deg, #fffbed 0%, #fff5d9 100%);
+  border-color: #e5c95e;
 }
 
 .tutorial-step-number {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background-color: #f7b500;
   color: #1f1f1f;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 6px 14px rgba(247, 181, 0, 0.24);
+}
+
+.tutorial-step-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .tutorial-step h3 {
-  margin: 0 0 6px;
-  font-size: 16px;
+  margin: 2px 0 6px;
+  font-size: 17px;
   font-weight: 800;
   color: #1f1f1f;
+  line-height: 1.4;
+  word-break: keep-all;
 }
 
 .tutorial-step p {
   margin: 0;
   font-size: 14px;
-  line-height: 1.6;
-  color: #4b4b4b;
+  line-height: 1.7;
+  color: #4f4f4f;
+  word-break: keep-all;
 }
 
 .tutorial-actions {
-  padding: 14px 20px !important;
+  padding: 16px 24px 20px !important;
+  background-color: #ffffff;
 }
 
 .tutorial-close-btn {
+  min-width: 110px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  padding: 0 18px !important;
+  background-color: #f7b500 !important;
   color: #1f1f1f !important;
-  font-weight: 700 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+  box-shadow: 0 10px 20px rgba(247, 181, 0, 0.22);
 }
 
-.tutorial-step.clickable {
-  cursor: pointer;
-  transition: all 0.2s ease;
+.tutorial-close-btn:hover {
+  background-color: #efae00 !important;
 }
 
-.tutorial-step.clickable:hover {
-  background-color: #fff4d6;
-  transform: translateY(-2px);
+@media (max-width: 768px) {
+  .tutorial-title-wrap {
+    padding: 24px 20px 16px !important;
+  }
+
+  .tutorial-title {
+    font-size: 25px;
+  }
+
+  .tutorial-subtitle {
+    font-size: 14px;
+  }
+
+  .tutorial-dialog-content {
+    padding: 18px 16px 8px !important;
+  }
+
+  .tutorial-step {
+    padding: 16px 14px;
+    border-radius: 18px;
+    gap: 14px;
+  }
+
+  .tutorial-step-number {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
+
+  .tutorial-step h3 {
+    font-size: 16px;
+  }
+
+  .tutorial-step p {
+    font-size: 13px;
+  }
+
+  .tutorial-actions {
+    padding: 14px 16px 18px !important;
+  }
+
+  .tutorial-close-btn {
+    width: 100% !important;
+  }
 }

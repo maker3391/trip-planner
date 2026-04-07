@@ -9,6 +9,8 @@ import com.fiveguys.trip_planner.response.ChatResponse;
 import com.fiveguys.trip_planner.response.DayPlanResponse;
 import com.fiveguys.trip_planner.response.RecommendationContentResponse;
 import com.fiveguys.trip_planner.response.RecommendationItemResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,9 +19,11 @@ import java.util.List;
 @Service
 public class ChatService {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
+
     private final OpenAiClient openAiClient;
     private final RecommendationIntentResolverService intentResolverService;
-    private final TourApiRecommendationService tourApiRecommendationService;
+    private final KakaoPlaceRecommendationService kakaoPlaceRecommendationService;
     private final RecommendationValidationService validationService;
     private final RecommendationNormalizationService normalizationService;
     private final RecommendationQualityService qualityService;
@@ -28,7 +32,7 @@ public class ChatService {
 
     public ChatService(OpenAiClient openAiClient,
                        RecommendationIntentResolverService intentResolverService,
-                       TourApiRecommendationService tourApiRecommendationService,
+                       KakaoPlaceRecommendationService kakaoPlaceRecommendationService,
                        RecommendationValidationService validationService,
                        RecommendationNormalizationService normalizationService,
                        RecommendationQualityService qualityService,
@@ -36,7 +40,7 @@ public class ChatService {
                        RecommendationCacheKeyGenerator cacheKeyGenerator) {
         this.openAiClient = openAiClient;
         this.intentResolverService = intentResolverService;
-        this.tourApiRecommendationService = tourApiRecommendationService;
+        this.kakaoPlaceRecommendationService = kakaoPlaceRecommendationService;
         this.validationService = validationService;
         this.normalizationService = normalizationService;
         this.qualityService = qualityService;
@@ -45,20 +49,35 @@ public class ChatService {
     }
 
     public ChatResponse chat(ChatRequest request) {
+        long start = System.currentTimeMillis();
+
         String intent = intentResolverService.resolve(request.getMessage());
+        log.info("[CHAT START] intent={}, message={}", intent, request.getMessage());
 
         if ("RESTAURANT_RECOMMENDATION".equals(intent) || "STAY_RECOMMENDATION".equals(intent)) {
-            return tourApiRecommendationService.recommend(request);
+            ChatResponse response = kakaoPlaceRecommendationService.recommend(request);
+
+            long end = System.currentTimeMillis();
+            log.info("[CHAT END] intent={}, elapsedMs={}", intent, (end - start));
+
+            return response;
         }
 
         String cacheKey = cacheKeyGenerator.generate(request.getMessage());
 
         ChatResponse cached = recommendationCacheService.get(cacheKey);
         if (cached != null) {
+            long end = System.currentTimeMillis();
+            log.info("[CHAT CACHE HIT] intent={}, cacheKey={}, elapsedMs={}", intent, cacheKey, (end - start));
             return cached;
         }
 
+        long llmStart = System.currentTimeMillis();
         RecommendationDraft draft = openAiClient.generateRecommendationDraft(request.getMessage());
+        long llmEnd = System.currentTimeMillis();
+        log.info("[CHAT LLM DONE] elapsedMs={}", (llmEnd - llmStart));
+
+        long validationStart = System.currentTimeMillis();
         validationService.validate(draft);
 
         RecommendationDraft normalized = normalizationService.normalize(draft);
@@ -66,9 +85,14 @@ public class ChatService {
 
         RecommendationDraft adjusted = qualityService.adjust(request.getMessage(), normalized);
         validationService.validate(adjusted);
+        long validationEnd = System.currentTimeMillis();
+        log.info("[CHAT POST PROCESS DONE] elapsedMs={}", (validationEnd - validationStart));
 
         ChatResponse response = toResponse(request.getMessage(), adjusted);
         recommendationCacheService.put(cacheKey, response);
+
+        long end = System.currentTimeMillis();
+        log.info("[CHAT END] intent={}, cacheKey={}, elapsedMs={}", intent, cacheKey, (end - start));
 
         return response;
     }
