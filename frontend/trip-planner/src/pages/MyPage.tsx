@@ -28,7 +28,6 @@ interface EditForm {
 export default function MyPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
 
-<<<<<<< HEAD
   // const [editForm, setEditForm] = useState({
   // const [form, setForm] = useState<EditForm>({
   //   email: "",
@@ -40,7 +39,7 @@ export default function MyPage() {
   //   newPassword: "",
   //   newPasswordConfirm: "",
   // });
-=======
+
   const [form, setForm] = useState<EditForm>({
     email: "",
     name: "",
@@ -50,7 +49,7 @@ export default function MyPage() {
     newPassword: "",
     newPasswordConfirm: "",
   });
->>>>>>> 57e35a566af0b9287a77a1627382b512b3a3b0d5
+
 
   useEffect(() => {
     const fetchUser = async () => {

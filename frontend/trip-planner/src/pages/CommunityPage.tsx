@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Header from "../components/layout/Header.tsx";
 import SearchIcon from '@mui/icons-material/Search';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';

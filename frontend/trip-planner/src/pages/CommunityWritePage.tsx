@@ -4,8 +4,6 @@ import { useNavigate } from "react-router-dom";
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./CommunityWritePage.css";
-import { getMe } from "../components/api/auth.ts";
-import { Message } from "@mui/icons-material";
 
 // 💡 1. 폰트 크기를 숫자로 조절하기 위한 Quill 설정
 const Size = Quill.import("attributors/style/size");
