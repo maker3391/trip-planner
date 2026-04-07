@@ -57,7 +57,7 @@ const dummyPosts = [
 export default function CommunityPage() {
     const [selectedMenu, setSelectedMenu] = useState("전체보기");
 
-    const categories = ["전체보기", "여행플랜 공유", "당일치기 친구 찾기", "자유게시판", "질문게시판", "사진게시판", "맛집게시판"];
+    const categories = ["전체보기", "여행플랜 공유", "당일치기 친구 찾기", "자유게시판", "질문게시판", "사진게시판", "맛집게시판", "후기게시판"];
     const regions = ["서울", "경기", "인천", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
     
     const navigate = useNavigate();
