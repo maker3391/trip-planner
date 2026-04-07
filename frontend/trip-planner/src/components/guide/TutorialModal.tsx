@@ -20,45 +20,84 @@ export default function TutorialModal({
   const navigate = useNavigate();
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle className="tutorial-title">서비스 이용 튜토리얼</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        className: "tutorial-paper",
+      }}
+    >
+      <DialogTitle className="tutorial-title-wrap">
+        <span className="tutorial-badge">GUIDE</span>
+        <h2 className="tutorial-title">지도 기반 여행 플래너 사용 가이드</h2>
+        <p className="tutorial-subtitle">
+          장소를 검색하거나 지도에서 직접 선택하고, 핀으로 위치를 확인한 뒤
+          일정에 추가해 여행 계획을 완성해보세요.
+        </p>
+      </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent dividers className="tutorial-dialog-content">
         <div className="tutorial-content">
-          <div className="tutorial-step clickable"
+          <div
+            className="tutorial-step tutorial-step-clickable"
             onClick={() => {
               onClose();
               navigate("/login");
             }}
           >
             <span className="tutorial-step-number">1</span>
-            <div>
-              <h3>로그인하기</h3>
-              <p>로그인 후 여행 계획을 저장하고 관리할 수 있습니다.</p>
+            <div className="tutorial-step-text">
+              <h3>로그인하고 계획 저장하기</h3>
+              <p>
+                로그인하면 여행 계획을 저장하고, 나중에 다시 확인하거나 수정할 수
+                있어요.
+              </p>
             </div>
           </div>
 
           <div className="tutorial-step">
             <span className="tutorial-step-number">2</span>
-            <div>
-              <h3>출발지 입력하기</h3>
-              <p>사이드바에서 출발 도시 또는 기차역을 입력해 여행을 시작하세요.</p>
+            <div className="tutorial-step-text">
+              <h3>검색으로 장소 찾기</h3>
+              <p>
+                사이드바에서 도시, 역, 관광지 등 원하는 장소를 검색해 빠르게
+                위치를 찾아보세요.
+              </p>
             </div>
           </div>
 
           <div className="tutorial-step">
             <span className="tutorial-step-number">3</span>
-            <div>
-              <h3>일정 구성하기</h3>
-              <p>가고 싶은 목적지와 이동 계획을 추가해 여행 일정을 구성합니다.</p>
+            <div className="tutorial-step-text">
+              <h3>지도에서 직접 선택하기</h3>
+              <p>
+                지도를 클릭하면 해당 위치를 바로 확인할 수 있어서 원하는 장소를
+                직관적으로 고를 수 있어요.
+              </p>
             </div>
           </div>
 
           <div className="tutorial-step">
             <span className="tutorial-step-number">4</span>
-            <div>
-              <h3>계획 확인하기</h3>
-              <p>완성된 여행 일정을 확인하고 필요에 따라 수정합니다.</p>
+            <div className="tutorial-step-text">
+              <h3>핀으로 위치 확인하기</h3>
+              <p>
+                선택한 장소는 핀으로 표시되어 여행 동선과 위치를 한눈에 파악할 수
+                있어요.
+              </p>
+            </div>
+          </div>
+
+          <div className="tutorial-step">
+            <span className="tutorial-step-number">5</span>
+            <div className="tutorial-step-text">
+              <h3>일정에 추가해 여행 완성하기</h3>
+              <p>
+                마음에 드는 장소를 일정에 추가하고 순서를 정리해 나만의 여행
+                계획을 완성해보세요.
+              </p>
             </div>
           </div>
         </div>
@@ -66,7 +105,7 @@ export default function TutorialModal({
 
       <DialogActions className="tutorial-actions">
         <Button onClick={onClose} className="tutorial-close-btn">
-          닫기
+          확인했어요
         </Button>
       </DialogActions>
     </Dialog>
