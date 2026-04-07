@@ -20,23 +20,16 @@ public class RegionAliasResolverService {
 
     public ResolvedAlias resolve(String message, String resolvedCity) {
         String normalizedMessage = normalize(message);
+        List<String> tokens = tokenize(message);
         String normalizedCity = normalize(resolvedCity);
 
         List<RegionAliasRecord> candidates = regionAliasCsvLoader.getAliasRecords().stream()
                 .filter(record -> StringUtils.hasText(record.getAlias()))
-                .filter(record -> normalizedMessage.contains(normalize(record.getAlias())))
-                .filter(record -> {
-                    if (!StringUtils.hasText(record.getCity())) {
-                        return true;
-                    }
-                    if (!StringUtils.hasText(normalizedCity)) {
-                        return true;
-                    }
-                    return normalize(record.getCity()).equals(normalizedCity);
-                })
+                .filter(record -> matchesAlias(normalizedMessage, tokens, record.getAlias()))
+                .filter(record -> isCityMatched(record, normalizedCity))
                 .sorted(Comparator
                         .comparingInt(RegionAliasRecord::getPriority).reversed()
-                        .thenComparingInt((RegionAliasRecord record) -> record.getAlias().length()).reversed())
+                        .thenComparingInt((RegionAliasRecord record) -> normalize(record.getAlias()).length()).reversed())
                 .toList();
 
         if (candidates.isEmpty()) {
@@ -55,6 +48,39 @@ public class RegionAliasResolverService {
         );
     }
 
+    private boolean isCityMatched(RegionAliasRecord record, String normalizedCity) {
+        if (!StringUtils.hasText(record.getCity())) {
+            return true;
+        }
+
+        if (!StringUtils.hasText(normalizedCity)) {
+            return false;
+        }
+
+        return normalize(record.getCity()).equals(normalizedCity);
+    }
+
+    private boolean matchesAlias(String normalizedMessage, List<String> tokens, String alias) {
+        String normalizedAlias = normalize(alias);
+
+        if (tokens.contains(normalizedAlias)) {
+            return true;
+        }
+
+        String paddedMessage = " " + normalizedMessage + " ";
+        String paddedAlias = " " + normalizedAlias + " ";
+
+        return paddedMessage.contains(paddedAlias);
+    }
+
+    private List<String> tokenize(String value) {
+        String normalized = normalize(value);
+        if (!StringUtils.hasText(normalized)) {
+            return List.of();
+        }
+        return List.of(normalized.split("\\s+"));
+    }
+
     private String normalize(String value) {
         if (!StringUtils.hasText(value)) {
             return "";
@@ -62,7 +88,8 @@ public class RegionAliasResolverService {
 
         return Normalizer.normalize(value, Normalizer.Form.NFKC)
                 .toLowerCase(Locale.ROOT)
-                .replaceAll("\\s+", "")
+                .replaceAll("[^가-힣a-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
                 .trim();
     }
 
