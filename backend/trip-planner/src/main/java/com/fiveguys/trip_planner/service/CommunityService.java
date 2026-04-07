@@ -36,7 +36,7 @@ public class CommunityService {
                 .content(safeContent)
                 .departure(request.getDeparture())
                 .arrival(request.getArrival())
-                .tags(request.getTags())
+                .tags(String.valueOf(request.getTags()))
                 .rating(request.getRating())
                 .build();
 
