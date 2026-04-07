@@ -4,5 +4,6 @@ public enum RegionScope {
     PROVINCE,
     CITY,
     DISTRICT,
+    NEIGHBORHOOD,
     UNKNOWN
 }
