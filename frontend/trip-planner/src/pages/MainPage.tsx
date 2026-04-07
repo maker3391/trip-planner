@@ -16,6 +16,14 @@ export default function MainPage() {
   // 불러올 여행 ID를 관리하는 상태 (테스트용으로 1번 설정 가능)
   const [targetTripId, setTargetTripId] = useState<number | null>(null);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tripForm, setTripForm] = useState({
+    title: "",
+    destination: "",
+    startDate: "",
+    endDate: "",
+  });
+
   const createTripMutation = useCreateTrip();
   
   // --- 1. 데이터 불러오기 훅 사용 ---
@@ -52,10 +60,24 @@ export default function MainPage() {
     }
   }, [tripData]);
 
+  const handleOpenModal = () => {
+    if(path.length === 0) {
+      alert("저장할 경로가 없습니다. 지도에서 장소를 먼저 추가해주세요.")
+      return;
+    }
+    setTripForm(prev => ({...prev, destination: searchKeyword || ""}));
+    setIsModalOpen(true);
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const {name, value} = e.target;
+    setTripForm(prev => ({...prev, [name]: value}));
+  };
+
   // --- 3. 저장 로직 ---
   const handleSaveToBackend = () => {
-    if (path.length === 0) {
-      alert("저장할 경로가 없습니다!");
+    if(!tripForm.title || !tripForm.destination || !tripForm.startDate || !tripForm.endDate) {
+      alert("모든 여행 정보를 입력해주세요.");
       return;
     }
 
@@ -70,16 +92,22 @@ export default function MainPage() {
       longitude: p.lng,
       googlePlaceId: p.placeId
     }));
-
     const requestData: TripPlanRequest = {
-      title: searchKeyword ? `${searchKeyword} 여행 일정` : "나의 여행 계획",
-      destination: "부산",
-      startDate: "2026-05-01",
-      endDate: "2026-05-03",
+      title: tripForm.title,
+      destination: tripForm.destination,
+      startDate: tripForm.startDate,
+      endDate: tripForm.endDate,
       schedules: schedules
     };
-    createTripMutation.mutate(requestData);
-  }
+    createTripMutation.mutate(requestData, {
+      onSuccess: () => {
+      setIsModalOpen(false);
+      setTripForm({title: "", destination: "", startDate: "", endDate: ""});
+      }
+    });
+  };
+
+  
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -96,7 +124,7 @@ export default function MainPage() {
           
           <div style={{ position: 'absolute', bottom: '30px', left: '30px', zIndex: 100, display: 'flex', gap: '12px' }}>
             <button
-              onClick={handleSaveToBackend}
+              onClick={handleOpenModal}
               style={{ padding: '14px 28px', backgroundColor: '#1a1a1a', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
             >
               <span>💾</span> 저장하기
@@ -123,6 +151,48 @@ export default function MainPage() {
         </main>
       </div>
       <GuidePopup open={openGuidePopup} onClose={() => setOpenGuidePopup(false)} />
+      {isModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+          display: 'flex', justifyContent: 'center', alignItems: 'center'
+        }}>
+          <div style={{
+            backgroundColor: 'white', padding: '30px', borderRadius: '16px',
+            width: '400px', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '15px'
+          }}>
+            <h2 style={{ margin: '0 0 10px 0', fontSize: '20px' }}>✈️ 여행 정보 입력</h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>여행 제목</label>
+              <input type="text" name="title" value={tripForm.title} onChange={handleFormChange} placeholder="예: 신나는 부산 먹방 여행" style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>목적지 (도시)</label>
+              <input type="text" name="destination" value={tripForm.destination} onChange={handleFormChange} placeholder="예: 부산" style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 }}>
+                <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>시작일</label>
+                <input type="date" name="startDate" value={tripForm.startDate} onChange={handleFormChange} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 }}>
+                <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>종료일</label>
+                <input type="date" name="endDate" value={tripForm.endDate} onChange={handleFormChange} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <button onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '12px', backgroundColor: '#f0f0f0', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>취소</button>
+              <button onClick={handleSaveToBackend} disabled={createTripMutation.isPending} style={{ flex: 1, padding: '12px', backgroundColor: '#4285F4', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                {createTripMutation.isPending ? "저장 중..." : "최종 저장"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
