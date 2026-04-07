@@ -1,42 +1,10 @@
 import Header from "../components/layout/Header";
 import "./TripListPage.css";
-
-interface TripItem {
-  id: number;
-  title: string;
-  destination: string;
-  date: string;
-  members: number;
-  status: string;
-}
+import { useTrips } from "../components/hooks/useTrip.ts";
+import { TripPlanResponse } from "../types/trip.ts";
 
 export default function TripListPage() {
-  const tripList: TripItem[] = [
-    {
-      id: 1,
-      title: "부산 2박 3일 여행",
-      destination: "부산",
-      date: "2026.04.10 - 2026.04.12",
-      members: 3,
-      status: "계획 중",
-    },
-    {
-      id: 2,
-      title: "서울 당일치기",
-      destination: "서울",
-      date: "2026.04.18",
-      members: 2,
-      status: "확정",
-    },
-    {
-      id: 3,
-      title: "제주도 가족여행",
-      destination: "제주",
-      date: "2026.05.01 - 2026.05.04",
-      members: 4,
-      status: "계획 중",
-    },
-  ];
+  const { data: tripList, isLoading, isError } = useTrips();
 
   return (
     <div className="trip-list-page">
@@ -54,35 +22,53 @@ export default function TripListPage() {
         <section className="trip-list-section">
           <div className="trip-list-header">
             <h2 className="trip-list-section-title">내 여행 계획</h2>
-            <span className="trip-list-count">총 {tripList.length}개</span>
+            <span className="trip-list-count">
+              총 {Array.isArray(tripList) ? tripList.length : 0}개
+            </span>
           </div>
 
           <div className="trip-list-grid">
-            {tripList.map((trip) => (
-              <article key={trip.id} className="trip-card">
-                <div className="trip-card-top">
-                  <span className="trip-card-tag">{trip.destination}</span>
-                  <span className="trip-card-status">{trip.status}</span>
-                </div>
+            {isLoading && <p>여행 데이터를 불러오는 중입니다... ✈️</p>}
+            {isError && <p>데이터를 불러오는데 실패했습니다. 🥲</p>}
 
-                <h3 className="trip-card-title">{trip.title}</h3>
+            {Array.isArray(tripList) ? (
+              tripList.length === 0 ? (
+                <p>아직 작성된 여행 계획이 없습니다.</p>
+              ) : (
+                tripList.map((trip: TripPlanResponse) => (
+                  <article key={trip.id} className="trip-card">
+                    <div className="trip-card-top">
+                      <span className="trip-card-tag">{trip.destination}</span>
+                      <span className="trip-card-status">
+                        {trip.status || "계획 중"}
+                      </span>
+                    </div>
 
-                <div className="trip-card-info">
-                  <p>
-                    <span>여행 기간</span>
-                    <strong>{trip.date}</strong>
-                  </p>
-                  <p>
-                    <span>인원</span>
-                    <strong>{trip.members}명</strong>
-                  </p>
-                </div>
+                    <h3 className="trip-card-title">{trip.title}</h3>
 
-                <button type="button" className="trip-card-button">
-                  상세보기
-                </button>
-              </article>
-            ))}
+                    <div className="trip-card-info">
+                      <p>
+                        <span>여행 기간</span>
+                        <strong>
+                          {trip.startDate} ~ {trip.endDate}
+                        </strong>
+                      </p>
+                    </div>
+
+                    <button type="button" className="trip-card-button">
+                      상세보기
+                    </button>
+                  </article>
+                ))
+              )
+            ) : (
+              !isLoading && (
+                <p style={{ color: "red" }}>
+                  현재 로그인이 만료되었거나 데이터를 불러올 수 없습니다. 다시
+                  로그인해 주세요.
+                </p>
+              )
+            )}
           </div>
         </section>
       </main>

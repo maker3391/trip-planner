@@ -77,6 +77,12 @@
   border: 1px solid #f3e4b0;
   border-radius: 18px;
   padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trip-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
 }
 
 .trip-card-top {
@@ -140,9 +146,11 @@
   background: #f7c53a;
   font-weight: 700;
   cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
 .trip-card-button:hover {
+  transform: translateY(-1px);
   opacity: 0.95;
 }
 
