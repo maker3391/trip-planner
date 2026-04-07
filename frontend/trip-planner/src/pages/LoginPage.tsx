@@ -40,6 +40,7 @@ export default function LoginPage() {
         
         // 1. 토큰 저장 (가장 먼저!)
         localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
         localStorage.setItem("isLoggedIn", "true");
 
         // 2. ⚡️ 가장 확실한 방법: 새로고침 이동

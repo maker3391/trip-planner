@@ -1,6 +1,7 @@
 export interface CommunityContent {
     route: string;
     title: string;
+    author: string;
     content: string;
     tags: string;
     userId: number; // 유저 ID는 통상적인 Long/number 사용

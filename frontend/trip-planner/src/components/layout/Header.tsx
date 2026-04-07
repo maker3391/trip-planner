@@ -43,7 +43,11 @@ export default function Header() {
           <nav className="header-nav">
             <span onClick={() => navigate("/")}>여행 계획</span>
             <span onClick={handleTripListClick}>여행 목록</span>
+<<<<<<< Updated upstream
             <span>게시판</span>
+=======
+            <span onClick={() => navigate("/community")}>게시판</span>
+>>>>>>> Stashed changes
             <span onClick={() => setOpenTutorial(true)}>도움말</span>
           </nav>
 

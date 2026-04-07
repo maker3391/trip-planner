@@ -4,8 +4,6 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 public class CommunityRequest {
@@ -26,7 +24,7 @@ public class CommunityRequest {
     private String arrival;
 
     // 🔥 핵심 변경
-    private List<String> tags;
+    private String tags;
 
     // 🔥 범위 제한
     @Min(value = 0, message = "최소 평점은 0입니다.")
