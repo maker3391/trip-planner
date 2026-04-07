@@ -5,10 +5,13 @@ import {
   useMap,
   useMapsLibrary,
   Marker,
-  Polyline
+  Polyline,
+  InfoWindow // 추가
 } from '@vis.gl/react-google-maps';
+// 드래그 앤 드롭 추가
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
-// --- 1. 인터페이스 정의 (export를 붙여야 MainPage에서 읽을 수 있습니다) ---
+// --- 1. 인터페이스 정의 ---
 export interface PlacePoint {
   lat: number;
   lng: number;
@@ -17,6 +20,7 @@ export interface PlacePoint {
   customTitle?: string;
   placeId?: string;
   photos?: string[];
+  memo?: string; // 메모 필드 추가
 }
 
 export interface Connection {
@@ -34,6 +38,7 @@ interface MapControllerProps {
   pinColor: string;
   selectedPinColor: string;
   lineColor: string;
+  onMemoChange: (idx: number, text: string) => void; // 메모 변경 핸들러 추가
 }
 
 interface MyMapAppProps {
@@ -44,10 +49,10 @@ interface MyMapAppProps {
   setConnections: React.Dispatch<React.SetStateAction<Connection[]>>;
 }
 
-// --- 2. 지도 컨트롤러 컴포넌트 (파일 내부에 위치) ---
+// --- 2. 지도 컨트롤러 컴포넌트 ---
 function MapController({ 
   searchKeyword, path, connections, onMapClick, onConnect, selectedSource, 
-  pinColor, selectedPinColor, lineColor 
+  pinColor, selectedPinColor, lineColor, onMemoChange
 }: MapControllerProps) {
   const map = useMap();
   const placesLib = useMapsLibrary('places');
@@ -106,19 +111,77 @@ function MapController({
   return (
     <>
       {path.map((point, i) => (
-        <Marker 
-          key={`${i}-${point.lat}`} 
-          position={{ lat: point.lat, lng: point.lng }} 
-          icon={{
-            path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-            fillColor: selectedSource === i ? selectedPinColor : pinColor,
-            fillOpacity: 1,
-            strokeWeight: 2,
-            strokeColor: "#FFFFFF",
-            scale: 8,
-          }}
-          onClick={() => onConnect(i)}
-        />
+        <React.Fragment key={`${i}-${point.lat}`}>
+          <Marker 
+            position={{ lat: point.lat, lng: point.lng }} 
+            icon={{
+              path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+              fillColor: selectedSource === i ? selectedPinColor : pinColor,
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: "#FFFFFF",
+              scale: 8,
+            }}
+            onClick={() => onConnect(i)}
+          />
+          {/* 핀 클릭 시 나타나는 메모 공간 */}
+          {selectedSource === i && (
+            <InfoWindow 
+              position={{ lat: point.lat, lng: point.lng }} 
+              onCloseClick={() => onConnect(-1)}
+            >
+              <div style={{ 
+                padding: '10px 5px', 
+                width: '240px', // 너비를 약간 더 키움
+                minHeight: '140px', // 전체적인 높이 확보
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden' // 외부 스크롤바 방지
+              }}>
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: '#444', 
+                  fontWeight: 'bold', 
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  📍 {point.name} 메모
+                </div>
+                <textarea 
+                  value={point.memo || ""} 
+                  onChange={(e) => onMemoChange(i, e.target.value)}
+                  placeholder="이곳에 여행 계획을 적어보세요..."
+                  style={{ 
+                    border: '1px solid #e0e0e0', 
+                    padding: '10px', 
+                    fontSize: '13px', 
+                    width: '100%', 
+                    height: '110px', // 입력창 높이를 충분히 확보
+                    outline: 'none',
+                    resize: 'none',
+                    boxSizing: 'border-box',
+                    borderRadius: '6px',
+                    lineHeight: '1.5',
+                    fontFamily: 'inherit',
+                    backgroundColor: '#fafafa',
+                    overflow: 'hidden' // 내부 스크롤바 방지 (필요시 'auto'로 변경)
+                  }}
+                />
+                <div style={{ 
+                  textAlign: 'right', 
+                  fontSize: '10px', 
+                  color: '#aaa', 
+                  marginTop: '5px' 
+                }}>
+                  내용은 자동으로 저장됩니다
+                </div>
+              </div>
+            </InfoWindow>
+          )}
+
+        </React.Fragment>
       ))}
       {connections.map((conn, i) => (
         <Polyline 
@@ -154,6 +217,7 @@ export default function MyMapApp({
   }, [setPath]);
 
   const handleConnect = (idx: number) => {
+    if (idx === -1) { setConnectSource(null); return; }
     if (connectSource === null) {
       setConnectSource(idx);
     } else if (connectSource === idx) {
@@ -171,6 +235,20 @@ export default function MyMapApp({
       setConnections(prev => [...prev, { from: connectSource, to: idx }]);
       setConnectSource(null);
     }
+  };
+
+  // 드래그 종료 시 처리
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const newPath = Array.from(path);
+    const [reorderedItem] = newPath.splice(result.source.index, 1);
+    newPath.splice(result.destination.index, 0, reorderedItem);
+    setPath(newPath);
+    setConnections([]); // 순서가 바뀌면 기존 선 연결이 깨지므로 초기화 (필요시 재계산 로직 추가)
+  };
+
+  const handleMemoChange = (idx: number, text: string) => {
+    setPath(prev => prev.map((p, i) => i === idx ? { ...p, memo: text } : p));
   };
 
   const deleteSelectedPin = () => {
@@ -210,10 +288,11 @@ export default function MyMapApp({
               searchKeyword={searchKeyword} path={path} connections={connections}
               onMapClick={handleMapClick} onConnect={handleConnect} selectedSource={connectSource}
               pinColor={pinColor} selectedPinColor={selectedPinColor} lineColor={lineColor}
+              onMemoChange={handleMemoChange}
             />
           </Map>
 
-          {/* 왼쪽 사이드바 */}
+          {/* 왼쪽 사이드바 - 드래그 앤 드롭 적용 */}
           <div style={{
             position: 'absolute', top: '20px', left: '20px', zIndex: 10,
             background: 'white', padding: '20px', borderRadius: '18px', 
@@ -240,29 +319,49 @@ export default function MyMapApp({
                   <button onClick={() => setConnections(c => c.slice(0, -1))} style={{ flex: 1, padding: '8px', fontSize: '12px', cursor: 'pointer', borderRadius: '8px', border: '1px solid #eee', color: '#1890ff', background: '#fff' }}>선 취소</button>
                 </div>
 
-                <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '5px' }}>
-                  {path.map((p, i) => (
-                    <div key={i} onClick={() => setConnectSource(i)} style={{ 
-                      display: 'flex', alignItems: 'center', padding: '10px', marginBottom: '6px', borderRadius: '10px', 
-                      background: connectSource === i ? '#fff1f0' : '#f9f9f9', cursor: 'pointer', border: connectSource === i ? `1px solid ${selectedPinColor}` : '1px solid transparent'
-                    }}>
-                      <span style={{ width: '20px', fontSize: '11px', fontWeight: 'bold', color: connectSource === i ? selectedPinColor : '#999' }}>{i + 1}</span>
-                      {editingIdx === i ? (
-                        <input value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => saveName(i)} onKeyDown={(e) => e.key === 'Enter' && saveName(i)} autoFocus style={{ flex: 1, fontSize: '13px' }} />
-                      ) : (
-                        <div style={{ flex: 1, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                      )}
-                      <button onClick={(e) => { e.stopPropagation(); setEditingIdx(i); setEditValue(p.name); }} style={{ border: 'none', background: 'none', cursor: 'pointer', opacity: 0.5 }}>✏️</button>
-                    </div>
-                  ))}
-                </div>
+                {/* 드래그 가능 리스트 */}
+                <DragDropContext onDragEnd={onDragEnd}>
+                  <Droppable droppableId="pathList">
+                    {(provided) => (
+                      <div {...provided.droppableProps} ref={provided.innerRef} style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '5px' }}>
+                        {path.map((p, i) => (
+                          <Draggable key={`${i}-${p.lat}`} draggableId={`${i}-${p.lat}`} index={i}>
+                            {(provided) => (
+                              <div 
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                onClick={() => setConnectSource(i)} 
+                                style={{ 
+                                  ...provided.draggableProps.style,
+                                  display: 'flex', alignItems: 'center', padding: '10px', marginBottom: '6px', borderRadius: '10px', 
+                                  background: connectSource === i ? '#fff1f0' : '#f9f9f9', cursor: 'pointer', border: connectSource === i ? `1px solid ${selectedPinColor}` : '1px solid transparent'
+                                }}
+                              >
+                                <span style={{ width: '20px', fontSize: '11px', fontWeight: 'bold', color: connectSource === i ? selectedPinColor : '#999' }}>{i + 1}</span>
+                                {editingIdx === i ? (
+                                  <input value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={() => saveName(i)} onKeyDown={(e) => e.key === 'Enter' && saveName(i)} autoFocus style={{ flex: 1, fontSize: '13px' }} />
+                                ) : (
+                                  <div style={{ flex: 1, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                                )}
+                                <button onClick={(e) => { e.stopPropagation(); setEditingIdx(i); setEditValue(p.name); }} style={{ border: 'none', background: 'none', cursor: 'pointer', opacity: 0.5 }}>✏️</button>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+
                 <button onClick={() => { if(window.confirm("초기화할까요?")) { setPath([]); setConnections([]); setConnectSource(null); }}} style={{ marginTop: '15px', width: '100%', padding: '10px', borderRadius: '8px', cursor: 'pointer', background: '#1a1a1a', color: 'white', border: 'none', fontSize: '12px' }}>전체 초기화</button>
               </>
             )}
           </div>
         </div>
 
-       {/* 오른쪽 상세 정보 패널 */}
+       {/* 오른쪽 상세 정보 패널 (삭제 없이 유지됨) */}
         {connectSource !== null && path[connectSource] && (
           <div style={{ width: '380px', background: 'white', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)', zIndex: 11, display: 'flex', flexDirection: 'column', animation: 'slideIn 0.3s ease-out' }}>
             <div style={{ padding: '24px', borderBottom: '1px solid #f0f0f0', position: 'relative' }}>
@@ -283,6 +382,12 @@ export default function MyMapApp({
                   <span>N</span> 네이버 지도에서 정보 확인
                 </a>
               </div>
+              {/* 추가된 메모가 있으면 상세창에도 표시 */}
+              {path[connectSource].memo && (
+                <div style={{ marginBottom: '10px', padding: '10px', background: '#f0f7ff', borderRadius: '8px', fontSize: '13px', color: '#0056b3' }}>
+                  <strong>메모:</strong> {path[connectSource].memo}
+                </div>
+              )}
               <p style={{ fontSize: '13px', color: '#666', lineHeight: '1.4', margin: 0 }}>{path[connectSource].address}</p>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
@@ -310,4 +415,3 @@ function ColorPickerItem({ label, value, onChange }: { label: string, value: str
     </div>
   );
 }
-//
