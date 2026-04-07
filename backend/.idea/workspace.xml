@@ -5,8 +5,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a2df37b3-aa01-4868-8497-a6f003698507" name="변경" comment="">
+      <change afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/assets/icons/tplanner.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/assets/icons/tplanner1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/assets/icons/tplanner2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/router/ProtectedRoute.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/TripListPage.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/TripListPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/hooks/useTrip.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/hooks/useTrip.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Sidebar.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Sidebar.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/profile/ProfileDropdown.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/profile/ProfileDropdown.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/router/Router.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/router/Router.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/LoginPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/LoginPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyMapApp.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyMapApp.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,7 +103,7 @@
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;Spring Boot.TripPlannerApplication.executor&quot;: &quot;Run&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Merging develop&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/user/Desktop/trip-planner/backend&quot;,

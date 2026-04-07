@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom"; 
 import Header from "../components/layout/Header";
 import "./TripListPage.css";
 import { useTrips } from "../components/hooks/useTrip.ts";
@@ -5,6 +6,16 @@ import { TripPlanResponse } from "../types/trip.ts";
 
 export default function TripListPage() {
   const { data: tripList, isLoading, isError } = useTrips();
+  
+  // [수정 1] useNavigate를 초기화해야 이동 기능을 사용할 수 있습니다.
+  const navigate = useNavigate();
+
+  // 불러오기 버튼 클릭 핸들러
+  const handleLoadTrip = (tripId: number) => {
+    console.log("이동 시도, Trip ID:", tripId);
+    // [수정 2] 메인(/)으로 이동하면서 state에 tripId를 담아 보냅니다.
+    navigate("/", { state: { tripId: tripId } });
+  };
 
   return (
     <div className="trip-list-page">
@@ -54,6 +65,15 @@ export default function TripListPage() {
                         </strong>
                       </p>
                     </div>
+
+                    {/* [수정 3] trip 객체가 아니라 trip.id를 넘겨줘야 합니다. */}
+                    <button 
+                      type="button" 
+                      className="trip-card-button load-btn" 
+                      onClick={() => handleLoadTrip(trip.id)} 
+                    >
+                      계획 불러오기
+                    </button>
 
                     <button type="button" className="trip-card-button">
                       상세보기

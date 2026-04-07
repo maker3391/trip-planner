@@ -1,11 +1,10 @@
-/* 글쓰기 폼 컨테이너 */
+/* 전체 폼 */
 .community-post-form {
     background: #fff;
-    border-top: 2px solid #222;
     padding-top: 30px;
 }
 
-/* 상단 드롭다운 행 */
+/* 상단 드롭다운 */
 .form-row {
     display: flex;
     gap: 20px;
@@ -16,35 +15,38 @@
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     flex: 1;
 }
 
 .form-group label {
-    font-size: 14px;
-    font-weight: 700;
-    color: #555;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
 }
 
-.form-group select, .form-group input {
-    padding: 10px;
+.form-group select,
+.form-group input {
+    padding: 10px 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 14px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
 }
 
-.form-group select:focus, .form-group input:focus {
+.form-group select:focus,
+.form-group input:focus {
     border-color: #ffc107;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.15);
 }
 
-/* 여정 입력창 특화 스타일 */
+/* ✈️ 여행 경로 */
 .route-inputs {
-    background: #f0f7ff;
+    background: #f5f9ff;
     padding: 15px;
     border-radius: 8px;
-    border: 1px solid #e0eaff;
+    border: 1px solid #e3edff;
 }
 
 .route-arrow {
@@ -53,38 +55,83 @@
     font-weight: bold;
 }
 
-/* 메인 입력 영역 */
+/* ⭐ 평점 영역 (툴바 밖으로 나왔기 때문에 카드 느낌) */
+.rating-section {
+    margin-bottom: 15px;
+    padding: 12px 15px;
+    background: #fff9e6;
+    border: 1px solid #ffe08a;
+    border-radius: 8px;
+}
+
+/* 별 hover 효과 */
+.stars span {
+    transition: transform 0.15s, color 0.15s;
+}
+
+.stars span:hover {
+    transform: scale(1.2);
+}
+
+/* 메인 영역 */
 .form-main-area {
     display: flex;
     flex-direction: column;
     border: 1px solid #eee;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     margin-top: 10px;
+    background: #fff;
 }
 
+/* 제목 */
 .post-input-title {
     border: none;
-    padding: 20px;
+    padding: 18px 20px;
     font-size: 20px;
     font-weight: 700;
     outline: none;
     border-bottom: 1px solid #f2f2f2;
 }
 
-.post-input-content {
-    border: none;
-    padding: 20px;
-    font-size: 16px;
-    min-height: 400px; /* 본문 영역 확보 */
-    resize: none;
-    outline: none;
-    line-height: 1.6;
+/* 🔥 툴바 */
+.post-toolbar {
+    border: none !important;
+    border-bottom: 1px solid #eee !important;
+    background: #fafafa !important;
 }
 
+/* 툴바 버튼 */
+.post-toolbar button:hover {
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+/* 🔥 ReactQuill 컨테이너 */
+.ql-container {
+    border: none !important;
+    font-size: 15px;
+    font-family: "Pretendard", "Noto Sans KR", sans-serif;
+}
+
+/* 🔥 실제 글 영역 */
+.ql-editor {
+    padding: 20px;
+    min-height: 420px;
+    line-height: 1.7;
+    color: #333;
+}
+
+/* placeholder */
+.ql-editor.ql-blank::before {
+    color: #bbb;
+    font-style: normal;
+}
+
+/* 태그 */
 .post-input-tags {
     border: none;
-    padding: 15px 20px;
+    padding: 14px 20px;
     font-size: 14px;
     color: #4A90E2;
     outline: none;
@@ -92,7 +139,7 @@
     background-color: #fafafa;
 }
 
-/* 하단 버튼 영역 */
+/* 하단 버튼 */
 .community-footer {
     display: flex;
     justify-content: flex-end;
