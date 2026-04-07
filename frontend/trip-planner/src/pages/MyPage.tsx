@@ -39,17 +39,17 @@ export default function MyPage() {
   const [openEdit, setOpenEdit] = useState(false);
   const {data: tripList, isLoading, isError} = useTrips();
 
-  const [editForm, setEditForm] = useState({
-  const [form, setForm] = useState<EditForm>({
-    email: "",
-    name: "",
-    nickname: "",
-    phone: "",
-    address: "",
-    currentPassword: "",
-    newPassword: "",
-    newPasswordConfirm: "",
-  });
+  // const [editForm, setEditForm] = useState({
+  // const [form, setForm] = useState<EditForm>({
+  //   email: "",
+  //   name: "",
+  //   nickname: "",
+  //   phone: "",
+  //   address: "",
+  //   currentPassword: "",
+  //   newPassword: "",
+  //   newPasswordConfirm: "",
+  // });
 
 
   useEffect(() => {
