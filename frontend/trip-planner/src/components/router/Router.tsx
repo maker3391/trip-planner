@@ -22,22 +22,14 @@ export default function Router() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/community" element={<CommunityPage />} />
-<<<<<<< Updated upstream
-        {<Route
-=======
         <Route
->>>>>>> Stashed changes
           path="/mypage"
           element={
             <ProtectedRoute>
               <MyPage />
             </ProtectedRoute>
           }
-<<<<<<< Updated upstream
-        />}
-=======
         />
->>>>>>> Stashed changes
         <Route path="/community/write" element={<CommunityWritePage />} />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         <Route
