@@ -136,7 +136,7 @@ export default function CommunityPage() {
                                 <div className="no-posts">게시판에 글이 없습니다!</div>
                             ) : (
                                 posts.map((post) => (
-                                    <div className="board-item-row" key={post.id}>
+                                    <div onClick={() => navigate(`/community/${post.id}`)} className="board-item-row" key={post.id}>
                                         <div className="col-id">{post.id}</div>
                                         <div className="col-route">
                                             {post.departure ? `${post.departure}` : ""} - 

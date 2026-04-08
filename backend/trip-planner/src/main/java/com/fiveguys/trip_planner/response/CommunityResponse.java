@@ -1,9 +1,13 @@
 package com.fiveguys.trip_planner.response;
 
 import com.fiveguys.trip_planner.entity.Community;
+<<<<<<< Updated upstream
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.fiveguys.trip_planner.repository.UserRepository;
+=======
+import io.swagger.v3.oas.annotations.media.Schema;
+>>>>>>> Stashed changes
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -65,10 +69,10 @@ public class CommunityResponse {
                 .content(community.getContent())
                 .departure(community.getDeparture())
                 .arrival(community.getArrival())
-                .tags(community.getTags())
+                .tags(community.getTags() != null ? community.getTags() : "")
                 .viewCount(community.getViewCount())
                 .recommendCount(community.getRecommendCount())
-                .rating(community.getRating())
+                .rating(community.getRating() != null ? community.getRating() : 0)
                 .createdAt(community.getCreatedAt())
                 .authorNickname(community.getAuthorNickname()) // 🔥 추가
                 .build();
