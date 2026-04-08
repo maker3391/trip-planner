@@ -5,411 +5,282 @@ import {
   useMap,
   useMapsLibrary,
   Marker,
-  Polyline
+  Polyline,
+  InfoWindow
 } from '@vis.gl/react-google-maps';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
-// --- 1. 인터페이스 정의 ---
-interface PlacePoint {
+// --- 인터페이스 ---
+export interface PlacePoint {
   lat: number;
   lng: number;
   name: string;
   address: string;
   placeId?: string;
   photos?: string[];
-  priceLevel?: number;
+  memo?: string;
+  isMemoOpen?: boolean;
 }
 
-interface Connection {
-  from: number;
-  to: number;
+// --- 메모 포커스 튐 방지 컴포넌트 ---
+function LocalMemoEditor({ initialMemo, onSave }: { initialMemo: string, onSave: (val: string) => void }) {
+  const [tempMemo, setTempMemo] = useState(initialMemo);
+  useEffect(() => { setTempMemo(initialMemo); }, [initialMemo]);
+
+  return (
+    <textarea 
+      value={tempMemo} 
+      onChange={(e) => setTempMemo(e.target.value)}
+      onBlur={() => onSave(tempMemo)}
+      onKeyDown={(e) => e.stopPropagation()} 
+      placeholder="메모 입력..."
+      style={{ 
+        border: '1px solid #e0e0e0', padding: '8px', fontSize: '12px', 
+        width: '100%', height: '70px', outline: 'none', resize: 'none', 
+        boxSizing: 'border-box', borderRadius: '6px', marginTop: '8px', 
+        backgroundColor: '#fafafa', fontFamily: 'inherit'
+      }}
+    />
+  );
 }
 
-interface MapControllerProps {
-  searchKeyword: string;
-  path: PlacePoint[];
-  connections: Connection[];
-  onMapClick: (point: PlacePoint) => void;
-  onConnect: (idx: number) => void;
-  selectedSource: number | null;
-  // --- 색상 프롭스 ---
-  pinColor: string;
-  lineColor: string;
-}
-
-// --- 2. 유틸리티 함수 (가격 수준 변환) ---
-const getPriceRange = (level?: number) => {
-  switch (level) {
-    case 0: return "무료";
-    case 1: return "₩10,000 미만";
-    case 2: return "₩10,000 ~ 20,000";
-    case 3: return "₩20,000 ~ 40,000";
-    case 4: return "₩40,000 이상";
-    default: return null;
-  }
-};
-
-// --- 3. 지도 컨트롤러 컴포넌트 ---
+// --- 지도 컨트롤러 (클릭 로직 복구) ---
 function MapController({ 
-  searchKeyword, path, connections, onMapClick, onConnect, selectedSource, pinColor, lineColor 
-}: MapControllerProps) {
+  searchKeyword, path, connections, onMapClick, onSelect, selectedSource, 
+  onMemoChange, toggleMemo, lineColor, pinColor, selectedPinColor, showAllMemos
+}: any) {
   const map = useMap();
   const placesLib = useMapsLibrary('places');
 
+  // 검색 로직
   useEffect(() => {
     if (!map || !placesLib || !searchKeyword.trim()) return;
-
     const service = new google.maps.places.PlacesService(document.createElement('div'));
-    
-    service.findPlaceFromQuery({
-      query: searchKeyword,
-      fields: ['place_id', 'geometry']
-    }, (results, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && results?.[0]?.place_id) {
-        const placeId = results[0].place_id;
-        const location = results[0].geometry?.location;
-
-        if (location) {
-          map.panTo(location);
-          map.setZoom(16);
-
-          service.getDetails({
-            placeId: placeId,
-            fields: ['name', 'formatted_address', 'photos', 'place_id', 'price_level', 'geometry'],
-            language: 'ko'
-          }, (place, detailStatus) => {
-            if (detailStatus === google.maps.places.PlacesServiceStatus.OK && place) {
-              onMapClick({
-                lat: place.geometry?.location?.lat() || location.lat(),
-                lng: place.geometry?.location?.lng() || location.lng(),
-                name: place.name || searchKeyword,
-                address: place.formatted_address || "",
-                placeId: place.place_id,
-                photos: place.photos?.map(p => p.getUrl({ maxWidth: 400 })),
-                priceLevel: place.price_level
-              });
-            }
-          });
-        }
-      }
-    });
-  }, [map, placesLib, searchKeyword, onMapClick]);
-
-  useEffect(() => {
-    if (!map || !placesLib) return;
-
-    const clickListener = map.addListener('click', (e: google.maps.MapMouseEvent | google.maps.IconMouseEvent) => {
-      if (!e.latLng) return;
-      const lat = e.latLng.lat();
-      const lng = e.latLng.lng();
-      const service = new google.maps.places.PlacesService(document.createElement('div'));
-
-      if ('placeId' in e && e.placeId) {
-        service.getDetails({ 
-          placeId: e.placeId, 
-          fields: ['name', 'formatted_address', 'photos', 'place_id', 'price_level'], 
-          language: 'ko' 
-        }, (place, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+    service.findPlaceFromQuery({ query: searchKeyword, fields: ['place_id', 'geometry'] }, (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && results?.[0]?.geometry?.location) {
+        const location = results[0].geometry.location;
+        map.panTo(location);
+        service.getDetails({ placeId: results[0].place_id!, fields: ['name', 'formatted_address', 'photos', 'place_id', 'geometry'], language: 'ko' }, (place, detailStatus) => {
+          if (detailStatus === google.maps.places.PlacesServiceStatus.OK && place) {
             onMapClick({
-              lat, lng,
-              name: place.name || "장소명 없음",
+              lat: place.geometry?.location?.lat() || location.lat(),
+              lng: place.geometry?.location?.lng() || location.lng(),
+              name: place.name || searchKeyword,
               address: place.formatted_address || "",
               placeId: place.place_id,
-              photos: place.photos?.map(p => p.getUrl({ maxWidth: 400 })),
-              priceLevel: place.price_level
+              photos: place.photos?.map((p: any) => p.getUrl({ maxWidth: 400 })),
+              isMemoOpen: true
             });
           }
         });
-        if (e.stop) e.stop();
+      }
+    });
+  }, [map, placesLib, searchKeyword]);
+
+  // 클릭 로직 복구 (지점 정보 받아오기)
+  useEffect(() => {
+    if (!map) return;
+    const clickListener = map.addListener('click', (e: google.maps.MapMouseEvent) => {
+      const poiEvent = e as google.maps.IconMouseEvent;
+      if (!e.latLng) return;
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+
+      if (poiEvent.placeId) {
+        const service = new google.maps.places.PlacesService(document.createElement('div'));
+        service.getDetails({ placeId: poiEvent.placeId, fields: ['name', 'formatted_address', 'photos'], language: 'ko' }, (place, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+            onMapClick({ lat, lng, name: place.name!, address: place.formatted_address!, photos: place.photos?.map(p => p.getUrl({maxWidth:400})), isMemoOpen: true });
+          }
+        });
       } else {
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng }, language: 'ko' }, (results, status) => {
           if (status === google.maps.GeocoderStatus.OK && results?.[0]) {
             const addr = results[0].formatted_address;
-            onMapClick({
-              lat, lng,
-              name: addr.split(' ').slice(-2).join(' ') || "지정 위치",
-              address: addr
-            });
+            onMapClick({ lat, lng, name: addr.split(' ').slice(-2).join(' '), address: addr, isMemoOpen: true });
           }
         });
       }
     });
-
     return () => google.maps.event.removeListener(clickListener);
-  }, [map, placesLib, onMapClick]);
+  }, [map, onMapClick]);
 
   return (
     <>
-      {path.map((point, i) => (
-        <Marker 
-          key={`${i}-${point.lat}-${point.lng}`} 
-          position={{ lat: point.lat, lng: point.lng }} 
-          icon={{
-            path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-            fillColor: selectedSource === i ? "#000000" : pinColor, // 선택 시 검정색, 평소 사용자 지정색
-            fillOpacity: 1,
-            strokeWeight: 2,
-            strokeColor: "#FFFFFF",
-            scale: 8,
-          }}
-          onClick={() => onConnect(i)}
-        />
+      {path.map((point: PlacePoint, i: number) => (
+        <React.Fragment key={`${i}-${point.lat}-${point.lng}`}>
+          <Marker 
+            position={{ lat: point.lat, lng: point.lng }} 
+            label={{ text: (i+1).toString(), color: 'white', fontWeight: 'bold' }}
+            icon={{
+              path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+              fillColor: selectedSource === i ? selectedPinColor : pinColor,
+              fillOpacity: 1, strokeWeight: 2, strokeColor: "#FFFFFF", scale: 8,
+            }}
+            zIndex={selectedSource === i ? 1000 : i}
+            onClick={() => onSelect(i)} 
+          />
+          {showAllMemos && (
+            <InfoWindow position={{ lat: point.lat, lng: point.lng }} headerDisabled={true} pixelOffset={new google.maps.Size(0, -35)}>
+              <div style={{ padding: '8px 5px', width: point.isMemoOpen ? '180px' : 'auto', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{point.name}</span>
+                  <button onClick={(e) => { e.stopPropagation(); toggleMemo(i); }} style={{ background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', padding: '1px 4px', fontSize: '10px' }}>
+                    {point.isMemoOpen ? '▲' : '▼'}
+                  </button>
+                </div>
+                {point.isMemoOpen && <LocalMemoEditor initialMemo={point.memo || ""} onSave={(val) => onMemoChange(i, val)} />}
+              </div>
+            </InfoWindow>
+          )}
+        </React.Fragment>
       ))}
-      {connections.map((conn, i) => (
-        <Polyline 
-          key={i} 
-          path={[path[conn.from], path[conn.to]]} 
-          strokeColor={lineColor} 
-          strokeWeight={4} 
-          strokeOpacity={0.7} 
-        />
+      {connections.map((conn: any, i: number) => (
+        path[conn.from] && path[conn.to] && <Polyline key={i} path={[path[conn.from], path[conn.to]]} strokeColor={lineColor} strokeWeight={4} strokeOpacity={0.8} />
       ))}
     </>
   );
 }
 
-// --- 4. 메인 애플리케이션 컴포넌트 ---
-export default function MyMapApp({ searchKeyword }: { searchKeyword: string }) {
-  const [path, setPath] = useState<PlacePoint[]>([]);
-  const [connections, setConnections] = useState<Connection[]>([]);
+// --- 메인 앱 ---
+export default function MyMapApp({ searchKeyword, path, setPath, connections, setConnections }: any) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [connectSource, setConnectSource] = useState<number | null>(null);
-  
-  // --- 색상 관리를 위한 새로운 State 추가 ---
-  const [pinColor, setPinColor] = useState("#FF4D4F"); // 기본 핀 색상 (빨강)
-  const [lineColor, setLineColor] = useState("#4285F4"); // 기본 선 색상 (파랑)
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [pinColor, setPinColor] = useState("#000000");
+  const [selectedPinColor, setSelectedPinColor] = useState("#4285F4");
+  const [lineColor, setLineColor] = useState("#FF4D4F");
+  const [showLines, setShowLines] = useState(true);
+  const [showAllMemos, setShowAllMemos] = useState(true);
 
-  const [editingIdx, setEditingIdx] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const reConnectAll = (currentPath: PlacePoint[]) => {
+    const newConn: any[] = [];
+    for (let i = 0; i < currentPath.length - 1; i++) newConn.push({ from: i, to: i + 1 });
+    setConnections(newConn);
+  };
 
   const handleMapClick = useCallback((newPoint: PlacePoint) => {
-    setPath(prev => {
-      const nextPath = [...prev, newPoint];
-      setConnectSource(nextPath.length - 1); 
+    setPath((prev: PlacePoint[]) => {
+      const nextPath = [...prev, { ...newPoint, isMemoOpen: true }];
+      reConnectAll(nextPath);
+      setSelectedIdx(nextPath.length - 1);
       return nextPath;
     });
   }, []);
 
-  const deleteSelectedPin = () => {
-    if (connectSource === null) {
-      alert("취소할 핀을 먼저 선택해주세요.");
-      return;
-    }
-    const targetIdx = connectSource;
-    setPath(prev => prev.filter((_, i) => i !== targetIdx));
-    setConnections(prev => 
-      prev
-        .filter(conn => conn.from !== targetIdx && conn.to !== targetIdx)
-        .map(conn => ({
-          from: conn.from > targetIdx ? conn.from - 1 : conn.from,
-          to: conn.to > targetIdx ? conn.to - 1 : conn.to
-        }))
-    );
-    setConnectSource(null);
-    setEditingIdx(null);
-  };
-
-  const handleConnect = (idx: number) => {
-    if (connectSource === null) {
-      setConnectSource(idx);
-    } else if (connectSource === idx) {
-      setConnectSource(null);
-    } else {
-      setConnections(prev => [...prev, { from: connectSource, to: idx }]);
-      setConnectSource(null);
-    }
-  };
-
-  const saveName = (idx: number) => {
-    if (editValue.trim()) {
-      setPath(prev => prev.map((p, i) => i === idx ? { ...p, name: editValue } : p));
-    }
-    setEditingIdx(null);
-  };
-
-  const clearAll = () => {
-    if (window.confirm("모든 경로 데이터를 초기화할까요?")) {
-      setPath([]);
-      setConnections([]);
-      setConnectSource(null);
-      setEditingIdx(null);
-    }
+  const openNaverMap = (point: PlacePoint) => {
+    const url = `https://map.naver.com/v5/search/${encodeURIComponent(point.name)}/place?c=${point.lng},${point.lat},15,0,0,0,dh`;
+    window.open(url, '_blank');
   };
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', fontFamily: 'sans-serif' }}>
-      <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={['places', 'geocoding']}>
-        
+    <div style={{ width: '100%', height: '100vh', display: 'flex', fontFamily: 'sans-serif' }}>
+      <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={['places']}>
         <div style={{ flex: 1, position: 'relative' }}>
-          <Map
-            style={{ width: '100%', height: '100%' }}
-            defaultCenter={{ lat: 35.179, lng: 129.075 }}
-            defaultZoom={13}
-            mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
-            disableDefaultUI={true}
-          >
+          <Map style={{ width: '100%', height: '100%' }} defaultCenter={{ lat: 35.179, lng: 129.075 }} defaultZoom={13} mapId={import.meta.env.VITE_GOOGLE_MAP_ID} disableDefaultUI={true}>
             <MapController 
-              searchKeyword={searchKeyword}
-              path={path}
-              connections={connections}
-              onMapClick={handleMapClick}
-              onConnect={handleConnect}
-              selectedSource={connectSource}
-              // 색상 값 넘겨주기
-              pinColor={pinColor}
-              lineColor={lineColor}
+              searchKeyword={searchKeyword} path={path} connections={showLines ? connections : []}
+              onMapClick={handleMapClick} onSelect={setSelectedIdx} selectedSource={selectedIdx}
+              onMemoChange={(idx: number, text: string) => setPath((prev: any) => prev.map((p: any, i: number) => i === idx ? { ...p, memo: text } : p))}
+              toggleMemo={(idx: number) => setPath((prev: any) => prev.map((p: any, i: number) => i === idx ? { ...p, isMemoOpen: !p.isMemoOpen } : p))}
+              lineColor={lineColor} pinColor={pinColor} selectedPinColor={selectedPinColor} showAllMemos={showAllMemos}
             />
           </Map>
 
-          {/* 왼쪽 사이드바 패널 */}
+          {/* 왼쪽 패널 */}
           <div style={{
-            position: 'absolute', top: '20px', left: '20px', zIndex: 10,
-            background: 'white', padding: '20px', borderRadius: '18px', 
-            boxShadow: '0 8px 30px rgba(0,0,0,0.12)', width: isCollapsed ? '60px' : '300px',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden'
+            position: 'absolute', top: '20px', left: '20px', zIndex: 10, background: 'white', padding: '24px', 
+            borderRadius: '20px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', width: isCollapsed ? '60px' : '340px', transition: '0.3s'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isCollapsed ? 0 : '20px' }}>
-              {!isCollapsed && <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 'bold' }}>📍 여행 경로</h3>}
-              <button onClick={() => setIsCollapsed(!isCollapsed)} style={{ cursor: 'pointer', border: 'none', background: '#f5f5f5', borderRadius: '50%', width: '30px', height: '30px' }}>
-                {isCollapsed ? "▶" : "◀"}
-              </button>
+              {!isCollapsed && <h3 style={{ margin: 0, fontSize: '18px' }}>📍 여행 경로</h3>}
+              <button onClick={() => setIsCollapsed(!isCollapsed)} style={{ cursor: 'pointer', border: 'none', background: '#f5f5f5', borderRadius: '50%', width: '30px', height: '30px' }}>{isCollapsed ? "▶" : "◀"}</button>
             </div>
 
             {!isCollapsed && (
               <>
-                {/* --- 색상 설정 섹션 추가 --- */}
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', padding: '12px', background: '#f8f9fa', borderRadius: '12px' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#666' }}>핀 색상</label>
-                    <input 
-                      type="color" 
-                      value={pinColor} 
-                      onChange={(e) => setPinColor(e.target.value)}
-                      style={{ width: '28px', height: '28px', border: 'none', cursor: 'pointer', background: 'transparent' }} 
-                    />
+                <div style={{ background: '#fcfcfc', border: '1px solid #f0f0f0', borderRadius: '12px', padding: '15px', marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', gap: '10px' }}>
+                    <ColorPicker label="기본 핀 색상" value={pinColor} onChange={setPinColor} />
+                    <ColorPicker label="선택된 핀 색상" value={selectedPinColor} onChange={setSelectedPinColor} />
+                    <ColorPicker label="경로 선 색상" value={lineColor} onChange={setLineColor} />
                   </div>
-                  <div style={{ borderLeft: '1px solid #eee' }} />
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#666' }}>선 색상</label>
-                    <input 
-                      type="color" 
-                      value={lineColor} 
-                      onChange={(e) => setLineColor(e.target.value)}
-                      style={{ width: '28px', height: '28px', border: 'none', cursor: 'pointer', background: 'transparent' }} 
-                    />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => setShowLines(!showLines)} style={{ flex: 1, padding: '8px', fontSize: '11px', cursor: 'pointer', background: '#fff', border: '1px solid #ddd', borderRadius: '6px' }}>{showLines ? "선 숨기기" : "선 보이기"}</button>
+                    <button onClick={() => setShowAllMemos(!showAllMemos)} style={{ flex: 1, padding: '8px', fontSize: '11px', cursor: 'pointer', background: '#fff', border: '1px solid #ddd', borderRadius: '6px' }}>{showAllMemos ? "메모 숨기기" : "메모 보이기"}</button>
                   </div>
                 </div>
+                
+                <button 
+                  onClick={() => { if(selectedIdx !== null) { const newP = path.filter((_: any, i: number) => i !== selectedIdx); setPath(newP); reConnectAll(newP); setSelectedIdx(null); } }}
+                  disabled={selectedIdx === null}
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px', marginBottom: '10px', background: selectedIdx !== null ? '#fff2f0' : '#f5f5f5', color: selectedIdx !== null ? '#ff4d4f' : '#ccc', border: '1px solid #ffa39e', fontSize: '13px', fontWeight: 'bold', cursor: selectedIdx !== null ? 'pointer' : 'default' }}
+                >선택된 핀 삭제</button>
 
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-                  <button onClick={deleteSelectedPin} style={{ flex: 1, padding: '8px', fontSize: '12px', cursor: 'pointer', borderRadius: '8px', border: '1px solid #eee', color: connectSource !== null ? '#ff4d4f' : '#ccc', background: '#fff', fontWeight: 'bold' }}>핀 취소</button>
-                  <button onClick={() => setConnections(c => c.slice(0, -1))} style={{ flex: 1, padding: '8px', fontSize: '12px', cursor: 'pointer', borderRadius: '8px', border: '1px solid #eee', color: '#1890ff', background: '#fff' }}>선 취소</button>
-                </div>
-
-                <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
-                  {path.length === 0 && <p style={{ fontSize: '13px', color: '#bbb', textAlign: 'center', padding: '20px 0' }}>지도를 클릭해 보세요!</p>}
-                  {path.map((p, i) => {
-                    const isSelected = connectSource === i;
-                    return (
-                      <div key={i} 
-                        onClick={() => setConnectSource(i)}
-                        style={{ 
-                          display: 'flex', alignItems: 'center', padding: '12px', marginBottom: '8px', 
-                          borderRadius: '12px', background: isSelected ? '#fff1f0' : '#f9f9f9',
-                          border: isSelected ? `1px solid ${pinColor}` : '1px solid transparent',
-                          transition: 'all 0.2s', cursor: 'pointer'
-                        }}
-                      >
-                        <span style={{ width: '22px', fontSize: '11px', fontWeight: 'bold', color: isSelected ? pinColor : '#999' }}>{i + 1}</span>
-                        {editingIdx === i ? (
-                          <input 
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={() => saveName(i)}
-                            onKeyDown={(e) => e.key === 'Enter' && saveName(i)}
-                            autoFocus
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ flex: 1, padding: '4px 8px', fontSize: '13px', border: `1px solid ${lineColor}`, borderRadius: '6px', outline: 'none' }}
-                          />
-                        ) : (
-                          <div style={{ 
-                            flex: 1, fontSize: '14px', 
-                            color: isSelected ? '#111' : '#333', 
-                            fontWeight: isSelected ? 'bold' : 'normal',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' 
-                          }}>
-                            {p.name}
-                          </div>
-                        )}
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setEditingIdx(i); setEditValue(p.name); }}
-                          style={{ marginLeft: '8px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '14px', opacity: 0.5 }}
-                        >
-                          ✏️
-                        </button>
+                <DragDropContext onDragEnd={(result) => {
+                  if (!result.destination) return;
+                  const newPath = Array.from(path);
+                  const [reorderedItem] = newPath.splice(result.source.index, 1);
+                  newPath.splice(result.destination.index, 0, reorderedItem);
+                  setPath(newPath); reConnectAll(newPath); setSelectedIdx(result.destination.index);
+                }}>
+                  <Droppable droppableId="pathList">
+                    {(provided) => (
+                      <div {...provided.droppableProps} ref={provided.innerRef} style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {path.map((p: any, i: number) => (
+                          <Draggable key={`${i}-${p.lat}`} draggableId={`${i}-${p.lat}`} index={i}>
+                            {(provided) => (
+                              <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} onClick={() => setSelectedIdx(i)} style={{ ...provided.draggableProps.style, display: 'flex', alignItems: 'center', padding: '12px', marginBottom: '8px', borderRadius: '12px', background: selectedIdx === i ? '#fff1f0' : '#f9f9f9', border: selectedIdx === i ? '1px solid #ff4d4f' : '1px solid transparent' }}>
+                                <span style={{ width: '25px', fontSize: '12px', fontWeight: 'bold', color: selectedIdx === i ? '#ff4d4f' : '#999' }}>{i + 1}</span>
+                                <div style={{ flex: 1, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
                       </div>
-                    );
-                  })}
-                </div>
-
-                <button onClick={clearAll} style={{ marginTop: '20px', width: '100%', padding: '12px', borderRadius: '10px', cursor: 'pointer', background: '#1a1a1a', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '13px' }}>
-                  전체 초기화
-                </button>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+                <button onClick={() => { if(confirm("초기화?")) { setPath([]); setConnections([]); setSelectedIdx(null); }}} style={{ marginTop: '15px', width: '100%', padding: '12px', borderRadius: '10px', background: '#333', color: '#fff', border: 'none', fontSize: '13px', cursor: 'pointer' }}>전체 초기화</button>
               </>
             )}
           </div>
         </div>
 
-        {/* 오른쪽 상세 정보 패널 */}
-        {connectSource !== null && path[connectSource] && (
-          <div style={{ width: '380px', background: 'white', boxShadow: '-5px 0 25px rgba(0,0,0,0.1)', zIndex: 11, display: 'flex', flexDirection: 'column', animation: 'slideIn 0.3s ease-out' }}>
+        {/* 오른쪽 상세 패널 (네이버 지도 연결 추가) */}
+        {selectedIdx !== null && path[selectedIdx] && (
+          <div style={{ width: '360px', background: 'white', boxShadow: '-5px 0 20px rgba(0,0,0,0.05)', zIndex: 11, display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '24px', borderBottom: '1px solid #f0f0f0', position: 'relative' }}>
-              <button onClick={() => setConnectSource(null)} style={{ position: 'absolute', right: '20px', top: '20px', border: 'none', background: '#eee', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer' }}>×</button>
-              <h2 style={{ margin: '0 0 10px 0', fontSize: '20px', fontWeight: 'bold', color: '#111' }}>{path[connectSource].name}</h2>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <a 
-                  href={`https://map.naver.com/v5/search/${path[connectSource].name}?c=${path[connectSource].lng},${path[connectSource].lat},15,0,0,0,dh`}
-                  target="_blank" 
-                  rel="noreferrer"
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                    width: 'fit-content', padding: '6px 12px', backgroundColor: '#03C75A', color: 'white',
-                    borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold'
-                  }}
-                >
-                  <span>N</span> 네이버 지도에서 정보 확인
-                </a>
-              </div>
-              <p style={{ fontSize: '13px', color: '#666', lineHeight: '1.4', margin: 0 }}>{path[connectSource].address}</p>
+              <button onClick={() => setSelectedIdx(null)} style={{ position: 'absolute', right: '20px', top: '20px', border: 'none', background: '#f0f0f0', borderRadius: '50%', cursor: 'pointer', width: '25px', height: '25px' }}>×</button>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '20px' }}>{path[selectedIdx].name}</h3>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>{path[selectedIdx].address}</p>
+              <button 
+                onClick={() => openNaverMap(path[selectedIdx!])}
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#03C75A', color: 'white', border: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                N 네이버 지도로 보기
+              </button>
             </div>
-            
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-              <h4 style={{ fontSize: '14px', marginBottom: '12px', color: '#333' }}>🖼️ 장소 사진</h4>
-              {path[connectSource].photos && path[connectSource].photos!.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  {path[connectSource].photos?.slice(0, 8).map((url, i) => (
-                    <img key={i} src={url} alt="place detail" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '12px', border: '1px solid #eee' }} />
-                  ))}
+              {path[selectedIdx].photos && path[selectedIdx].photos.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {path[selectedIdx].photos.map((url: string, i: number) => <img key={i} src={url} style={{ width: '100%', height: '110px', objectFit: 'cover', borderRadius: '8px' }} alt="place" />)}
                 </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#ccc' }}>
-                  <p style={{ fontSize: '13px' }}>등록된 사진이 없습니다.</p>
-                </div>
-              )}
+              ) : <p style={{ fontSize: '12px', color: '#ccc', textAlign: 'center' }}>사진 정보가 없습니다.</p>}
             </div>
           </div>
         )}
       </APIProvider>
+    </div>
+  );
+}
 
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #ddd; borderRadius: 10px; }
-      `}</style>
+function ColorPicker({ label, value, onChange }: any) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flex: 1 }}>
+      <label style={{ fontSize: '10px', color: '#888', fontWeight: 'bold', textAlign: 'center' }}>{label}</label>
+      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} style={{ border: 'none', width: '30px', height: '25px', cursor: 'pointer', background: 'transparent' }} />
     </div>
   );
 }

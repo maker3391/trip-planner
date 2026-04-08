@@ -6,6 +6,7 @@ import MyMapApp, { PlacePoint, Connection } from "./MyMapApp";
 import { useCreateTrip, useGetTrip } from "../components/hooks/useTrip"; // useGetTrip 추가
 import { TripPlanRequest, TripPlanResponse } from "../types/trip";
 import "./MainPage.css";
+import { useLocation } from 'react-router-dom';
 
 export default function MainPage() {
   const [openGuidePopup, setOpenGuidePopup] = useState(false);
