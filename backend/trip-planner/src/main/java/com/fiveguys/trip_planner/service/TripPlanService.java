@@ -90,25 +90,32 @@ public class TripPlanService {
     }
 
     @Transactional
-    public TripPlanResponseDto updateTripPlan (Long tripId, TripPlanRequestDto requestDto, User user) {
+    public TripPlanResponseDto updateTripPlan(Long tripId, TripPlanRequestDto requestDto, User user) {
+        // 1. 기존 계획 조회 및 권한 확인
         TripPlan tripPlan = tripPlanRepository.findById(tripId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 여행 계획을 찾을 수 없습니다."));
 
-        if(!tripPlan.getOwner().getId().equals(user.getId())) {
+        if (!tripPlan.getOwner().getId().equals(user.getId())) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
+        // 2. 기본 정보 업데이트
         tripPlan.setTitle(requestDto.getTitle());
         tripPlan.setDestination(requestDto.getDestination());
         tripPlan.setStartDate(requestDto.getStartDate());
         tripPlan.setEndDate(requestDto.getEndDate());
 
+        // 3. 기존 일정 비우기 (orphanRemoval = true 설정으로 인해 연결이 끊긴 자식은 삭제됨)
         tripPlan.getSchedules().clear();
 
-        if(requestDto.getSchedules() != null) {
-            for(TripScheduleRequestDto scheduleRequestDto : requestDto.getSchedules()) {
+        // 4. 새로운 일정 추가
+        if (requestDto.getSchedules() != null) {
+            for (TripScheduleRequestDto scheduleRequestDto : requestDto.getSchedules()) {
                 TripSchedule schedule = new TripSchedule();
+
+                // 양방향 연관관계 편의 설정
                 schedule.setTripPlan(tripPlan);
+
                 schedule.setDayNumber(scheduleRequestDto.getDayNumber());
                 schedule.setTitle(scheduleRequestDto.getTitle());
                 schedule.setVisitOrder(scheduleRequestDto.getVisitOrder());
@@ -117,7 +124,8 @@ public class TripPlanService {
                 schedule.setMemo(scheduleRequestDto.getMemo());
                 schedule.setEstimatedStayMinutes(scheduleRequestDto.getEstimatedStayMinutes());
 
-                if(scheduleRequestDto.getGooglePlaceId() != null) {
+                // 장소 처리 로직
+                if (scheduleRequestDto.getGooglePlaceId() != null) {
                     Place place = placeRepository.findByExternalPlaceId(scheduleRequestDto.getGooglePlaceId())
                             .orElseGet(() -> {
                                 Place newPlace = new Place();
@@ -134,6 +142,11 @@ public class TripPlanService {
                 tripPlan.getSchedules().add(schedule);
             }
         }
+
+        // 5. 명시적으로 변경 사항 반영 (핵심 포인트)
+        // saveAndFlush를 사용하면 ResponseDto로 변환되기 전에 DB에 SQL이 즉시 날아갑니다.
+        tripPlanRepository.saveAndFlush(tripPlan);
+
         return new TripPlanResponseDto(tripPlan);
     }
 
