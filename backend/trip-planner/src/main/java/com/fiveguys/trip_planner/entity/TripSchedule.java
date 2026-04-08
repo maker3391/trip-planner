@@ -32,6 +32,15 @@ public class TripSchedule {
     @Column(nullable = false)
     private Integer visitOrder;
 
+    @Column(name = "pin_color", length = 20)
+    private String pinColor;
+
+    @Column(name = "selected_pin_color", length = 20)
+    private String selectedPinColor;
+
+    @Column(name = "line_color", length = 20)
+    private String lineColor;
+
     private LocalTime startTime;
     private LocalTime endTime;
     private String memo;

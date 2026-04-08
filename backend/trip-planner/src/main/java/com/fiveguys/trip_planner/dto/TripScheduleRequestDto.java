@@ -49,4 +49,13 @@ public class TripScheduleRequestDto {
 
     @Schema(description = "Google Place ID", example = "ChIJabcdEFGH1234")
     private String googlePlaceId;
+
+    @Schema(description = "지도 핀 색상 (Hex코드)", example = "#FF5733")
+    private String pinColor;
+
+    @Schema(description = "선택된 지도 핀 색상 (Hex코드)", example = "#FF0000")
+    private String selectedPinColor;
+
+    @Schema(description = "경로 선 색상 (Hex코드)", example = "#33C1FF")
+    private String lineColor;
 }
