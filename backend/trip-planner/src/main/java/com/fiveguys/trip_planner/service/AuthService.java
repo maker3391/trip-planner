@@ -1,8 +1,6 @@
 package com.fiveguys.trip_planner.service;
 
-import com.fiveguys.trip_planner.dto.ChangeNicknameRequest;
-import com.fiveguys.trip_planner.dto.ChangePasswordRequest;
-import com.fiveguys.trip_planner.dto.ChangePhoneRequest;
+import com.fiveguys.trip_planner.dto.UpdateMyInfoRequest;
 import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.entity.RefreshToken;
@@ -19,6 +17,7 @@ import com.fiveguys.trip_planner.response.TokenResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -140,63 +139,73 @@ public class AuthService {
         return new MessageResponse("로그아웃 완료");
     }
 
-    public MessageResponse changePassword(User user, ChangePasswordRequest request) {
+    @Transactional
+    public MessageResponse updateMe(User user, UpdateMyInfoRequest request) {
         validateAuthenticatedUser(user);
 
-        if (user.getPassword() == null) {
-            throw new IllegalArgumentException("소셜 로그인 계정은 비밀번호를 변경할 수 없습니다.");
-        }
-
-        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
-        }
-
-        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("새 비밀번호는 현재 비밀번호와 달라야 합니다.");
-        }
-
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
-        userRepository.save(user);
-
-        return new MessageResponse("비밀번호 변경 완료");
-    }
-
-    public MessageResponse changeNickname(User user, ChangeNicknameRequest request) {
-        validateAuthenticatedUser(user);
-
+        String newName = request.name() == null ? "" : request.name().trim();
         String newNickname = normalizeNickname(request.nickname());
+        String newPhone = normalizePhone(request.phone());
 
-        if (newNickname.equals(user.getNickname())) {
-            throw new IllegalArgumentException("현재 사용 중인 닉네임과 같습니다.");
+        boolean hasPasswordInput =
+                (request.currentPassword() != null && !request.currentPassword().isBlank()) ||
+                        (request.newPassword() != null && !request.newPassword().isBlank());
+
+        if (newName.isBlank()) {
+            throw new IllegalArgumentException("이름은 비어 있을 수 없습니다.");
         }
 
-        if (userRepository.existsByNicknameAndIdNot(newNickname, user.getId())) {
+        if (newName.equals(user.getName())
+                && newNickname.equals(user.getNickname())
+                && equalsNullable(newPhone, user.getPhone())
+                && !hasPasswordInput) {
+            throw new IllegalArgumentException("변경된 내용이 없습니다.");
+        }
+
+        if (!newNickname.equals(user.getNickname())
+                && userRepository.existsByNicknameAndIdNot(newNickname, user.getId())) {
             throw new DuplicateNicknameException("이미 사용중인 닉네임입니다.");
         }
 
-        user.setNickname(newNickname);
-        userRepository.save(user);
-
-        return new MessageResponse("닉네임 변경 완료");
-    }
-
-    public MessageResponse changePhone(User user, ChangePhoneRequest request) {
-        validateAuthenticatedUser(user);
-
-        String newPhone = normalizePhone(request.phone());
-
-        if (user.getPhone() != null && newPhone.equals(user.getPhone())) {
-            throw new IllegalArgumentException("현재 사용 중인 전화번호와 같습니다.");
-        }
-
-        if (userRepository.existsByPhoneAndIdNot(newPhone, user.getId())) {
+        if (!equalsNullable(newPhone, user.getPhone())
+                && newPhone != null
+                && userRepository.existsByPhoneAndIdNot(newPhone, user.getId())) {
             throw new DuplicatePhoneException("이미 사용중인 전화번호입니다.");
         }
 
+        if (hasPasswordInput) {
+            if (user.getPassword() == null) {
+                throw new IllegalArgumentException("소셜 로그인 계정은 비밀번호를 변경할 수 없습니다.");
+            }
+
+            if (request.currentPassword() == null || request.currentPassword().isBlank()) {
+                throw new IllegalArgumentException("현재 비밀번호를 입력해주세요.");
+            }
+
+            if (request.newPassword() == null || request.newPassword().isBlank()) {
+                throw new IllegalArgumentException("새 비밀번호를 입력해주세요.");
+            }
+
+            if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+                throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+            }
+
+            if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+                throw new IllegalArgumentException("새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+            }
+        }
+
+        user.setName(newName);
+        user.setNickname(newNickname);
         user.setPhone(newPhone);
+
+        if (hasPasswordInput) {
+            user.setPassword(passwordEncoder.encode(request.newPassword()));
+        }
+
         userRepository.save(user);
 
-        return new MessageResponse("전화번호 변경 완료");
+        return new MessageResponse("회원정보 수정 완료");
     }
 
     private void validateAuthenticatedUser(User user) {
@@ -231,5 +240,11 @@ public class AuthService {
         }
 
         return digitsOnly.replaceFirst("(\\d{3})(\\d{4})(\\d{4})", "$1-$2-$3");
+    }
+
+    private boolean equalsNullable(String a, String b) {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        return a.equals(b);
     }
 }

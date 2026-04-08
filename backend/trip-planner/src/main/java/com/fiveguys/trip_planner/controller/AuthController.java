@@ -1,8 +1,6 @@
 package com.fiveguys.trip_planner.controller;
 
-import com.fiveguys.trip_planner.dto.ChangeNicknameRequest;
-import com.fiveguys.trip_planner.dto.ChangePasswordRequest;
-import com.fiveguys.trip_planner.dto.ChangePhoneRequest;
+import com.fiveguys.trip_planner.dto.UpdateMyInfoRequest;
 import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.response.MessageResponse;
 import com.fiveguys.trip_planner.dto.RefreshTokenRequest;
@@ -72,30 +70,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.logout(user));
     }
 
-    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호와 새 비밀번호를 입력받아 보안 정보를 업데이트합니다.")
-    @PatchMapping("/me/password")
-    public ResponseEntity<MessageResponse> changePassword(
+    @Operation(summary = "내 정보 수정", description = "이름, 닉네임, 전화번호, 비밀번호를 한 번에 수정합니다.")
+    @PatchMapping("/me")
+    public ResponseEntity<MessageResponse> updateMe(
             @AuthenticationPrincipal User user,
-            @Valid @RequestBody ChangePasswordRequest request
+            @Valid @RequestBody UpdateMyInfoRequest request
     ) {
-        return ResponseEntity.ok(authService.changePassword(user, request));
-    }
-
-    @Operation(summary = "닉네임 변경", description = "마이페이지에서 사용자의 닉네임을 새로운 이름으로 수정합니다.")
-    @PatchMapping("/me/nickname")
-    public ResponseEntity<MessageResponse> changeNickname(
-            @AuthenticationPrincipal User user,
-            @Valid @RequestBody ChangeNicknameRequest request
-    ) {
-        return ResponseEntity.ok(authService.changeNickname(user, request));
-    }
-
-    @Operation(summary = "전화번호 변경", description = "사용자의 연락처 정보를 업데이트합니다.")
-    @PatchMapping("/me/phone")
-    public ResponseEntity<MessageResponse> changePhone(
-            @AuthenticationPrincipal User user,
-            @Valid @RequestBody ChangePhoneRequest request
-    ) {
-        return ResponseEntity.ok(authService.changePhone(user, request));
+        return ResponseEntity.ok(authService.updateMe(user, request));
     }
 }

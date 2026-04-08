@@ -1,6 +1,6 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import Header from "../components/layout/Header";
-import { getMe } from "../components/api/auth.ts";
+import { getMe, updateMe } from "../components/api/auth.ts";
 import "./MyPage.css";
 
 interface UserInfo {
@@ -27,7 +27,6 @@ interface EditForm {
 
 export default function MyPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
-
   const [form, setForm] = useState<EditForm>({
     email: "",
     name: "",
@@ -37,6 +36,7 @@ export default function MyPage() {
     newPassword: "",
     newPasswordConfirm: "",
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -76,8 +76,27 @@ export default function MyPage() {
     }));
   };
 
-  const handleSave = () => {
-    if (form.newPassword || form.newPasswordConfirm || form.currentPassword) {
+  const handleSave = async () => {
+    if (!user || isSaving) return;
+
+    const trimmedName = form.name.trim();
+    const trimmedNickname = form.nickname.trim();
+    const trimmedPhone = form.phone.trim();
+
+    const hasPasswordInput =
+      !!form.currentPassword || !!form.newPassword || !!form.newPasswordConfirm;
+
+    if (!trimmedName) {
+      alert("이름을 입력해주세요.");
+      return;
+    }
+
+    if (!trimmedNickname) {
+      alert("닉네임을 입력해주세요.");
+      return;
+    }
+
+    if (hasPasswordInput) {
       if (!form.currentPassword) {
         alert("현재 비밀번호를 입력해주세요.");
         return;
@@ -88,14 +107,52 @@ export default function MyPage() {
         return;
       }
 
+      if (!form.newPasswordConfirm) {
+        alert("새 비밀번호 확인을 입력해주세요.");
+        return;
+      }
+
       if (form.newPassword !== form.newPasswordConfirm) {
         alert("새 비밀번호 확인이 일치하지 않습니다.");
         return;
       }
     }
 
-    console.log("수정할 회원정보:", form);
-    alert("회원정보 수정 저장 기능은 아직 연결 전입니다.");
+    try {
+      setIsSaving(true);
+
+      await updateMe({
+        name: trimmedName,
+        nickname: trimmedNickname,
+        phone: trimmedPhone,
+        currentPassword: form.currentPassword || undefined,
+        newPassword: form.newPassword || undefined,
+      });
+
+      const updatedUser = await getMe();
+      setUser(updatedUser);
+
+      setForm({
+        email: updatedUser.email || "",
+        name: updatedUser.name || "",
+        nickname: updatedUser.nickname || "",
+        phone: updatedUser.phone || "",
+        currentPassword: "",
+        newPassword: "",
+        newPasswordConfirm: "",
+      });
+
+      alert("회원정보가 수정되었습니다.");
+    } catch (error: any) {
+      console.error("회원정보 수정 실패:", error);
+
+      alert(
+        error?.response?.data?.message ||
+          "회원정보 수정 중 오류가 발생했습니다."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const displayName =
@@ -218,8 +275,9 @@ export default function MyPage() {
               type="button"
               className="mypage-save-btn"
               onClick={handleSave}
+              disabled={isSaving}
             >
-              저장
+              {isSaving ? "저장 중..." : "저장"}
             </button>
           </div>
         </section>
