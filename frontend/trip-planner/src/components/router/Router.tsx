@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useState } from "react";
+
 import MainPage from "../../pages/MainPage";
 import LoginPage from "../../pages/LoginPage";
 import SignupPage from "../../pages/SignupPage";
@@ -8,8 +10,12 @@ import CommunityPage from "../../pages/CommunityPage";
 import CommunityWritePage from "../../pages/CommunityWritePage";
 import TripListPage from "../../pages/TripListPage";
 import ProtectedRoute from "./ProtectedRoute";
+import ChatBotButton from "../chatbot/ChatBotButton";
+import ChatBotModal from "../chatbot/ChatBotModal";
 
 export default function Router() {
+  const [openChatBot, setOpenChatBot] = useState(false);
+
   return (
     <BrowserRouter
       future={{
@@ -33,7 +39,7 @@ export default function Router() {
         <Route path="/community/write" element={<CommunityWritePage />} />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         <Route
-          path="trip-list"
+          path="/trip-list"
           element={
             <ProtectedRoute>
               <TripListPage />
@@ -41,6 +47,13 @@ export default function Router() {
           }
         />
       </Routes>
+
+      <ChatBotButton onClick={() => setOpenChatBot(true)} />
+
+      <ChatBotModal
+        open={openChatBot}
+        onClose={() => setOpenChatBot(false)}
+      />
     </BrowserRouter>
   );
 }

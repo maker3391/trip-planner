@@ -37,7 +37,7 @@ public class RecommendationQualityService {
         adjusted.setDays(draft.getDays());
 
         if ("TRAVEL_ITINERARY".equals(draft.getIntent())) {
-            adjusted.setDayPlans(adjustDayPlans(draft.getDayPlans(), detailArea));
+            adjusted.setDayPlans(adjustDayPlans(draft.getDayPlans(), draft.getDays(), detailArea));
             adjusted.setItems(new ArrayList<>());
         } else {
             adjusted.setDayPlans(new ArrayList<>());
@@ -48,22 +48,19 @@ public class RecommendationQualityService {
         return adjusted;
     }
 
-    private List<DayPlanDraft> adjustDayPlans(List<DayPlanDraft> dayPlans, String detailArea) {
+    private List<DayPlanDraft> adjustDayPlans(List<DayPlanDraft> dayPlans, Integer days, String detailArea) {
         List<DayPlanDraft> result = new ArrayList<>();
-        if (dayPlans == null || dayPlans.isEmpty()) {
+        if (dayPlans == null || dayPlans.isEmpty() || days == null || days < 1) {
             return result;
         }
 
         Set<String> globalSeen = new LinkedHashSet<>();
 
-        for (DayPlanDraft source : dayPlans) {
-            if (source == null) {
-                continue;
-            }
-
+        for (int i = 0; i < dayPlans.size() && i < days; i++) {
+            DayPlanDraft source = dayPlans.get(i);
             DayPlanDraft target = new DayPlanDraft();
-            target.setDay(source.getDay());
-            target.setPlaces(adjustPlaces(source.getPlaces(), detailArea, globalSeen));
+            target.setDay(i + 1);
+            target.setPlaces(adjustPlaces(source == null ? null : source.getPlaces(), detailArea, globalSeen));
             result.add(target);
         }
 
@@ -83,6 +80,10 @@ public class RecommendationQualityService {
         for (String place : places) {
             String cleaned = cleanPlaceName(place);
             if (!StringUtils.hasText(cleaned)) {
+                continue;
+            }
+
+            if (looksLikeGeneratedDescription(cleaned)) {
                 continue;
             }
 
@@ -257,33 +258,20 @@ public class RecommendationQualityService {
             return true;
         }
 
-        if (value.contains("맛집")
-                || value.contains("명물")
-                || value.contains("추천")
-                || value.contains("골목")
-                || value.contains("유명")
-                || value.contains("분위기")
-                || value.contains("현지인")
-                || value.contains("매콤")
-                || value.contains("정통")
-                || value.contains("대표")
+        if (value.contains("대표")
                 || value.contains("핫플")
-                || value.contains("유니크")
-                || value.contains("인기")
-                || value.contains("숨은")
-                || value.contains("로컬")) {
+                || value.contains("감성")
+                || value.contains("분위기")
+                || value.contains("로컬")
+                || value.contains("추천")
+                || value.contains("명소")
+                || value.contains("스팟")
+                || value.contains("거리")
+                || value.contains("코스")) {
             return true;
         }
 
         if (value.contains("의 ")) {
-            return true;
-        }
-
-        if (value.endsWith("맛집")
-                || value.endsWith("식당")
-                || value.endsWith("카페")
-                || value.endsWith("호텔")
-                || value.endsWith("숙소")) {
             return true;
         }
 

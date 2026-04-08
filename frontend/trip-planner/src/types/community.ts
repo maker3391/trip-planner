@@ -1,31 +1,52 @@
+// 🔹 개별 게시글 데이터
 export interface CommunityContent {
     route: string;
     title: string;
-    author: string;
+    authorNickname: string; // 작성자 닉네임
     content: string;
     tags: string;
-    userId: number; // 유저 ID는 통상적인 Long/number 사용
+    userId: number; // 유저 ID (프론트에서 필요 시 사용)
+    viewCount: number; // 조회수
+    recommendCount: number; // 좋아요 수
+    createdAt: string; // 문자열 형태의 LocalDateTime
+    updatedAt: string; // 수정된 날짜도 추가
+    departure?: string; // 출발지 (선택)
+    arrival?: string;   // 도착지 (선택)
+    rating?: number;    // 평점 (선택)
 }
 
+// types/community.ts 추가
+export interface CommunityRequest {
+    category: string;
+    region: string;
+    title: string;
+    content: string;
+    departure?: string;
+    arrival?: string;
+    tags?: string;
+    rating?: number;
+    userId: number;          // 필수: 작성자 ID
+    likedByUser?: boolean;  // 현재 로그인한 사용자가 좋아요를 눌렀는지
+}
+
+// 🔹 게시글 목록/페이징 응답
 export interface CommunityResponse {
-    // 12자리 ID는 데이터 유실 방지를 위해 string 권장 (프론트에서 출력 시 편리)
-    id: string;                 // 번호 (col-id)
-    route: string;              // 여정 (col-route)
-    title: string;              // 제목 (col-title)
-    content: string;            // 본문 (상세 보기용)
-    authorNickname: string;     // 작성자 닉네임 (col-author)
+    id: string;                 // 게시글 ID
+    route: string;              // 여정
+    title: string;              // 제목
+    content: string;            // 본문
+    authorNickname: string;     // 작성자 닉네임
     tags: string;               // 태그
-    viewCount: number;          // 조회 (col-views)
-    recommendCount: number;     // 추천 (col-stats)
-    
-    // 서버에서 오는 LocalDateTime은 문자열이므로 string으로 받고 
-    // 화면 표시 직전에 가공하는 것이 편합니다.
-    createdAt: string;          // 날짜 (col-date)
+    viewCount: number;          // 조회수
+    recommendCount: number;     // 좋아요 수
+    createdAt: string;          // 생성일
+    updatedAt: string;          // 수정일
+    departure?: string;         // 출발지
+    arrival?: string;           // 도착지
+    rating?: number;            // 평점
 }
 
-/**
- * 페이징 처리를 위한 인터페이스 (백엔드의 Page<T> 응답 대응)
- */
+// 🔹 페이징 처리를 위한 인터페이스 (백엔드 Page<T> 대응)
 export interface CommunityPageResponse {
     content: CommunityResponse[];
     totalPages: number;

@@ -1,7 +1,11 @@
 package com.fiveguys.trip_planner.response;
 
 import com.fiveguys.trip_planner.entity.Community;
+<<<<<<< Updated upstream
 import io.swagger.v3.oas.annotations.media.Schema;
+=======
+import com.fiveguys.trip_planner.repository.UserRepository;
+>>>>>>> Stashed changes
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -43,6 +47,13 @@ public class CommunityResponse {
 
     @Schema(description = "게시글 작성 일시", example = "2026-04-07T15:11:30")
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    private Long viewCount;
+    private Long recommendCount;
+
+    // 🔥 작성자 닉네임 추가
+    private String authorNickname;
 
     /**
      * Entity → DTO 변환
@@ -57,8 +68,11 @@ public class CommunityResponse {
                 .departure(community.getDeparture())
                 .arrival(community.getArrival())
                 .tags(community.getTags())
+                .viewCount(community.getViewCount())
+                .recommendCount(community.getRecommendCount())
                 .rating(community.getRating())
                 .createdAt(community.getCreatedAt())
+                .authorNickname(community.getAuthorNickname()) // 🔥 추가
                 .build();
     }
 }
