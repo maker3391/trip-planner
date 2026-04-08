@@ -1,8 +1,6 @@
 package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.dto.RegionAliasRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -13,8 +11,6 @@ import java.util.Locale;
 
 @Service
 public class RegionAliasResolverService {
-
-    private static final Logger log = LoggerFactory.getLogger(RegionAliasResolverService.class);
 
     private final RegionAliasCsvLoader regionAliasCsvLoader;
 
@@ -43,23 +39,10 @@ public class RegionAliasResolverService {
             }
 
             int specificity = computeSpecificityScore(record, normalizedMessage, tokens);
-
             candidates.add(new AliasCandidate(record, specificity));
-
-            log.info(
-                    "[ALIAS CANDIDATE] alias={}, city={}, targetName={}, targetParent={}, hint={}, priority={}, specificity={}",
-                    record.getAlias(),
-                    record.getCity(),
-                    record.getTargetName(),
-                    record.getTargetParent(),
-                    record.getQueryHint(),
-                    record.getPriority(),
-                    specificity
-            );
         }
 
         if (candidates.isEmpty()) {
-            log.info("[ALIAS SELECTED] none");
             return null;
         }
 
@@ -71,17 +54,6 @@ public class RegionAliasResolverService {
         }
 
         RegionAliasRecord selected = best.record();
-
-        log.info(
-                "[ALIAS SELECTED] alias={}, city={}, targetName={}, targetParent={}, hint={}, priority={}, specificity={}",
-                selected.getAlias(),
-                selected.getCity(),
-                selected.getTargetName(),
-                selected.getTargetParent(),
-                selected.getQueryHint(),
-                selected.getPriority(),
-                best.specificityScore()
-        );
 
         return new ResolvedAlias(
                 selected.getAlias(),
