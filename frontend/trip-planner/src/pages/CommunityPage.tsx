@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-import { useState } from "react";
-=======
 import { useEffect, useState } from "react";
->>>>>>> Stashed changes
 import Header from "../components/layout/Header.tsx";
 import SearchIcon from '@mui/icons-material/Search';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
@@ -144,7 +140,7 @@ export default function CommunityPage() {
                                         <div className="col-author">{post.authorNickname}</div>
 
                                         <div className="col-date">
-                                        {post.createdAt?.split("T")[0]}
+                                        {post.createdAt?.split("T")[0]} 
                                         </div>
 
                                         <div className="col-views">{post.viewCount}</div>
