@@ -12,6 +12,7 @@ import TripListPage from "../../pages/TripListPage";
 import ProtectedRoute from "./ProtectedRoute";
 import ChatBotButton from "../chatbot/ChatBotButton";
 import ChatBotModal from "../chatbot/ChatBotModal";
+import CommunityReadPage from "../../pages/CommunityReadPage";
 
 export default function Router() {
   const [openChatBot, setOpenChatBot] = useState(false);
@@ -27,7 +28,6 @@ export default function Router() {
         <Route path="/" element={<MainPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/community" element={<CommunityPage />} />
         <Route
           path="/mypage"
           element={
@@ -36,7 +36,12 @@ export default function Router() {
             </ProtectedRoute>
           }
         />
+        <Route path="/community" element={<CommunityPage />} />
         <Route path="/community/write" element={<CommunityWritePage />} />
+        <Route 
+          path="/community/:id" 
+          element={<CommunityReadPage />} 
+        />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         <Route
           path="/trip-list"

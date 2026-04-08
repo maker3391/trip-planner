@@ -59,9 +59,16 @@ export default function DetailPanel({ selectedIdx, path, setPath, onClose }: any
       
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
         <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#666' }}>상세 메모</label>
+        
         <LocalMemoEditor 
           initialMemo={point.memo || ""} 
-          onSave={(val: string) => setPath((prev: any) => prev.map((p: any, i: number) => i === selectedIdx ? { ...p, memo: val } : p))} 
+          
+          onSave={(newMemo) => {
+            // 입력이 끝났을 때(onBlur) 실행될 로직
+            setPath((prev: any[]) => prev.map((p, i) => 
+              i === selectedIdx ? { ...p, memo: newMemo } : p
+            ));
+          }} 
         />
       </div>
     </div>

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 //프론트 -> 백
@@ -30,4 +31,13 @@ public class TripPlanRequestDto {
 
     @Schema(description = "일정 목록")
     private List<TripScheduleRequestDto> schedules;
+
+    @Schema(description = "예상 경비 목록")
+    private List<ExpenseRequestDto> expenses;
+
+    @Schema(description = "총 예산", example = "500000")
+    private BigDecimal totalBudget;
+
+    @Schema(description = "통화", example = "원")
+    private String currency = "원";
 }

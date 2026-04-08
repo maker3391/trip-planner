@@ -3,8 +3,8 @@ package com.fiveguys.trip_planner.dto;
 import com.fiveguys.trip_planner.entity.TripPlan;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +41,15 @@ public class TripPlanResponseDto {
     @Schema(description = "여행 일정 목록")
     private List<TripScheduleResponseDto> schedules;
 
+    @Schema(description = "예상 경비 목록")
+    private List<ExpenseResponseDto> expenses;
+
+    @Schema(description = "총 예산")
+    private BigDecimal totalBudget;
+
+    @Schema(description = "통화")
+    private String currency;
+
     public TripPlanResponseDto(TripPlan tripPlan) {
         this.id = tripPlan.getId();
         this.ownerId = tripPlan.getOwner().getId();
@@ -56,5 +65,17 @@ public class TripPlanResponseDto {
                     .map(TripScheduleResponseDto::new)
                     .collect(Collectors.toList());
         }
+
+        if (tripPlan.getExpenses() != null) {
+            this.expenses = tripPlan.getExpenses().stream()
+                    .map(ExpenseResponseDto::new)
+                    .collect(Collectors.toList());
+        }
+
+        if (tripPlan.getBudget() != null) {
+            this.totalBudget = tripPlan.getBudget().getTotalBudget();
+            this.currency = tripPlan.getBudget().getCurrency();
+        }
     }
 }
+

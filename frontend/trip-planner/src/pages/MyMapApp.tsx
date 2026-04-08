@@ -4,13 +4,28 @@ import MapController from '../components/map/MapController';
 import SideListPanel from '../components/map//SideListPanel';
 import DetailPanel from '../components/map//DetailPanel';
 import { PlacePoint, Connection } from '../types/map';
+// Props 타입 정의 추가
+interface MyMapAppProps {
+  searchKeyword: string;
+  path: PlacePoint[];
+  setPath: any;
+  connections: Connection[];
+  setConnections: any;
+  pinColor: string;
+  setPinColor: (color: string) => void;
+  selectedPinColor: string;
+  setSelectedPinColor: (color: string) => void;
+  lineColor: string;
+  setLineColor: (color: string) => void;
+}
 
-export default function MyMapApp({ searchKeyword, path, setPath, connections, setConnections }: any) {
+export default function MyMapApp({ 
+  searchKeyword, path, setPath, connections, setConnections,
+  pinColor, setPinColor, selectedPinColor, setSelectedPinColor, lineColor, setLineColor 
+  }: MyMapAppProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const [pinColor, setPinColor] = useState("#000000");
-  const [selectedPinColor, setSelectedPinColor] = useState("#4285F4");
-  const [lineColor, setLineColor] = useState("#FF4D4F");
+
   const [showLines, setShowLines] = useState(true);
   const [showAllMemos, setShowAllMemos] = useState(true);
 
