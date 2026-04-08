@@ -9,6 +9,11 @@ const Calculator: React.FC = () => {
   const [pendingItem, setPendingItem] = useState<ExpenseItem | null>(null);
   const [budget, setBudget] = useState<number>(0);
 
+  const clearItems = () => {
+    window.dispatchEvent(new CustomEvent('CART_UPDATED', { detail: [] }));
+    setBudget(0);
+  }
+
   useEffect(() => {
     const handleOpen = () => setIsCalcOpen(true);
     const handlePrompt = (e: Event) => {
@@ -33,12 +38,6 @@ const Calculator: React.FC = () => {
   }, []);
 
   // 입력값 변경 핸들러
-  const handleAddItem = () => {
-    // 서비스 함수를 호출하여 새로운 상태를 설정
-    setCart(prev => CalculatorService.addItem(prev));
-  };
-
-  // 입력값 변경 핸들러
   const handleInputChange = (id: string, field: 'name' | 'price', value: string) => {
     setCart(prevCart => 
       prevCart.map(item => {
@@ -50,6 +49,11 @@ const Calculator: React.FC = () => {
         return item;
       })
     );
+  };
+  
+  const handleAddItem = () => {
+    // 서비스 함수를 호출하여 새로운 상태를 설정
+    setCart(prev => CalculatorService.addItem(prev));
   };
 
   return (
@@ -114,7 +118,7 @@ const Calculator: React.FC = () => {
                 {(budget - cart.reduce((sum, item) => sum + (item.price || 0), 0)).toLocaleString()}원
               </span>
             </div>
-            <button className="calc-btn-reset" onClick={CalculatorService.clearItems}>초기화</button>
+            <button className="calc-btn-reset" onClick={clearItems}>초기화</button>
           </div>
         </div>
       )}

@@ -29,10 +29,6 @@ export const CalculatorService = {
     return cart.map(item => item.id === id ? { ...item, name: newName } : item);
   },
 
-  clearItems: () => {
-    window.dispatchEvent(new CustomEvent('CART_UPDATED', { detail: [] }));
-  },
-
   // 특정 아이템 삭제 (현재 cart 배열과 삭제할 id를 인자로 받음)
   removeItem: (currentCart: ExpenseItem[], id: string) => {
     const updatedCart = currentCart.filter(item => item.id !== id);
