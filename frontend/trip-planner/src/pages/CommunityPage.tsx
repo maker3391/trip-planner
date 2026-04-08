@@ -1,63 +1,23 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "../components/layout/Header.tsx";
 import SearchIcon from '@mui/icons-material/Search';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import "./CommunityPage.css";
 import { useNavigate } from "react-router-dom";
+import client from "../components/api/client.ts";
 
-// 임시 게시글 데이터
-const dummyPosts = [
-    { 
-        id: "260406-0001", 
-        title: "이번 주말 부산 바다 보러 가실 분!", 
-        author: "여행고수", 
-        date: "2026.04.06", 
-        views: 125, 
-        likes: 12, 
-        departure: "서울", 
-        arrival: "부산", 
-        comments: 5 
-    },
-    { 
-        id: "260405-0002", 
-        title: "기내수하물 캐리어 사이즈 질문 (국내선/국제선)", 
-        author: "프로봇짐러", 
-        date: "2026.04.05", 
-        views: 89, 
-        likes: 3, 
-        departure: null, 
-        arrival: null, 
-        comments: 14 
-    },
-    { 
-        id: "260404-0003", 
-        title: "제주도 3박 4일 렌트카 쉐어하실 1인 구합니다", 
-        author: "베스트드라이버", 
-        date: "2026.04.04", 
-        views: 210, 
-        likes: 8, 
-        departure: "김포", 
-        arrival: "제주", 
-        comments: 2 
-    },
-    { 
-        id: "260403-0004", 
-        title: "충북 단양 패러글라이딩 후기 공유해요", 
-        author: "하늘날다", 
-        date: "2026.04.03", 
-        views: 156, 
-        likes: 22, 
-        departure: null, 
-        arrival: null, 
-        comments: 7 
-    }
-];
+export const getCommunityPosts = async (page = 0) => {
+  const response = await client.get(`/community/posts?page=${page}`);
+  return response.data;
+};
 
 export default function CommunityPage() {
+    
     const [selectedMenu, setSelectedMenu] = useState("전체보기");
+    const [posts, setPosts] = useState<any[]>([]);
 
-    const categories = ["전체보기", "여행플랜 공유", "당일치기 친구 찾기", "자유게시판", "질문게시판", "사진게시판", "맛집게시판"];
+    const categories = ["전체보기", "여행플랜 공유", "당일치기 친구 찾기", "자유게시판", "질문게시판", "사진게시판", "맛집게시판", "후기게시판"];
     const regions = ["서울", "경기", "인천", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
     
     const navigate = useNavigate();
@@ -66,6 +26,21 @@ export default function CommunityPage() {
     const handleReset = () => {
         setSelectedMenu("전체보기");
     };
+
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                const data = await getCommunityPosts();
+                // content가 없으면 빈 배열로 초기화
+                setPosts(data?.content || []);
+            } catch (error) {
+                console.error("게시글 불러오기 실패:", error);
+                setPosts([]); // fetch 실패 시도
+            }
+        };
+
+        fetchPosts();
+    }, []);
 
     return (
         <div className="community-page">
@@ -149,24 +124,35 @@ export default function CommunityPage() {
 
                         {/* 리스트 본문 */}
                         <div className="board-body">
-                            {dummyPosts.map((post) => (
-                                <div className="board-item-row" key={post.id}>
-                                    <div className="col-id">{post.id.split('-')[1]}</div>
-                                    <div className="col-route">
-                                        {post.departure ? `${post.departure} ➔ ${post.arrival}` : "-"}
-                                    </div>
-                                    <div className="col-title">
+                                {posts.map((post) => (
+                                    <div className="board-item-row" key={post.id}>
+                                        
+                                        <div className="col-id">{post.id}</div>
+
+                                        <div className="col-route">
+                                        {post.route || "-"}
+                                        </div>
+
+                                        <div className="col-title">
                                         <span className="post-title-text">{post.title}</span>
-                                        {post.comments > 0 && <span className="comment-count">[{post.comments}]</span>}
+                                        </div>
+
+                                        <div className="col-author">{post.authorNickname}</div>
+
+                                        <div className="col-date">
+                                        {post.createdAt?.split("T")[0]} 
+                                        </div>
+
+                                        <div className="col-views">{post.viewCount}</div>
+
+                                        <div className="col-stats">
+                                        <span className="stat-item">
+                                            <ThumbUpOffAltIcon fontSize="inherit" /> {post.recommendCount}
+                                        </span>
+                                        </div>
+
                                     </div>
-                                    <div className="col-author">{post.author}</div>
-                                    <div className="col-date">{post.date}</div>
-                                    <div className="col-views">{post.views}</div>
-                                    <div className="col-stats">
-                                        <span className="stat-item"><ThumbUpOffAltIcon fontSize="inherit" /> {post.likes}</span>
-                                    </div>
-                                </div>
-                            ))}
+                                    ))}
                         </div>
                     </div>
 

@@ -1,15 +1,29 @@
 package com.fiveguys.trip_planner.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Schema(description = "여행 추천 초안 정보 객체")
 public class RecommendationDraft {
 
+    @Schema(description = "여행 목적 또는 의도", example = "가족 여행")
     private String intent;
+
+    @Schema(description = "주요 여행지(도시/지역명)", example = "제주도")
     private String destination;
+
+    @Schema(description = "세부 지역 정보", example = "서귀포시")
     private String detailArea;
+
+    @Schema(description = "총 여행 일수", example = "3")
     private Integer days;
+
+    @Schema(description = "일자별 여행 계획 목록")
     private List<DayPlanDraft> dayPlans = new ArrayList<>();
+
+    @Schema(description = "추천 여행 요소(명소/음식점/활동 등) 목록")
     private List<RecommendationItemDraft> items = new ArrayList<>();
 
     public RecommendationDraft() {

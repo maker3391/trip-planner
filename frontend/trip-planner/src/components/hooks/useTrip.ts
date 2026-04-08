@@ -46,3 +46,48 @@ export const useGetTrip = (tripId: number | string | null) => {
     enabled: !!tripId,
   });
 };
+
+// 특정 여행 계획 수정(업데이트) 훅 추가
+export const useUpdateTrip = (tripId: number | string | null) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (updatedTrip: TripPlanRequest) => {
+      const response = await client.patch(`/trips/${tripId}`, updatedTrip);
+      return response.data;
+    },
+
+    onSuccess: () => {
+      alert("여행 계획이 수정되었습니다! ✨");
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
+      queryClient.invalidateQueries({ queryKey: ["trips", tripId] });
+    },
+
+    onError: (error) => {
+      console.error("수정 실패.", error);
+      alert("여행 계획 수정에 실패하였습니다.");
+    },
+  });
+};
+
+// 특정 여행 계획 삭제 훅
+export const useDeleteTrip = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (tripId: number) => {
+      await client.delete(`/trips/${tripId}`);
+    },
+
+    onSuccess: (_data, tripId) => {
+      alert("여행 계획이 삭제되었습니다.");
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
+      queryClient.removeQueries({ queryKey: ["trips", tripId] });
+    },
+
+    onError: (error) => {
+      console.error("삭제 실패.", error);
+      alert("여행 계획 삭제에 실패하였습니다.");
+    },
+  });
+};
