@@ -31,7 +31,6 @@ public class RecommendationCacheService {
 
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
-    @SuppressWarnings("unchecked")
     public <T> T get(String key) {
         CacheEntry entry = cache.get(key);
         if (entry == null) {

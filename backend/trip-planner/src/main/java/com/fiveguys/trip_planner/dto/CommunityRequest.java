@@ -43,4 +43,8 @@ public class CommunityRequest {
     @Min(value = 0, message = "최소 평점은 0입니다.")
     @Max(value = 5, message = "최대 평점은 5입니다.")
     private Integer rating;
+
+    // 🔥 작성자 ID 추가
+    @NotNull(message = "작성자 ID는 필수입니다.")
+    private Long userId;
 }

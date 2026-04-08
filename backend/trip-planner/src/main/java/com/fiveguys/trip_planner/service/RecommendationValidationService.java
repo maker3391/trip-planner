@@ -66,8 +66,8 @@ public class RecommendationValidationService {
                 throw new LlmCallException("일차 정보가 올바르지 않습니다.");
             }
 
-            if (dayPlan.getPlaces() == null || dayPlan.getPlaces().isEmpty()) {
-                throw new LlmCallException(dayPlan.getDay() + "일차 추천 장소가 비어 있습니다.");
+            if (dayPlan.getPlaces() == null || dayPlan.getPlaces().size() < 2) {
+                throw new LlmCallException(dayPlan.getDay() + "일차 추천 장소가 충분하지 않습니다.");
             }
         }
     }

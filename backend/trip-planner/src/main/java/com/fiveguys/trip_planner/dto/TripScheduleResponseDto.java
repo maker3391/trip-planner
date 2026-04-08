@@ -51,6 +51,15 @@ public class TripScheduleResponseDto {
     @Schema(description = "Google Place ID", example = "ChIJabcdEFGH1234")
     private String googlePlaceId;
 
+    @Schema(description = "지도 핀 색상", example = "#FF5733")
+    private final String pinColor;
+
+    @Schema(description = "선택된 지도 핀 색상", example = "#FF0000")
+    private final String selectedPinColor;
+
+    @Schema(description = "지도 선 색상", example = "#33C1FF")
+    private final String lineColor;
+
     public TripScheduleResponseDto(TripSchedule schedule) {
         this.id = schedule.getId();
         this.dayNumber = schedule.getDayNumber();
@@ -60,6 +69,9 @@ public class TripScheduleResponseDto {
         this.endTime = schedule.getEndTime();
         this.memo = schedule.getMemo();
         this.estimatedStayMinutes = schedule.getEstimatedStayMinutes();
+        this.pinColor = schedule.getPinColor();
+        this.selectedPinColor = schedule.getSelectedPinColor();
+        this.lineColor = schedule.getLineColor();
 
         if(schedule.getPlace() != null) {
             this.placeName = schedule.getPlace().getName();

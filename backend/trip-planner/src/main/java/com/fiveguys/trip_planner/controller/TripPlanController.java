@@ -39,7 +39,7 @@ public class TripPlanController {
         List<TripPlanResponseDto> responseDto = tripPlanService.getMyTripPlans(user);
         return ResponseEntity.ok(responseDto);
     }
-    @Operation(summary = "여행 계획 수정", description = "이미 저장된 여행의 제목, 날짜 또는 장소 리스트(schedules)를 전체적으로 업데이트합니다.")
+    @Operation(summary = "여행 계획 수정", description = "이미 저장된 여행의 제목, 날짜 또는 장소 리스트(schedules)중 변경사항이 있는 항목을 업데이트합니다.")
     @PatchMapping("/{id}")
     public ResponseEntity<TripPlanResponseDto> updateTripPlan(@PathVariable Long id,
                                                               @RequestBody TripPlanRequestDto requestDto,

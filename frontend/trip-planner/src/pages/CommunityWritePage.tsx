@@ -2,10 +2,12 @@ import React, { useState, useRef, useMemo } from "react";
 import Header from "../components/layout/Header.tsx";
 import { useNavigate } from "react-router-dom";
 import client from "../components/api/client.ts";
+import community from "../types/community.ts"
 // npm install react-quill 해야합니다.
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./CommunityWritePage.css";
+import { getMe } from "../components/api/auth.ts";
 
 // 💡 1. 폰트 크기를 숫자로 조절하기 위한 Quill 설정
 const Size = Quill.import("attributors/style/size");
@@ -16,9 +18,22 @@ Quill.register(Size, true);
 const RATING_ENABLED_CATEGORIES = ["맛집게시판", "사진게시판", "후기게시판"]; 
 const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유", "당일치기 친구 찾기"];
 
+interface UserInfo {
+  id: number;
+  email: string;
+  name?: string;
+  nickname?: string;
+  phone?: string;
+  address?: string;
+  profileImage?: string;
+  role?: string;
+  status?: string;
+}
+
 export default function CommunityWritePage() {
     const navigate = useNavigate();
     const quillRef = useRef<ReactQuill>(null);
+    const [ user, setUser ] = useState<UserInfo | null>(null);
 
     const [formData, setFormData] = useState({
         category: "자유게시판",
@@ -80,29 +95,51 @@ export default function CommunityWritePage() {
     }), []);
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+            e.preventDefault();
 
-        if (!localStorage.getItem("isLoggedIn")) {
-            alert("로그인이 필요한 서비스 입니다.");
-            navigate("/api/auth/login");
-            return;
-        }
-            
-        try {
-            const response = await client.post(
-                "/community/posts",
-                formData
-            );
-
-            if (response.status === 201) {
-                alert('게시글이 성공적으로 등록되었습니다!');
-                window.location.href = "/community"; 
+            if (!localStorage.getItem("isLoggedIn")) {
+                alert("로그인이 필요한 서비스 입니다.");
+                navigate("/api/auth/login");
+                return;
             }
 
-        } catch (error) {
-            console.error("등록 실패:", error);
-        }
-    };
+            try {
+                // 🔹 userId 가져오기 (로컬스토리지에서)
+                const userData = await getMe();
+                setUser(userData);
+
+                if (!userData.id) {
+                    alert("유저 정보가 없습니다. 다시 로그인 해주세요.");
+                    navigate("/login");
+                    return;
+                }
+                const userId = userData.id;
+
+                // 🔹 content가 비어 있는지 추가 체크
+                if (!formData.content || formData.content.trim() === "<p><br></p>") {
+                    alert("내용을 입력해주세요.");
+                    return;
+                }
+
+                // 🔹 기존 formData에 userId 추가
+                const payload: community.CommunityRequest = { ...formData, userId };
+
+                const response = await client.post("/community/posts", payload);
+
+                if (response.status === 201) {
+                    alert('게시글이 성공적으로 등록되었습니다!');
+                    window.location.href = "/community"; 
+                } else {
+                    alert("게시글 등록에 실패했습니다.");
+                    console.error("등록 실패:", response);
+                }
+
+            } catch (error: any) {
+                // 서버 에러 처리
+                alert("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+                console.error("등록 실패:", error);
+            }
+        };
 
     return (
         <div className="community-page">

@@ -3,14 +3,15 @@ package com.fiveguys.trip_planner.service;
 import com.fiveguys.trip_planner.client.OpenAiClient;
 import com.fiveguys.trip_planner.dto.ChatRequest;
 import com.fiveguys.trip_planner.dto.DayPlanDraft;
+import com.fiveguys.trip_planner.dto.ItineraryOnlyDraft;
+import com.fiveguys.trip_planner.dto.ItineraryRequestContext;
 import com.fiveguys.trip_planner.dto.RecommendationDraft;
 import com.fiveguys.trip_planner.dto.RecommendationItemDraft;
+import com.fiveguys.trip_planner.exception.LlmCallException;
 import com.fiveguys.trip_planner.response.ChatResponse;
 import com.fiveguys.trip_planner.response.DayPlanResponse;
 import com.fiveguys.trip_planner.response.RecommendationContentResponse;
 import com.fiveguys.trip_planner.response.RecommendationItemResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,8 +19,6 @@ import java.util.List;
 
 @Service
 public class ChatService {
-
-    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 
     private final OpenAiClient openAiClient;
     private final RecommendationIntentResolverService intentResolverService;
@@ -29,6 +28,7 @@ public class ChatService {
     private final RecommendationQualityService qualityService;
     private final RecommendationCacheService recommendationCacheService;
     private final RecommendationCacheKeyGenerator cacheKeyGenerator;
+    private final ItineraryRequestResolverService itineraryRequestResolverService;
 
     public ChatService(OpenAiClient openAiClient,
                        RecommendationIntentResolverService intentResolverService,
@@ -37,7 +37,8 @@ public class ChatService {
                        RecommendationNormalizationService normalizationService,
                        RecommendationQualityService qualityService,
                        RecommendationCacheService recommendationCacheService,
-                       RecommendationCacheKeyGenerator cacheKeyGenerator) {
+                       RecommendationCacheKeyGenerator cacheKeyGenerator,
+                       ItineraryRequestResolverService itineraryRequestResolverService) {
         this.openAiClient = openAiClient;
         this.intentResolverService = intentResolverService;
         this.kakaoPlaceRecommendationService = kakaoPlaceRecommendationService;
@@ -46,55 +47,72 @@ public class ChatService {
         this.qualityService = qualityService;
         this.recommendationCacheService = recommendationCacheService;
         this.cacheKeyGenerator = cacheKeyGenerator;
+        this.itineraryRequestResolverService = itineraryRequestResolverService;
     }
 
     public ChatResponse chat(ChatRequest request) {
-        long start = System.currentTimeMillis();
-
-        String intent = intentResolverService.resolve(request.getMessage());
-        log.info("[CHAT START] intent={}, message={}", intent, request.getMessage());
+        String message = request.getMessage();
+        String intent = intentResolverService.resolve(message);
 
         if ("RESTAURANT_RECOMMENDATION".equals(intent) || "STAY_RECOMMENDATION".equals(intent)) {
-            ChatResponse response = kakaoPlaceRecommendationService.recommend(request);
-
-            long end = System.currentTimeMillis();
-            log.info("[CHAT END] intent={}, elapsedMs={}", intent, (end - start));
-
-            return response;
+            return kakaoPlaceRecommendationService.recommend(request);
         }
 
-        String cacheKey = cacheKeyGenerator.generate(request.getMessage());
+        ItineraryRequestContext context = itineraryRequestResolverService.resolve(message);
+        String cacheKey = cacheKeyGenerator.generate(context);
 
         ChatResponse cached = recommendationCacheService.get(cacheKey);
         if (cached != null) {
-            long end = System.currentTimeMillis();
-            log.info("[CHAT CACHE HIT] intent={}, cacheKey={}, elapsedMs={}", intent, cacheKey, (end - start));
             return cached;
         }
 
-        long llmStart = System.currentTimeMillis();
-        RecommendationDraft draft = openAiClient.generateRecommendationDraft(request.getMessage());
-        long llmEnd = System.currentTimeMillis();
-        log.info("[CHAT LLM DONE] elapsedMs={}", (llmEnd - llmStart));
+        RecommendationDraft adjusted;
 
-        long validationStart = System.currentTimeMillis();
-        validationService.validate(draft);
+        try {
+            adjusted = buildValidatedItineraryDraft(message, context, false);
+        } catch (LlmCallException e) {
+            if (!shouldRetryItinerary(e)) {
+                throw e;
+            }
 
-        RecommendationDraft normalized = normalizationService.normalize(draft);
-        validationService.validate(normalized);
+            adjusted = buildValidatedItineraryDraft(message, context, true);
+        }
 
-        RecommendationDraft adjusted = qualityService.adjust(request.getMessage(), normalized);
-        validationService.validate(adjusted);
-        long validationEnd = System.currentTimeMillis();
-        log.info("[CHAT POST PROCESS DONE] elapsedMs={}", (validationEnd - validationStart));
-
-        ChatResponse response = toResponse(request.getMessage(), adjusted);
+        ChatResponse response = toResponse(message, adjusted);
         recommendationCacheService.put(cacheKey, response);
 
-        long end = System.currentTimeMillis();
-        log.info("[CHAT END] intent={}, cacheKey={}, elapsedMs={}", intent, cacheKey, (end - start));
-
         return response;
+    }
+
+    private RecommendationDraft buildValidatedItineraryDraft(String message,
+                                                             ItineraryRequestContext context,
+                                                             boolean expandedScope) {
+        ItineraryOnlyDraft itineraryOnlyDraft = openAiClient.generateItineraryDayPlans(context, expandedScope);
+
+        RecommendationDraft rawDraft = new RecommendationDraft();
+        rawDraft.setIntent("TRAVEL_ITINERARY");
+        rawDraft.setDestination(context.getDestination());
+        rawDraft.setDetailArea(context.getDetailArea());
+        rawDraft.setDays(context.getDays());
+        rawDraft.setDayPlans(itineraryOnlyDraft.getDayPlans() == null ? new ArrayList<>() : itineraryOnlyDraft.getDayPlans());
+        rawDraft.setItems(new ArrayList<>());
+
+        RecommendationDraft normalized = normalizationService.normalize(rawDraft);
+        RecommendationDraft adjusted = qualityService.adjust(message, normalized);
+        validationService.validate(adjusted);
+
+        return adjusted;
+    }
+
+    private boolean shouldRetryItinerary(LlmCallException e) {
+        if (e == null || e.getMessage() == null) {
+            return false;
+        }
+
+        String message = e.getMessage();
+        return message.contains("여행 일정 추천 결과가 비어 있습니다.")
+                || message.contains("여행 일수와 일정 개수가 맞지 않습니다.")
+                || message.contains("추천 장소가 충분하지 않습니다.");
     }
 
     private ChatResponse toResponse(String originalMessage, RecommendationDraft draft) {

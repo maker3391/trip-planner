@@ -7,8 +7,6 @@ import com.fiveguys.trip_planner.exception.LlmCallException;
 import com.fiveguys.trip_planner.response.ChatResponse;
 import com.fiveguys.trip_planner.response.RecommendationContentResponse;
 import com.fiveguys.trip_planner.response.RecommendationItemResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -22,7 +20,6 @@ import java.util.Set;
 @Service
 public class KakaoPlaceRecommendationService {
 
-    private static final Logger log = LoggerFactory.getLogger(KakaoPlaceRecommendationService.class);
     private static final int MAX_ITEMS = 5;
     private static final int MAX_COLLECT_SIZE = 20;
 
@@ -65,17 +62,8 @@ public class KakaoPlaceRecommendationService {
 
         String queryDestination = resolveEffectiveDestination(destination, district);
 
-        log.info("[STEP 1 BEFORE ALIAS] destination={}, district={}, neighborhood={}, detailArea={}, queryDestination={}",
-                destination, district, neighborhood, detailArea, queryDestination);
-
         RegionAliasResolverService.ResolvedAlias alias =
                 regionAliasResolverService.resolve(message, StringUtils.hasText(queryDestination) ? queryDestination : destination);
-
-        log.info("[STEP 2 ALIAS RAW] aliasCity={}, aliasTargetName={}, aliasTargetParent={}, aliasHint={}",
-                alias != null ? alias.getCity() : null,
-                alias != null ? alias.getTargetName() : null,
-                alias != null ? alias.getTargetParent() : null,
-                alias != null ? alias.getQueryHint() : null);
 
         String aliasQueryHint = "";
         String aliasTargetName = "";
@@ -113,9 +101,6 @@ public class KakaoPlaceRecommendationService {
                     neighborhood = aliasTargetName;
                     detailArea = aliasTargetName;
                 }
-            } else {
-                log.info("[ALIAS SKIPPED] current detailArea is already more specific. currentDetailArea={}, aliasTargetName={}, aliasHint={}",
-                        detailArea, normalizedAliasTargetName, normalizedAliasHint);
             }
         }
 
@@ -134,15 +119,19 @@ public class KakaoPlaceRecommendationService {
         String rawAreaHint = rawAreaHintExtractorService.extract(message, queryDestination);
         rawAreaHint = normalizeDisplayArea(rawAreaHint);
 
-        log.info("[STEP 3 AFTER ALIAS] destination={}, district={}, neighborhood={}, detailArea={}, queryDestination={}, aliasHint={}, rawAreaHint={}",
-                destination, district, neighborhood, detailArea, queryDestination, aliasQueryHint, rawAreaHint);
-
-        String cacheKey = cacheKeyGenerator.generate(message);
-        log.info("[STEP 4 CACHE KEY] {}", cacheKey);
+        String cacheKey = cacheKeyGenerator.generatePlaceKey(
+                intent,
+                queryDestination,
+                detailArea,
+                neighborhood,
+                district,
+                aliasQueryHint,
+                rawAreaHint,
+                message
+        );
 
         ChatResponse cached = recommendationCacheService.get(cacheKey);
         if (cached != null) {
-            log.info("[KAKAO CACHE HIT] key={}", cacheKey);
             return cached;
         }
 
@@ -159,15 +148,11 @@ public class KakaoPlaceRecommendationService {
                 message
         );
 
-        log.info("[STEP 5 QUERY CANDIDATES] {}", queryCandidates);
-
         List<JsonNode> collectedDocs = new ArrayList<>();
 
         for (String query : queryCandidates) {
             JsonNode root = kakaoLocalClient.searchKeyword(query);
             List<JsonNode> docs = extractDocuments(root);
-
-            log.info("[STEP 6 QUERY RESULT] query={}, docs={}", query, docs.size());
 
             if (!docs.isEmpty()) {
                 collectedDocs.addAll(docs);
@@ -177,8 +162,6 @@ public class KakaoPlaceRecommendationService {
                 break;
             }
         }
-
-        log.info("[STEP 7 COLLECTED DOCS] total={}", collectedDocs.size());
 
         if (collectedDocs.isEmpty()) {
             throw new LlmCallException("장소 검색 결과가 없습니다: "
@@ -195,8 +178,6 @@ public class KakaoPlaceRecommendationService {
                 aliasQueryHint,
                 aliasTargetParent
         );
-
-        log.info("[STEP 8 FILTERED ITEMS] count={}", items.size());
 
         if (items.isEmpty()) {
             throw new LlmCallException("추천 가능한 결과가 없습니다: "
@@ -220,13 +201,17 @@ public class KakaoPlaceRecommendationService {
 
     private void validateRegionStrict(String message) {
         if (!regionResolverService.hasExplicitTopLevelArea(message)) {
-            throw new LlmCallException("지역은 반드시 앞에 포함해야 합니다. 예: 부산 중구 맛집 추천, 서울 성수동 카페 추천");
+            throw new LlmCallException(
+                    "지역명이 모호합니다. '시/군/구'를 포함하여 다시 입력해 주세요. (예: 서울 강남구 숙소 추천, 부산 해운대구 맛집 추천, 제주 2박 3일 일정 추천)"
+            );
         }
     }
 
     private void validateResolvedDestination(String destination) {
         if (!StringUtils.hasText(destination)) {
-            throw new LlmCallException("지역은 반드시 앞에 포함해야 합니다. 예: 부산 중구 맛집 추천, 서울 성수동 카페 추천");
+            throw new LlmCallException(
+                    "지역명이 모호합니다. '시/군/구'를 포함하여 다시 입력해 주세요. (예: 서울 강남구 숙소 추천, 부산 해운대구 맛집 추천, 제주 2박 3일 일정 추천)"
+            );
         }
     }
 
@@ -473,9 +458,6 @@ public class KakaoPlaceRecommendationService {
             }
 
             int score = score(doc, intent, detailArea, neighborhood, district, aliasQueryHint, aliasTargetParent);
-
-            log.debug("[DOC PASS] name={}, address={}, score={}", name, address, score);
-
             scoredPlaces.add(new ScoredPlace(name, address, placeUrl, category, score));
         }
 
@@ -536,9 +518,6 @@ public class KakaoPlaceRecommendationService {
         boolean districtMatch = !StringUtils.hasText(district) || isCityOrCounty(district) || containsLooseRegion(merged, district);
         boolean aliasHintMatch = !StringUtils.hasText(aliasQueryHint) || containsLooseRegion(merged, aliasQueryHint);
         boolean aliasParentMatch = !StringUtils.hasText(aliasTargetParent) || containsLooseRegion(merged, aliasTargetParent);
-
-        log.debug("[LOCATION CHECK] name={}, merged={}, destinationMatch={}, detailMatch={}, neighborhoodMatch={}, districtMatch={}, aliasHintMatch={}, aliasParentMatch={}",
-                name, merged, destinationMatch, detailMatch, neighborhoodMatch, districtMatch, aliasHintMatch, aliasParentMatch);
 
         if (!destinationMatch) {
             return false;
@@ -748,7 +727,7 @@ public class KakaoPlaceRecommendationService {
     }
 
     private String stripRegionSuffixForLooseMatch(String value) {
-        return value.replaceAll("(특별자치도|특별자치시|광역시|특별시|시|군|구|동|읍|면|리)$", "").trim();
+        return value.replaceAll("(특별자치도|특별자치시|광역시|특별시|도|시|군|구|동|읍|면|리)$", "").trim();
     }
 
     private String normalizeForMatch(String value) {
