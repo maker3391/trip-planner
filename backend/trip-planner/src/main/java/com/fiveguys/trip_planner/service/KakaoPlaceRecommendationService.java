@@ -53,10 +53,10 @@ public class KakaoPlaceRecommendationService {
     public ChatResponse recommend(ChatRequest request) {
         String message = request.getMessage();
 
+        validateRegionStrict(message);
+
         String intent = intentResolverService.resolve(message);
         RegionResolverService.ResolvedRegion resolvedRegion = regionResolverService.resolve(message);
-
-        validateRegionStrict(message);
 
         String destination = resolvedRegion.getCity();
         String district = resolvedRegion.getDistrict();
@@ -65,40 +65,80 @@ public class KakaoPlaceRecommendationService {
 
         String queryDestination = resolveEffectiveDestination(destination, district);
 
-        RegionAliasResolverService.ResolvedAlias alias = regionAliasResolverService.resolve(message, queryDestination);
+        log.info("[STEP 1 BEFORE ALIAS] destination={}, district={}, neighborhood={}, detailArea={}, queryDestination={}",
+                destination, district, neighborhood, detailArea, queryDestination);
+
+        RegionAliasResolverService.ResolvedAlias alias =
+                regionAliasResolverService.resolve(message, StringUtils.hasText(queryDestination) ? queryDestination : destination);
+
+        log.info("[STEP 2 ALIAS RAW] aliasCity={}, aliasTargetName={}, aliasTargetParent={}, aliasHint={}",
+                alias != null ? alias.getCity() : null,
+                alias != null ? alias.getTargetName() : null,
+                alias != null ? alias.getTargetParent() : null,
+                alias != null ? alias.getQueryHint() : null);
 
         String aliasQueryHint = "";
         String aliasTargetName = "";
         String aliasTargetParent = "";
 
         if (alias != null) {
-            if (StringUtils.hasText(alias.getCity())) {
-                destination = alias.getCity();
-                queryDestination = alias.getCity();
-            }
+            String normalizedAliasCity = normalizeDisplayArea(alias.getCity());
+            String normalizedAliasHint = normalizeDisplayArea(alias.getQueryHint());
+            String normalizedAliasTargetName = normalizeDisplayArea(alias.getTargetName());
+            String normalizedAliasTargetParent = normalizeDisplayArea(alias.getTargetParent());
 
-            aliasQueryHint = alias.getQueryHint();
-            aliasTargetName = alias.getTargetName();
-            aliasTargetParent = alias.getTargetParent();
+            boolean currentAlreadySpecific =
+                    StringUtils.hasText(detailArea)
+                            && !normalizeAreaName(detailArea).equals(normalizeAreaName(destination));
 
-            if (StringUtils.hasText(aliasTargetParent)) {
-                district = aliasTargetParent;
-            }
+            boolean aliasIsMoreSpecific =
+                    StringUtils.hasText(normalizedAliasTargetName)
+                            && !normalizeAreaName(normalizedAliasTargetName).equals(normalizeAreaName(normalizedAliasCity));
 
-            if (StringUtils.hasText(aliasTargetName)) {
-                neighborhood = aliasTargetName;
-                detailArea = aliasTargetName;
+            if (!currentAlreadySpecific || aliasIsMoreSpecific) {
+                if (StringUtils.hasText(normalizedAliasCity)) {
+                    destination = normalizedAliasCity;
+                    queryDestination = normalizedAliasCity;
+                }
+
+                aliasQueryHint = normalizedAliasHint;
+                aliasTargetName = normalizedAliasTargetName;
+                aliasTargetParent = normalizedAliasTargetParent;
+
+                if (StringUtils.hasText(aliasTargetParent)) {
+                    district = aliasTargetParent;
+                }
+
+                if (StringUtils.hasText(aliasTargetName)) {
+                    neighborhood = aliasTargetName;
+                    detailArea = aliasTargetName;
+                }
+            } else {
+                log.info("[ALIAS SKIPPED] current detailArea is already more specific. currentDetailArea={}, aliasTargetName={}, aliasHint={}",
+                        detailArea, normalizedAliasTargetName, normalizedAliasHint);
             }
         }
 
-        String rawAreaHint = rawAreaHintExtractorService.extract(message, queryDestination);
+        if (!StringUtils.hasText(queryDestination)) {
+            queryDestination = destination;
+        }
 
-        log.info("[REGION RESOLVED] city={}, district={}, neighborhood={}, detailArea={}, queryDestination={}, aliasHint={}, rawAreaHint={}",
-                destination, district, neighborhood, detailArea, queryDestination, aliasQueryHint, rawAreaHint);
+        queryDestination = normalizeDisplayArea(queryDestination);
+        destination = normalizeDisplayArea(destination);
+        district = normalizeDisplayArea(district);
+        neighborhood = normalizeDisplayArea(neighborhood);
+        detailArea = normalizeDisplayArea(detailArea);
 
         validateResolvedDestination(queryDestination);
 
+        String rawAreaHint = rawAreaHintExtractorService.extract(message, queryDestination);
+        rawAreaHint = normalizeDisplayArea(rawAreaHint);
+
+        log.info("[STEP 3 AFTER ALIAS] destination={}, district={}, neighborhood={}, detailArea={}, queryDestination={}, aliasHint={}, rawAreaHint={}",
+                destination, district, neighborhood, detailArea, queryDestination, aliasQueryHint, rawAreaHint);
+
         String cacheKey = cacheKeyGenerator.generate(message);
+        log.info("[STEP 4 CACHE KEY] {}", cacheKey);
 
         ChatResponse cached = recommendationCacheService.get(cacheKey);
         if (cached != null) {
@@ -119,13 +159,15 @@ public class KakaoPlaceRecommendationService {
                 message
         );
 
-        log.info("[KAKAO QUERY CANDIDATES] {}", queryCandidates);
+        log.info("[STEP 5 QUERY CANDIDATES] {}", queryCandidates);
 
         List<JsonNode> collectedDocs = new ArrayList<>();
 
         for (String query : queryCandidates) {
             JsonNode root = kakaoLocalClient.searchKeyword(query);
             List<JsonNode> docs = extractDocuments(root);
+
+            log.info("[STEP 6 QUERY RESULT] query={}, docs={}", query, docs.size());
 
             if (!docs.isEmpty()) {
                 collectedDocs.addAll(docs);
@@ -136,8 +178,11 @@ public class KakaoPlaceRecommendationService {
             }
         }
 
+        log.info("[STEP 7 COLLECTED DOCS] total={}", collectedDocs.size());
+
         if (collectedDocs.isEmpty()) {
-            throw new LlmCallException("장소 검색 결과가 없습니다: " + buildDisplayDestination(queryDestination, detailArea, neighborhood, district, aliasQueryHint));
+            throw new LlmCallException("장소 검색 결과가 없습니다: "
+                    + buildDisplayDestination(queryDestination, detailArea, neighborhood, district, aliasQueryHint));
         }
 
         List<RecommendationItemResponse> items = filterScoreSortAndMap(
@@ -151,8 +196,11 @@ public class KakaoPlaceRecommendationService {
                 aliasTargetParent
         );
 
+        log.info("[STEP 8 FILTERED ITEMS] count={}", items.size());
+
         if (items.isEmpty()) {
-            throw new LlmCallException("추천 가능한 결과가 없습니다: " + buildDisplayDestination(queryDestination, detailArea, neighborhood, district, aliasQueryHint));
+            throw new LlmCallException("추천 가능한 결과가 없습니다: "
+                    + buildDisplayDestination(queryDestination, detailArea, neighborhood, district, aliasQueryHint));
         }
 
         ChatResponse response = new ChatResponse(
@@ -166,12 +214,8 @@ public class KakaoPlaceRecommendationService {
                 )
         );
 
-        recommendationCacheService.put(responseKey(cacheKey), response, resolveTtl(intent));
+        recommendationCacheService.put(cacheKey, response, resolveTtl(intent));
         return response;
-    }
-
-    private String responseKey(String cacheKey) {
-        return cacheKey;
     }
 
     private void validateRegionStrict(String message) {
@@ -187,10 +231,35 @@ public class KakaoPlaceRecommendationService {
     }
 
     private String resolveEffectiveDestination(String destination, String district) {
+        String districtHead = extractCityHead(district);
+
+        if (isCityOrCounty(districtHead)) {
+            return districtHead;
+        }
+
         if (isCityOrCounty(district)) {
             return district;
         }
+
         return destination;
+    }
+
+    private String extractCityHead(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+
+        String[] parts = value.trim().split("\\s+");
+        if (parts.length == 0) {
+            return "";
+        }
+
+        String first = parts[0];
+        if (first.endsWith("시") || first.endsWith("군")) {
+            return first;
+        }
+
+        return "";
     }
 
     private boolean isCityOrCounty(String value) {
@@ -268,31 +337,31 @@ public class KakaoPlaceRecommendationService {
         List<String> bases = new ArrayList<>();
 
         if (StringUtils.hasText(detailArea)) {
-            bases.add(joinLocation(destination, detailArea));
+            bases.add(joinDistinctLocation(destination, detailArea));
         }
 
         if (StringUtils.hasText(neighborhood)) {
-            bases.add(joinLocation(destination, neighborhood));
+            bases.add(joinDistinctLocation(destination, neighborhood));
         }
 
         if (StringUtils.hasText(aliasTargetName)) {
-            bases.add(joinLocation(destination, aliasTargetName));
-        }
-
-        if (StringUtils.hasText(aliasTargetParent) && StringUtils.hasText(aliasQueryHint)) {
-            bases.add(joinLocation(destination, aliasTargetParent, aliasQueryHint));
+            bases.add(joinDistinctLocation(destination, aliasTargetName));
         }
 
         if (StringUtils.hasText(aliasQueryHint)) {
-            bases.add(joinLocation(destination, aliasQueryHint));
+            bases.add(joinDistinctLocation(destination, aliasQueryHint));
+        }
+
+        if (StringUtils.hasText(aliasTargetParent) && StringUtils.hasText(aliasQueryHint)) {
+            bases.add(joinDistinctLocation(joinDistinctLocation(destination, aliasTargetParent), aliasQueryHint));
         }
 
         if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            bases.add(joinLocation(destination, district));
+            bases.add(joinDistinctLocation(destination, district));
         }
 
         if (StringUtils.hasText(rawAreaHint)) {
-            bases.add(joinLocation(destination, rawAreaHint));
+            bases.add(joinDistinctLocation(destination, rawAreaHint));
         }
 
         bases.add(destination);
@@ -300,14 +369,36 @@ public class KakaoPlaceRecommendationService {
         return dedupStrings(bases);
     }
 
-    private String joinLocation(String... parts) {
-        List<String> values = new ArrayList<>();
-        for (String part : parts) {
-            if (StringUtils.hasText(part)) {
-                values.add(part.trim());
-            }
+    private String joinDistinctLocation(String first, String second) {
+        if (!StringUtils.hasText(first)) {
+            return normalizeDisplayArea(second);
         }
-        return String.join(" ", values).replaceAll("\\s+", " ").trim();
+        if (!StringUtils.hasText(second)) {
+            return normalizeDisplayArea(first);
+        }
+
+        String a = normalizeDisplayArea(first);
+        String b = normalizeDisplayArea(second);
+
+        if (normalizeAreaName(a).equals(normalizeAreaName(b))) {
+            return a;
+        }
+
+        return (a + " " + b).replaceAll("\\s+", " ").trim();
+    }
+
+    private String normalizeDisplayArea(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        return value.trim().replaceAll("\\s+", " ");
+    }
+
+    private String normalizeAreaName(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        return value.replaceAll("\\s+", "").trim().toLowerCase();
     }
 
     private List<String> dedupStrings(List<String> values) {
@@ -383,6 +474,8 @@ public class KakaoPlaceRecommendationService {
 
             int score = score(doc, intent, detailArea, neighborhood, district, aliasQueryHint, aliasTargetParent);
 
+            log.debug("[DOC PASS] name={}, address={}, score={}", name, address, score);
+
             scoredPlaces.add(new ScoredPlace(name, address, placeUrl, category, score));
         }
 
@@ -437,38 +530,41 @@ public class KakaoPlaceRecommendationService {
                 + (addressName == null ? "" : addressName) + " "
                 + (name == null ? "" : name)).toLowerCase();
 
-        if (StringUtils.hasText(destination) && !containsLooseRegion(merged, destination)) {
+        boolean destinationMatch = !StringUtils.hasText(destination) || containsLooseRegion(merged, destination);
+        boolean detailMatch = !StringUtils.hasText(detailArea) || containsLooseRegion(merged, detailArea);
+        boolean neighborhoodMatch = !StringUtils.hasText(neighborhood) || containsLooseRegion(merged, neighborhood);
+        boolean districtMatch = !StringUtils.hasText(district) || isCityOrCounty(district) || containsLooseRegion(merged, district);
+        boolean aliasHintMatch = !StringUtils.hasText(aliasQueryHint) || containsLooseRegion(merged, aliasQueryHint);
+        boolean aliasParentMatch = !StringUtils.hasText(aliasTargetParent) || containsLooseRegion(merged, aliasTargetParent);
+
+        log.debug("[LOCATION CHECK] name={}, merged={}, destinationMatch={}, detailMatch={}, neighborhoodMatch={}, districtMatch={}, aliasHintMatch={}, aliasParentMatch={}",
+                name, merged, destinationMatch, detailMatch, neighborhoodMatch, districtMatch, aliasHintMatch, aliasParentMatch);
+
+        if (!destinationMatch) {
             return false;
         }
 
-        boolean hasNarrowingCondition =
-                StringUtils.hasText(detailArea)
-                        || StringUtils.hasText(neighborhood)
-                        || (StringUtils.hasText(district) && !isCityOrCounty(district))
-                        || StringUtils.hasText(aliasQueryHint)
-                        || StringUtils.hasText(aliasTargetParent);
-
-        if (StringUtils.hasText(detailArea) && containsLooseRegion(merged, detailArea)) {
-            return true;
+        if (StringUtils.hasText(detailArea)) {
+            return detailMatch;
         }
 
-        if (StringUtils.hasText(neighborhood) && containsLooseRegion(merged, neighborhood)) {
-            return true;
+        if (StringUtils.hasText(neighborhood)) {
+            return neighborhoodMatch;
         }
 
-        if (StringUtils.hasText(district) && !isCityOrCounty(district) && containsLooseRegion(merged, district)) {
-            return true;
+        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
+            return districtMatch;
         }
 
-        if (StringUtils.hasText(aliasQueryHint) && containsLooseRegion(merged, aliasQueryHint)) {
-            return true;
+        if (StringUtils.hasText(aliasQueryHint)) {
+            return aliasHintMatch;
         }
 
-        if (StringUtils.hasText(aliasTargetParent) && containsLooseRegion(merged, aliasTargetParent)) {
-            return true;
+        if (StringUtils.hasText(aliasTargetParent)) {
+            return aliasParentMatch;
         }
 
-        return !hasNarrowingCondition;
+        return true;
     }
 
     private int score(JsonNode doc,
@@ -581,19 +677,19 @@ public class KakaoPlaceRecommendationService {
                                            String district,
                                            String aliasQueryHint) {
         if (StringUtils.hasText(detailArea)) {
-            return joinLocation(destination, detailArea);
+            return joinDistinctLocation(destination, detailArea);
         }
 
         if (StringUtils.hasText(neighborhood)) {
-            return joinLocation(destination, neighborhood);
+            return joinDistinctLocation(destination, neighborhood);
         }
 
         if (StringUtils.hasText(aliasQueryHint)) {
-            return joinLocation(destination, aliasQueryHint);
+            return joinDistinctLocation(destination, aliasQueryHint);
         }
 
         if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            return joinLocation(destination, district);
+            return joinDistinctLocation(destination, district);
         }
 
         return destination;
@@ -646,7 +742,9 @@ public class KakaoPlaceRecommendationService {
         }
 
         String strippedKeyword = stripRegionSuffixForLooseMatch(normalizedKeyword);
-        return StringUtils.hasText(strippedKeyword) && normalizedValue.contains(strippedKeyword);
+        return StringUtils.hasText(strippedKeyword)
+                && strippedKeyword.length() >= 2
+                && normalizedValue.contains(strippedKeyword);
     }
 
     private String stripRegionSuffixForLooseMatch(String value) {
