@@ -1,5 +1,8 @@
 package com.fiveguys.trip_planner.service;
 
+
+import com.fiveguys.trip_planner.dto.ExpenseRequestDto;
+import com.fiveguys.trip_planner.dto.ExpenseResponseDto;
 import com.fiveguys.trip_planner.response.ExpenseSummaryResponse;
 import com.fiveguys.trip_planner.entity.*;
 import com.fiveguys.trip_planner.repository.*;
@@ -10,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +21,7 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final BudgetRepository budgetRepository;
+    private final TripPlanRepository tripPlanRepository;
 
     @Transactional(readOnly = true)
     public ExpenseSummaryResponse getBudgetAnalysis(Long tripPlanId) {
@@ -61,6 +66,60 @@ public class ExpenseService {
                 .remainingBudget(remainingBudget)
                 .planVsActualGap(planVsActualGap)
                 .budgetUsagePercentage(usagePercentage)
+                .build();
+    }
+
+    @Transactional
+    public List<ExpenseResponseDto> getExpensesByTripId(Long tripId) {
+        List<Expense> expenses = expenseRepository.findByTripPlanId(tripId);
+        return expenses.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public ExpenseResponseDto createExpense(Long tripId, ExpenseRequestDto requestDto) {
+        TripPlan tripPlan = tripPlanRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 여행 계획을 찾을 수 없습니다."));
+
+        Expense expense = Expense.builder()
+                .tripPlan(tripPlan)
+                .amount(requestDto.getAmount())
+                .category(requestDto.getCategory())
+                .description(requestDto.getDescription())
+                .build();
+
+        Expense savedExpense = expenseRepository.save(expense);
+        return convertToDto(savedExpense);
+    }
+
+    @Transactional
+    public ExpenseResponseDto updateExpense(Long expenseId, ExpenseRequestDto requestDto) {
+        Expense expense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 경비 내역을 찾을 수 없습니다."));
+
+        expense.update(
+                requestDto.getAmount(),
+                requestDto.getCategory(),
+                requestDto.getDescription()
+        );
+
+        return convertToDto(expense);
+    }
+
+    @Transactional
+    public void deleteExpense(Long expenseId) {
+        Expense expense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 경비 내역을 찾을 수 없습니다."));
+        expenseRepository.delete(expense);
+    }
+
+    private ExpenseResponseDto convertToDto(Expense expense) {
+        return ExpenseResponseDto.builder()
+                .id(expense.getId())
+                .amount(expense.getAmount())
+                .category(expense.getCategory())
+                .description(expense.getCategory())
                 .build();
     }
 }

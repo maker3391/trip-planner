@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.text.Normalizer;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -20,39 +20,215 @@ public class RegionAliasResolverService {
 
     public ResolvedAlias resolve(String message, String resolvedCity) {
         String normalizedMessage = normalize(message);
+        List<String> tokens = tokenize(message);
         String normalizedCity = normalize(resolvedCity);
 
-        List<RegionAliasRecord> candidates = regionAliasCsvLoader.getAliasRecords().stream()
-                .filter(record -> StringUtils.hasText(record.getAlias()))
-                .filter(record -> normalizedMessage.contains(normalize(record.getAlias())))
-                .filter(record -> {
-                    if (!StringUtils.hasText(record.getCity())) {
-                        return true;
-                    }
-                    if (!StringUtils.hasText(normalizedCity)) {
-                        return true;
-                    }
-                    return normalize(record.getCity()).equals(normalizedCity);
-                })
-                .sorted(Comparator
-                        .comparingInt(RegionAliasRecord::getPriority).reversed()
-                        .thenComparingInt((RegionAliasRecord record) -> record.getAlias().length()).reversed())
-                .toList();
+        List<AliasCandidate> candidates = new ArrayList<>();
+
+        for (RegionAliasRecord record : regionAliasCsvLoader.getAliasRecords()) {
+            if (!StringUtils.hasText(record.getAlias())) {
+                continue;
+            }
+
+            if (!matchesAlias(normalizedMessage, tokens, record.getAlias())) {
+                continue;
+            }
+
+            if (!isCityMatched(record.getCity(), normalizedCity)) {
+                continue;
+            }
+
+            int specificity = computeSpecificityScore(record, normalizedMessage, tokens);
+            candidates.add(new AliasCandidate(record, specificity));
+        }
 
         if (candidates.isEmpty()) {
             return null;
         }
 
-        RegionAliasRecord best = candidates.get(0);
+        AliasCandidate best = null;
+        for (AliasCandidate candidate : candidates) {
+            if (best == null || compare(candidate, best) > 0) {
+                best = candidate;
+            }
+        }
+
+        RegionAliasRecord selected = best.record();
 
         return new ResolvedAlias(
-                best.getAlias(),
-                best.getCity(),
-                best.getTargetLevel(),
-                best.getTargetName(),
-                best.getTargetParent(),
-                best.getQueryHint()
+                selected.getAlias(),
+                selected.getCity(),
+                selected.getTargetLevel(),
+                selected.getTargetName(),
+                selected.getTargetParent(),
+                selected.getQueryHint()
         );
+    }
+
+    private int compare(AliasCandidate a, AliasCandidate b) {
+        if (a.specificityScore() != b.specificityScore()) {
+            return Integer.compare(a.specificityScore(), b.specificityScore());
+        }
+
+        if (a.record().getPriority() != b.record().getPriority()) {
+            return Integer.compare(a.record().getPriority(), b.record().getPriority());
+        }
+
+        int aAliasLen = safeLength(a.record().getAlias());
+        int bAliasLen = safeLength(b.record().getAlias());
+        if (aAliasLen != bAliasLen) {
+            return Integer.compare(aAliasLen, bAliasLen);
+        }
+
+        int aTargetLen = safeLength(a.record().getTargetName());
+        int bTargetLen = safeLength(b.record().getTargetName());
+        if (aTargetLen != bTargetLen) {
+            return Integer.compare(aTargetLen, bTargetLen);
+        }
+
+        int aParentLen = safeLength(a.record().getTargetParent());
+        int bParentLen = safeLength(b.record().getTargetParent());
+        return Integer.compare(aParentLen, bParentLen);
+    }
+
+    private int computeSpecificityScore(RegionAliasRecord record,
+                                        String normalizedMessage,
+                                        List<String> tokens) {
+        int score = 0;
+
+        String alias = normalize(record.getAlias());
+        String city = normalize(record.getCity());
+        String targetName = normalize(record.getTargetName());
+        String targetParent = normalize(record.getTargetParent());
+        String hint = normalize(record.getQueryHint());
+
+        if (tokens.contains(alias)) {
+            score += 100;
+        } else if (containsTokenPrefix(tokens, alias)) {
+            score += 80;
+        } else if (containsPhrase(normalizedMessage, alias)) {
+            score += 60;
+        }
+
+        if (StringUtils.hasText(targetName)) {
+            score += 25;
+        }
+
+        if (StringUtils.hasText(targetParent)) {
+            score += 15;
+        }
+
+        if (StringUtils.hasText(hint)) {
+            score += 10;
+        }
+
+        if (StringUtils.hasText(city)) {
+            score += 5;
+        }
+
+        score += safeLength(record.getAlias()) * 3;
+        score += safeLength(record.getTargetName()) * 2;
+        score += safeLength(record.getTargetParent());
+
+        if (isBroadAlias(record)) {
+            score -= 30;
+        }
+
+        return score;
+    }
+
+    private boolean isBroadAlias(RegionAliasRecord record) {
+        String city = normalize(record.getCity());
+        String targetName = normalize(record.getTargetName());
+        String hint = normalize(record.getQueryHint());
+
+        return StringUtils.hasText(city)
+                && city.equals(targetName)
+                && city.equals(hint);
+    }
+
+    private boolean matchesAlias(String normalizedMessage, List<String> tokens, String alias) {
+        String normalizedAlias = normalize(alias);
+
+        if (!StringUtils.hasText(normalizedAlias)) {
+            return false;
+        }
+
+        if (tokens.contains(normalizedAlias)) {
+            return true;
+        }
+
+        if (containsTokenPrefix(tokens, normalizedAlias)) {
+            return true;
+        }
+
+        return containsPhrase(normalizedMessage, normalizedAlias);
+    }
+
+    private boolean containsTokenPrefix(List<String> tokens, String alias) {
+        for (String token : tokens) {
+            if (alias.length() >= 2 && token.startsWith(alias)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsPhrase(String normalizedMessage, String alias) {
+        String paddedMessage = " " + normalizedMessage + " ";
+        String paddedAlias = " " + alias + " ";
+        return paddedMessage.contains(paddedAlias);
+    }
+
+    private boolean isCityMatched(String aliasCity, String resolvedCity) {
+        if (!StringUtils.hasText(aliasCity)) {
+            return true;
+        }
+
+        if (!StringUtils.hasText(resolvedCity)) {
+            return false;
+        }
+
+        String normalizedAliasCity = normalize(aliasCity);
+        String normalizedResolvedCity = normalize(resolvedCity);
+
+        if (normalizedAliasCity.equals(normalizedResolvedCity)) {
+            return true;
+        }
+
+        String strippedAliasCity = stripSuffix(normalizedAliasCity);
+        String strippedResolvedCity = stripSuffix(normalizedResolvedCity);
+
+        return StringUtils.hasText(strippedAliasCity)
+                && StringUtils.hasText(strippedResolvedCity)
+                && strippedAliasCity.equals(strippedResolvedCity);
+    }
+
+    private List<String> tokenize(String value) {
+        String normalized = normalize(value);
+        if (!StringUtils.hasText(normalized)) {
+            return List.of();
+        }
+
+        List<String> result = new ArrayList<>();
+        for (String token : normalized.split("\\s+")) {
+            if (StringUtils.hasText(token)) {
+                result.add(token);
+            }
+        }
+        return result;
+    }
+
+    private int safeLength(String value) {
+        return value == null ? 0 : normalize(value).length();
+    }
+
+    private String stripSuffix(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+
+        return value.replaceAll("(특별자치도|특별자치시|광역시|특별시|시|군|구|동|읍|면|리)$", "").trim();
     }
 
     private String normalize(String value) {
@@ -62,8 +238,12 @@ public class RegionAliasResolverService {
 
         return Normalizer.normalize(value, Normalizer.Form.NFKC)
                 .toLowerCase(Locale.ROOT)
-                .replaceAll("\\s+", "")
+                .replaceAll("[^가-힣a-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
                 .trim();
+    }
+
+    private record AliasCandidate(RegionAliasRecord record, int specificityScore) {
     }
 
     public static class ResolvedAlias {

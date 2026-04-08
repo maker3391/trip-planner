@@ -1,18 +1,17 @@
 /* 1. 전체 레이아웃 (본문 확장형) */
 .community-page {
     max-width: 1200px;
-    margin: 40px auto;
-    margin-top: 80px;
+    margin: 80px auto 40px auto;
     padding: 0 20px;
     font-family: 'Noto Sans KR', -apple-system, sans-serif;
     color: #333;
 }
 
 .community-container {
-    margin-top: 20px;
     display: flex;
     gap: 40px;
     align-items: flex-start;
+    margin-top: 20px;
 }
 
 /* 2. 사이드바 스타일 (슬림화) */
@@ -50,7 +49,8 @@
     color: #666;
 }
 
-.sidebar-section li:hover, .sidebar-section li.active {
+.sidebar-section li:hover,
+.sidebar-section li.active {
     background-color: #fffdf5;
     color: #ffc107;
     font-weight: 600;
@@ -180,10 +180,10 @@
     background-color: #fff;
 }
 
-.board-header-row, .board-item-row {
+.board-header-row,
+.board-item-row {
     display: grid;
-    /* 번호, 여정, 제목, 작성자, 날짜, 조회, 추천 */
-    grid-template-columns: 60px 120px 1fr 130px 100px 70px 60px;
+    grid-template-columns: 60px 120px 1fr 130px 100px 70px 60px; /* 번호, 여정, 제목, 작성자, 날짜, 조회, 추천 */
     align-items: center;
     padding: 15px 0;
     text-align: center;
@@ -241,6 +241,15 @@
     margin: 0 10px;
 }
 
+.col-author {
+    font-size: 14px;
+    color: #444;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* 푸터 및 글쓰기 버튼 */
 .community-footer {
     display: flex;
@@ -266,7 +275,10 @@
     transform: translateY(-1px);
 }
 
-.col-stats, .col-author, .col-date, .col-views {
+.col-stats,
+.col-author,
+.col-date,
+.col-views {
     color: #888;
     font-size: 14px;
 }
@@ -276,4 +288,12 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
+}
+
+/* 게시글 없음 메시지 */
+.board-body .no-posts {
+    text-align: center;
+    color: #aaa;
+    padding: 40px 0;
+    font-size: 14px;
 }

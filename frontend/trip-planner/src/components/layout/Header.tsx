@@ -25,12 +25,23 @@ export default function Header() {
   const handleTripListClick = () => {
     if (!isLoggedIn) {
       alert("로그인 후 이용 가능합니다.");
+      localStorage.setItem("isLoggedIn","false");
       navigate("/login");
       return;
     }
 
     navigate("/trip-list");
   };
+
+  const handleCommunityClick = () => {
+    if (!isLoggedIn) {
+      alert("로그인 후 이용 가능합니다.");
+      localStorage.setItem("isLoggedIn","false");
+      navigate("/login");
+      return;
+    }
+    navigate("/community");
+  }
 
   return (
     <>
@@ -43,7 +54,7 @@ export default function Header() {
           <nav className="header-nav">
             <span onClick={() => navigate("/")}>여행 계획</span>
             <span onClick={handleTripListClick}>여행 목록</span>
-            <span>친구 찾기</span>
+            <span onClick={handleCommunityClick}>게시판</span>
             <span onClick={() => setOpenTutorial(true)}>도움말</span>
           </nav>
 

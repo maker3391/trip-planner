@@ -43,6 +43,9 @@ public class TripPlanService {
                 schedule.setEndTime(scheduleRequestDto.getEndTime());
                 schedule.setMemo(scheduleRequestDto.getMemo());
                 schedule.setEstimatedStayMinutes(scheduleRequestDto.getEstimatedStayMinutes());
+                schedule.setPinColor(scheduleRequestDto.getPinColor());
+                schedule.setSelectedPinColor(scheduleRequestDto.getSelectedPinColor());
+                schedule.setLineColor(scheduleRequestDto.getLineColor());
 
                 if(scheduleRequestDto.getGooglePlaceId() != null) {
                     Place place = placeRepository.findByExternalPlaceId(scheduleRequestDto.getGooglePlaceId())
@@ -98,14 +101,16 @@ public class TripPlanService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        tripPlan.setTitle(requestDto.getTitle());
-        tripPlan.setDestination(requestDto.getDestination());
-        tripPlan.setStartDate(requestDto.getStartDate());
-        tripPlan.setEndDate(requestDto.getEndDate());
+        if (requestDto.getTitle() != null) tripPlan.setTitle(requestDto.getTitle());
+        if (requestDto.getDestination() != null) tripPlan.setDestination(requestDto.getDestination());
+        if (requestDto.getStartDate() != null) tripPlan.setStartDate(requestDto.getStartDate());
+        if (requestDto.getEndDate() != null) tripPlan.setEndDate(requestDto.getEndDate());
+        if (requestDto.getStatus() != null) tripPlan.setStatus(requestDto.getStatus());
 
-        tripPlan.getSchedules().clear();
 
         if(requestDto.getSchedules() != null) {
+            tripPlan.getSchedules().clear();
+
             for(TripScheduleRequestDto scheduleRequestDto : requestDto.getSchedules()) {
                 TripSchedule schedule = new TripSchedule();
                 schedule.setTripPlan(tripPlan);
@@ -116,6 +121,9 @@ public class TripPlanService {
                 schedule.setEndTime(scheduleRequestDto.getEndTime());
                 schedule.setMemo(scheduleRequestDto.getMemo());
                 schedule.setEstimatedStayMinutes(scheduleRequestDto.getEstimatedStayMinutes());
+                schedule.setPinColor(scheduleRequestDto.getPinColor());
+                schedule.setSelectedPinColor(scheduleRequestDto.getSelectedPinColor());
+                schedule.setLineColor(scheduleRequestDto.getLineColor());
 
                 if(scheduleRequestDto.getGooglePlaceId() != null) {
                     Place place = placeRepository.findByExternalPlaceId(scheduleRequestDto.getGooglePlaceId())
@@ -130,7 +138,6 @@ public class TripPlanService {
                             });
                     schedule.setPlace(place);
                 }
-
                 tripPlan.getSchedules().add(schedule);
             }
         }

@@ -1,5 +1,6 @@
 package com.fiveguys.trip_planner.service;
 
+import com.fiveguys.trip_planner.dto.ItineraryRequestContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -32,19 +33,19 @@ public class RecommendationCacheKeyGenerator {
         String intent = intentResolverService.resolve(message);
         RegionResolverService.ResolvedRegion resolvedRegion = regionResolverService.resolve(message);
 
-        String destination = resolvedRegion.getCity();
+        String destination = resolveEffectiveDestination(
+                resolvedRegion.getCity(),
+                resolvedRegion.getDistrict()
+        );
+
         String district = resolvedRegion.getDistrict();
         String neighborhood = resolvedRegion.getNeighborhood();
         String detailArea = resolvedRegion.getDetailName();
 
-        if (!StringUtils.hasText(destination) && StringUtils.hasText(district)) {
-            destination = district;
-        }
-
         Integer days = resolveDays(normalizedMessage);
         String subtype = resolveSubtype(intent, normalizedMessage);
 
-        StringBuilder key = new StringBuilder("recommendation:v4");
+        StringBuilder key = new StringBuilder("recommendation:v10");
         key.append(":").append(intent);
         key.append(":").append(safeSegment(destination));
 
@@ -65,6 +66,69 @@ public class RecommendationCacheKeyGenerator {
         }
 
         return key.toString();
+    }
+
+    public String generatePlaceKey(String intent,
+                                   String destination,
+                                   String detailArea,
+                                   String neighborhood,
+                                   String district,
+                                   String aliasQueryHint,
+                                   String rawAreaHint,
+                                   String message) {
+        String subtype = resolveSubtype(intent, normalize(message));
+
+        StringBuilder key = new StringBuilder("recommendation:v11");
+        key.append(":").append(intent);
+        key.append(":").append(safeSegment(destination));
+
+        String specificArea = firstNonBlank(
+                detailArea,
+                neighborhood,
+                aliasQueryHint,
+                rawAreaHint,
+                isCityOrCounty(district) ? null : district
+        );
+
+        if (StringUtils.hasText(specificArea)) {
+            key.append(":").append(safeSegment(specificArea));
+        }
+
+        if (StringUtils.hasText(subtype)) {
+            key.append(":").append(subtype);
+        }
+
+        return key.toString();
+    }
+
+    public String generate(ItineraryRequestContext context) {
+        StringBuilder key = new StringBuilder("recommendation:v13");
+        key.append(":TRAVEL_ITINERARY");
+        key.append(":").append(safeSegment(context.getDestination()));
+        key.append(":").append(safeSegment(context.getDetailArea()));
+        key.append(":").append(context.getDays() == null ? "unknown" : context.getDays());
+        return key.toString();
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (StringUtils.hasText(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String resolveEffectiveDestination(String destination, String district) {
+        if (isCityOrCounty(district)) {
+            return district;
+        }
+        return destination;
+    }
+
+    private boolean isCityOrCounty(String value) {
+        return StringUtils.hasText(value)
+                && (value.endsWith("시") || value.endsWith("군"));
     }
 
     private String resolveSubtype(String intent, String message) {
