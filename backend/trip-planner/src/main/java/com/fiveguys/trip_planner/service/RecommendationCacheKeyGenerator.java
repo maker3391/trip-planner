@@ -44,7 +44,7 @@ public class RecommendationCacheKeyGenerator {
         Integer days = resolveDays(normalizedMessage);
         String subtype = resolveSubtype(intent, normalizedMessage);
 
-        StringBuilder key = new StringBuilder("recommendation:v7");
+        StringBuilder key = new StringBuilder("recommendation:v10");
         key.append(":").append(intent);
         key.append(":").append(safeSegment(destination));
 

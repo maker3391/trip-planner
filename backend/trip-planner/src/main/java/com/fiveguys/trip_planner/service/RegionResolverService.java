@@ -39,11 +39,20 @@ public class RegionResolverService {
         }
 
         if (!StringUtils.hasText(resolvedCity)) {
-            if (StringUtils.hasText(resolvedDistrict) && isCityOrCounty(resolvedDistrict)) {
-                resolvedCity = resolvedDistrict;
-            } else if (neighborhood != null && StringUtils.hasText(neighborhood.getCity())) {
+            if (StringUtils.hasText(resolvedDistrict)) {
+                String districtHead = extractSigHead(resolvedDistrict);
+                if (isCityOrCounty(districtHead)) {
+                    resolvedCity = districtHead;
+                } else if (isCityOrCounty(resolvedDistrict)) {
+                    resolvedCity = resolvedDistrict;
+                }
+            }
+
+            if (!StringUtils.hasText(resolvedCity) && neighborhood != null && StringUtils.hasText(neighborhood.getCity())) {
                 resolvedCity = neighborhood.getCity();
-            } else if (StringUtils.hasText(provinceName)) {
+            }
+
+            if (!StringUtils.hasText(resolvedCity) && StringUtils.hasText(provinceName)) {
                 resolvedCity = provinceName;
             }
         }
@@ -55,14 +64,6 @@ public class RegionResolverService {
                     provinceName
             );
             if (verified == null) {
-                resolvedNeighborhood = "";
-            }
-        }
-
-        if (StringUtils.hasText(resolvedDistrict) && isDistrictOnly(resolvedDistrict) && StringUtils.hasText(provinceName)) {
-            RegionRecord verifiedDistrict = findDistrictByNameAndProvince(resolvedDistrict, provinceName);
-            if (verifiedDistrict == null) {
-                resolvedDistrict = "";
                 resolvedNeighborhood = "";
             }
         }
@@ -86,28 +87,41 @@ public class RegionResolverService {
                 continue;
             }
 
-            String name = region.getName();
-            String normalizedName = normalize(name);
-            String strippedName = stripSuffix(normalizedName);
-
             if ("CTPRVN".equals(region.getLevel())) {
-                if (tokens.contains(normalizedName)
-                        || (StringUtils.hasText(strippedName) && tokens.contains(strippedName))
-                        || isExactPhraseHit(normalizedMessage, normalizedName)) {
+                if (matchesTopLevel(tokens, normalizedMessage, region.getName())) {
                     return true;
                 }
+                continue;
             }
 
-            if ("SIG".equals(region.getLevel()) && isCityOrCounty(name)) {
-                if (tokens.contains(normalizedName)
-                        || (StringUtils.hasText(strippedName) && tokens.contains(strippedName))
-                        || isExactPhraseHit(normalizedMessage, normalizedName)) {
+            if ("SIG".equals(region.getLevel())) {
+                if (matchesTopLevel(tokens, normalizedMessage, region.getName())) {
+                    return true;
+                }
+
+                String sigHead = extractSigHead(region.getName());
+                if (StringUtils.hasText(sigHead) && matchesTopLevel(tokens, normalizedMessage, sigHead)) {
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    private boolean matchesTopLevel(List<String> tokens, String normalizedMessage, String regionName) {
+        String normalizedName = normalize(regionName);
+        String strippedName = stripSuffix(normalizedName);
+
+        if (tokens.contains(normalizedName)) {
+            return true;
+        }
+
+        if (StringUtils.hasText(strippedName) && tokens.contains(strippedName)) {
+            return true;
+        }
+
+        return isExactPhraseHit(normalizedMessage, normalizedName);
     }
 
     private RegionRecord findBestProvince(String normalizedMessage, List<String> tokens) {
@@ -155,6 +169,11 @@ public class RegionResolverService {
         }
 
         String districtName = district.getName();
+        String districtHead = extractSigHead(districtName);
+
+        if (isCityOrCounty(districtHead)) {
+            return districtHead;
+        }
 
         if (isCityOrCounty(districtName)) {
             return districtName;
@@ -165,26 +184,6 @@ public class RegionResolverService {
         }
 
         return provinceName;
-    }
-
-    private RegionRecord findDistrictByNameAndProvince(String districtName, String provinceName) {
-        for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
-            if (!"SIG".equals(region.getLevel())) {
-                continue;
-            }
-
-            if (!normalize(region.getName()).equals(normalize(districtName))) {
-                continue;
-            }
-
-            if (StringUtils.hasText(provinceName) && !normalize(region.getCity()).equals(normalize(provinceName))) {
-                continue;
-            }
-
-            return region;
-        }
-
-        return null;
     }
 
     private RegionRecord findNeighborhoodByNameAndParentAndProvince(String neighborhoodName,
@@ -199,11 +198,11 @@ public class RegionResolverService {
                 continue;
             }
 
-            if (StringUtils.hasText(parentName) && !normalize(region.getParent()).equals(normalize(parentName))) {
+            if (StringUtils.hasText(parentName) && !isSameAreaName(region.getParent(), parentName)) {
                 continue;
             }
 
-            if (StringUtils.hasText(provinceName) && !normalize(region.getCity()).equals(normalize(provinceName))) {
+            if (StringUtils.hasText(provinceName) && !isSameAreaName(region.getCity(), provinceName)) {
                 continue;
             }
 
@@ -225,11 +224,11 @@ public class RegionResolverService {
                 continue;
             }
 
-            if (StringUtils.hasText(cityFilter) && !normalize(region.getCity()).equals(normalize(cityFilter))) {
+            if (StringUtils.hasText(cityFilter) && !isSameAreaName(region.getCity(), cityFilter)) {
                 continue;
             }
 
-            if (StringUtils.hasText(parentFilter) && !normalize(region.getParent()).equals(normalize(parentFilter))) {
+            if (StringUtils.hasText(parentFilter) && !isSameAreaName(region.getParent(), parentFilter)) {
                 continue;
             }
 
@@ -250,55 +249,130 @@ public class RegionResolverService {
         String normalizedName = normalize(region.getName());
         String strippedName = stripSuffix(normalizedName);
 
-        if ("CTPRVN".equals(level) || "SIG".equals(level)) {
-            if (tokens.contains(normalizedName)) {
+        if ("CTPRVN".equals(level)) {
+            return tokens.contains(normalizedName)
+                    || (StringUtils.hasText(strippedName) && tokens.contains(strippedName))
+                    || isExactPhraseHit(normalizedMessage, normalizedName);
+        }
+
+        if ("SIG".equals(level)) {
+            if (tokens.contains(normalizedName)
+                    || (StringUtils.hasText(strippedName) && tokens.contains(strippedName))
+                    || isExactPhraseHit(normalizedMessage, normalizedName)) {
                 return true;
             }
 
-            if (StringUtils.hasText(strippedName) && tokens.contains(strippedName)) {
-                return true;
-            }
+            String sigHead = extractSigHead(region.getName());
+            if (StringUtils.hasText(sigHead)) {
+                String normalizedHead = normalize(sigHead);
+                String strippedHead = stripSuffix(normalizedHead);
 
-            return isExactPhraseHit(normalizedMessage, normalizedName);
+                return tokens.contains(normalizedHead)
+                        || (StringUtils.hasText(strippedHead) && tokens.contains(strippedHead))
+                        || isExactPhraseHit(normalizedMessage, normalizedHead);
+            }
         }
 
         if ("EMD".equals(level)) {
-            if (tokens.contains(normalizedName)) {
+            if (tokens.contains(normalizedName) || isExactPhraseHit(normalizedMessage, normalizedName)) {
                 return true;
             }
 
-            return isExactPhraseHit(normalizedMessage, normalizedName);
+            String strippedOnly = stripSuffix(normalizedName);
+            return StringUtils.hasText(strippedOnly)
+                    && strippedOnly.length() >= 2
+                    && tokens.contains(strippedOnly)
+                    && !looksLikeBroadAmbiguousArea(strippedOnly);
         }
 
         return false;
     }
 
     private int matchScore(String normalizedMessage, List<String> tokens, RegionRecord region) {
+        int score = 0;
+
         String normalizedName = normalize(region.getName());
         String strippedName = stripSuffix(normalizedName);
-        int score = 0;
 
         if (tokens.contains(normalizedName)) {
             score += 100;
         }
 
-        if (!"EMD".equals(region.getLevel()) && StringUtils.hasText(strippedName) && tokens.contains(strippedName)) {
-            score += 70;
+        if ("SIG".equals(region.getLevel()) || "CTPRVN".equals(region.getLevel())) {
+            if (StringUtils.hasText(strippedName) && tokens.contains(strippedName)) {
+                score += 70;
+            }
+        }
+
+        if ("EMD".equals(region.getLevel())) {
+            if (StringUtils.hasText(strippedName)
+                    && strippedName.length() >= 2
+                    && tokens.contains(strippedName)
+                    && !looksLikeBroadAmbiguousArea(strippedName)) {
+                score += 35;
+            }
         }
 
         if (isExactPhraseHit(normalizedMessage, normalizedName)) {
             score += 20;
         }
 
+        if ("SIG".equals(region.getLevel())) {
+            String sigHead = extractSigHead(region.getName());
+            if (StringUtils.hasText(sigHead)) {
+                String normalizedHead = normalize(sigHead);
+                String strippedHead = stripSuffix(normalizedHead);
+
+                if (tokens.contains(normalizedHead)) {
+                    score += 80;
+                }
+
+                if (StringUtils.hasText(strippedHead) && tokens.contains(strippedHead)) {
+                    score += 55;
+                }
+
+                if (isExactPhraseHit(normalizedMessage, normalizedHead)) {
+                    score += 18;
+                }
+            }
+        }
+
         if (StringUtils.hasText(region.getParent()) && tokens.contains(normalize(region.getParent()))) {
             score += 12;
         }
 
-        if (StringUtils.hasText(region.getCity()) && tokens.contains(normalize(region.getCity()))) {
-            score += 10;
+        if (StringUtils.hasText(region.getCity())) {
+            String normalizedCity = normalize(region.getCity());
+            String strippedCity = stripSuffix(normalizedCity);
+
+            if (tokens.contains(normalizedCity)) {
+                score += 10;
+            } else if (StringUtils.hasText(strippedCity) && tokens.contains(strippedCity)) {
+                score += 8;
+            }
         }
 
         return score;
+    }
+
+    private boolean isSameAreaName(String left, String right) {
+        if (!StringUtils.hasText(left) || !StringUtils.hasText(right)) {
+            return false;
+        }
+
+        String normalizedLeft = normalize(left);
+        String normalizedRight = normalize(right);
+
+        if (normalizedLeft.equals(normalizedRight)) {
+            return true;
+        }
+
+        String strippedLeft = stripSuffix(normalizedLeft);
+        String strippedRight = stripSuffix(normalizedRight);
+
+        return StringUtils.hasText(strippedLeft)
+                && StringUtils.hasText(strippedRight)
+                && strippedLeft.equals(strippedRight);
     }
 
     private boolean isExactPhraseHit(String normalizedMessage, String normalizedName) {
@@ -327,17 +401,48 @@ public class RegionResolverService {
         return result;
     }
 
+    private String extractSigHead(String sigName) {
+        if (!StringUtils.hasText(sigName)) {
+            return "";
+        }
+
+        String[] parts = sigName.trim().split("\\s+");
+        if (parts.length == 0) {
+            return "";
+        }
+
+        String first = parts[0];
+        if (first.endsWith("시") || first.endsWith("군") || first.endsWith("구")) {
+            return first;
+        }
+
+        return "";
+    }
+
+    private boolean looksLikeBroadAmbiguousArea(String value) {
+        if (!StringUtils.hasText(value)) {
+            return true;
+        }
+
+        return value.length() <= 1
+                || "중".equals(value)
+                || "서".equals(value)
+                || "동".equals(value)
+                || "남".equals(value)
+                || "북".equals(value);
+    }
+
     private boolean isCityOrCounty(String value) {
         return StringUtils.hasText(value)
                 && (value.endsWith("시") || value.endsWith("군"));
     }
 
-    private boolean isDistrictOnly(String value) {
-        return StringUtils.hasText(value) && value.endsWith("구");
-    }
-
     private String stripSuffix(String value) {
-        return value.replaceAll("(특별자치도|특별자치시|광역시|특별시|시|군|구|동|읍|면|리)$", "");
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+
+        return value.replaceAll("(특별자치도|특별자치시|광역시|특별시|시|군|구|동|읍|면|리)$", "").trim();
     }
 
     private String normalize(String value) {
