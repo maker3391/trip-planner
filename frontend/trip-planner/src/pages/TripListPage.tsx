@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import "./TripListPage.css";
-import { useTrips, useGetTrip, useDeleteTrip } from "../components/hooks/useTrip.ts";
+import {
+  useTrips,
+  useGetTrip,
+  useDeleteTrip,
+} from "../components/hooks/useTrip.ts";
 import { TripPlanResponse } from "../types/trip.ts";
 
 export default function TripListPage() {
@@ -23,6 +27,10 @@ export default function TripListPage() {
     navigate("/", { state: { tripId } });
   };
 
+  const handleCreateTrip = () => {
+    navigate("/");
+  };
+
   const handleSelectTrip = (tripId: number) => {
     setSelectedTripId(tripId);
   };
@@ -32,14 +40,14 @@ export default function TripListPage() {
   };
 
   const handleDeleteTrip = async () => {
-  if (!selectedTripId) return;
+    if (!selectedTripId) return;
 
-  const confirmed = window.confirm("정말 이 여행 계획을 삭제하시겠습니까?");
-  if (!confirmed) return;
+    const confirmed = window.confirm("정말 이 여행 계획을 삭제하시겠습니까?");
+    if (!confirmed) return;
 
-  try {
-    await deleteTripMutation.mutateAsync(selectedTripId);
-    setSelectedTripId(null);
+    try {
+      await deleteTripMutation.mutateAsync(selectedTripId);
+      setSelectedTripId(null);
     } catch (error) {
       console.error(error);
     }
@@ -75,10 +83,20 @@ export default function TripListPage() {
 
         <section className="trip-list-section">
           <div className="trip-list-header">
-            <h2 className="trip-list-section-title">내 여행 계획</h2>
-            <span className="trip-list-count">
-              총 {Array.isArray(tripList) ? tripList.length : 0}개
-            </span>
+            <div className="trip-list-header-left">
+              <h2 className="trip-list-section-title">내 여행 계획</h2>
+              <span className="trip-list-count">
+                총 {Array.isArray(tripList) ? tripList.length : 0}개
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="trip-create-button"
+              onClick={handleCreateTrip}
+            >
+              + 새 여행 계획
+            </button>
           </div>
 
           <div
@@ -92,7 +110,11 @@ export default function TripListPage() {
 
               {Array.isArray(tripList) ? (
                 tripList.length === 0 ? (
-                  <p>아직 작성된 여행 계획이 없습니다.</p>
+                  <div className="trip-empty-state">
+                    <p className="trip-empty-text">
+                      아직 작성된 여행 계획이 없습니다.
+                    </p>
+                  </div>
                 ) : (
                   <div className="trip-list-vertical">
                     {tripList.map((trip: TripPlanResponse) => (
@@ -104,7 +126,9 @@ export default function TripListPage() {
                       >
                         <div className="trip-card-main">
                           <div className="trip-card-top">
-                            <span className="trip-card-tag">{trip.destination}</span>
+                            <span className="trip-card-tag">
+                              {trip.destination}
+                            </span>
                             <span className="trip-card-status">
                               {formatStatus(trip.status)}
                             </span>
@@ -169,7 +193,7 @@ export default function TripListPage() {
                     >
                       {deleteTripMutation.isPending ? "삭제 중..." : "삭제"}
                     </button>
-                    
+
                     <button
                       type="button"
                       className="trip-detail-close"
@@ -231,10 +255,14 @@ export default function TripListPage() {
                     <div className="trip-detail-schedule-section">
                       <h5 className="trip-detail-subtitle">일정 목록</h5>
 
-                      {selectedTrip.schedules && selectedTrip.schedules.length > 0 ? (
+                      {selectedTrip.schedules &&
+                      selectedTrip.schedules.length > 0 ? (
                         <ul className="trip-detail-schedule-list">
                           {selectedTrip.schedules.map((schedule) => (
-                            <li key={schedule.id} className="trip-detail-schedule-item">
+                            <li
+                              key={schedule.id}
+                              className="trip-detail-schedule-item"
+                            >
                               <div className="schedule-item-top">
                                 <strong>
                                   DAY {schedule.dayNumber} · {schedule.title}
@@ -254,7 +282,8 @@ export default function TripListPage() {
                                 <p>
                                   <span>시간</span>
                                   <strong>
-                                    {schedule.startTime || "-"} ~ {schedule.endTime || "-"}
+                                    {schedule.startTime || "-"} ~{" "}
+                                    {schedule.endTime || "-"}
                                   </strong>
                                 </p>
                                 <p>

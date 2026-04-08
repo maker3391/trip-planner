@@ -3,24 +3,22 @@ package com.fiveguys.trip_planner.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiveguys.trip_planner.config.OpenAiProperties;
-import com.fiveguys.trip_planner.dto.RecommendationDraft;
+import com.fiveguys.trip_planner.dto.ItineraryOnlyDraft;
+import com.fiveguys.trip_planner.dto.ItineraryRequestContext;
 import com.fiveguys.trip_planner.exception.LlmCallException;
 import com.fiveguys.trip_planner.service.RecommendationPromptBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
 @Component
 public class OpenAiClient {
-
-    private static final Logger log = LoggerFactory.getLogger(OpenAiClient.class);
 
     private final RestClient restClient;
     private final OpenAiProperties properties;
@@ -37,15 +35,15 @@ public class OpenAiClient {
         this.promptBuilder = promptBuilder;
     }
 
-    public RecommendationDraft generateRecommendationDraft(String userMessage) {
-        try {
-            long start = System.currentTimeMillis();
+    public ItineraryOnlyDraft generateItineraryDayPlans(ItineraryRequestContext context) {
+        return generateItineraryDayPlans(context, false);
+    }
 
-            String prompt = promptBuilder.build(userMessage);
-            log.info("[OPENAI REQUEST] promptLength={}, model={}, maxOutputTokens={}",
-                    prompt.length(),
-                    properties.getModel(),
-                    properties.getMaxOutputTokens());
+    public ItineraryOnlyDraft generateItineraryDayPlans(ItineraryRequestContext context, boolean expandedScope) {
+        try {
+            String prompt = expandedScope
+                    ? promptBuilder.buildExpandedItineraryPrompt(context)
+                    : promptBuilder.buildItineraryPrompt(context);
 
             Map<String, Object> body = Map.of(
                     "model", properties.getModel(),
@@ -67,21 +65,17 @@ public class OpenAiClient {
                     .retrieve()
                     .body(String.class);
 
-            long end = System.currentTimeMillis();
-            log.info("[OPENAI RESPONSE] elapsedMs={}", (end - start));
-
             if (raw == null || raw.isBlank()) {
                 throw new LlmCallException("추천 결과가 비어 있습니다.");
             }
 
-            log.debug("OpenAI raw: {}", raw);
-
             String json = extractJson(raw);
-
-            return objectMapper.readValue(json, RecommendationDraft.class);
+            return objectMapper.readValue(json, ItineraryOnlyDraft.class);
 
         } catch (HttpClientErrorException e) {
             throw new LlmCallException(resolveErrorMessage(e), e);
+        } catch (ResourceAccessException e) {
+            throw new LlmCallException("AI 응답 대기 시간이 초과되었습니다.", e);
         } catch (LlmCallException e) {
             throw e;
         } catch (Exception e) {

@@ -1,69 +1,178 @@
 package com.fiveguys.trip_planner.service;
 
+import com.fiveguys.trip_planner.dto.ItineraryRequestContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Service
 public class RecommendationPromptBuilder {
 
-    private final DetailAreaParsingService detailAreaParsingService;
-
-    public RecommendationPromptBuilder(DetailAreaParsingService detailAreaParsingService) {
-        this.detailAreaParsingService = detailAreaParsingService;
-    }
-
-    public String build(String userMessage) {
-        String detailArea = detailAreaParsingService.extractDetailArea(userMessage);
-        String parentCity = detailAreaParsingService.resolveParentCity(detailArea);
-
-        String detailRule = buildDetailRule(detailArea, parentCity);
+    public String buildItineraryPrompt(ItineraryRequestContext context) {
+        String detailRule = buildDetailRule(context.getDetailArea());
+        String scopeRule = buildScopeRule(context.getDestination());
 
         return """
                 Return JSON only.
 
                 {
-                  "intent": "TRAVEL_ITINERARY",
-                  "destination": "string",
-                  "detailArea": "string or null",
-                  "days": integer,
                   "dayPlans": [
                     {
-                      "day": integer,
+                      "day": 1,
                       "places": ["string", "string"]
                     }
-                  ],
-                  "items": []
+                  ]
                 }
 
                 Rules:
-                - use Korean place names
-                - destination must be in South Korea
-                - intent must be TRAVEL_ITINERARY
-                - if detailed area exists, destination must be the parent city and detailArea must be that area
-                - if no detailed area exists, detailArea must be null
-                - "2박3일" means days=3
-                - dayPlans count must equal days
-                - each day must have 2 to 4 places
-                - items must be []
-                - no markdown
+                - use Korean place names only
+                - output only real place names
+                - each day has exactly 2 places
                 - no explanation
-                """ + detailRule + """
+                - do not use places outside the allowed destination scope
+                """ + scopeRule + detailRule + """
 
-                User:
-                """ + userMessage;
+                Destination:
+                %s
+
+                Days:
+                %d
+                """.formatted(context.getDestination(), context.getDays());
     }
 
-    private String buildDetailRule(String detailArea, String parentCity) {
-        if (!StringUtils.hasText(detailArea) || !StringUtils.hasText(parentCity)) {
+    public String buildExpandedItineraryPrompt(ItineraryRequestContext context) {
+        String detailRule = buildDetailRule(context.getDetailArea());
+        String scopeRule = buildScopeRule(context.getDestination());
+
+        return """
+                Return JSON only.
+
+                {
+                  "dayPlans": [
+                    {
+                      "day": 1,
+                      "places": ["string", "string"]
+                    }
+                  ]
+                }
+
+                Rules:
+                - use Korean place names only
+                - output only real place names
+                - each day has exactly 2 places
+                - no explanation
+                - do not use places outside the allowed destination scope
+                - for small cities or counties, include nearby 읍/면/동 단위 명소 within the same city or county
+                - do not leave any day empty
+                """ + scopeRule + detailRule + """
+
+                Destination:
+                %s
+
+                Days:
+                %d
+                """.formatted(context.getDestination(), context.getDays());
+    }
+
+    private String buildDetailRule(String detailArea) {
+        if (!StringUtils.hasText(detailArea)) {
             return "";
         }
 
         return """
                 
                 Focus area:
-                - parent city: %s
-                - detail area: %s
                 - prioritize places in or near %s
-                """.formatted(parentCity, detailArea, detailArea);
+                """.formatted(detailArea);
+    }
+
+    private String buildScopeRule(String destination) {
+        if (!StringUtils.hasText(destination)) {
+            return "";
+        }
+
+        String compact = destination.replaceAll("\\s+", "");
+
+        if (compact.equals("경상북도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 경상북도
+                    - do not use places in 경상남도, 부산, 대구, 울산, or any other province
+                    """;
+        }
+
+        if (compact.equals("경상남도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 경상남도
+                    - do not use places in 경상북도, 부산, 대구, 울산, or any other province
+                    """;
+        }
+
+        if (compact.equals("전라북도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 전라북도
+                    - do not use places in 전라남도 or any other province
+                    """;
+        }
+
+        if (compact.equals("전라남도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 전라남도
+                    - do not use places in 전라북도 or any other province
+                    """;
+        }
+
+        if (compact.equals("충청북도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 충청북도
+                    - do not use places in 충청남도 or any other province
+                    """;
+        }
+
+        if (compact.equals("충청남도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 충청남도
+                    - do not use places in 충청북도 or any other province
+                    """;
+        }
+
+        if (compact.equals("경상도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 경상북도 or 경상남도
+                    - do not use places outside 경상권
+                    """;
+        }
+
+        if (compact.equals("전라도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 전라북도 or 전라남도
+                    - do not use places outside 전라권
+                    """;
+        }
+
+        if (compact.equals("충청도")) {
+            return """
+                    
+                    Allowed scope:
+                    - use only places in 충청북도 or 충청남도
+                    - do not use places outside 충청권
+                    """;
+        }
+
+        return "";
     }
 }

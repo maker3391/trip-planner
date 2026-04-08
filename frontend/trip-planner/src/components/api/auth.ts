@@ -11,6 +11,18 @@ export interface UserMeResponse {
   status: string;
 }
 
+export interface MessageResponse {
+  message: string;
+}
+
+export interface UpdateMeRequest {
+  name: string;
+  nickname: string;
+  phone: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
 export const getMe = async (): Promise<UserMeResponse> => {
   const token = localStorage.getItem("accessToken");
 
@@ -21,6 +33,18 @@ export const getMe = async (): Promise<UserMeResponse> => {
   const response = await client.get<UserMeResponse>("/auth/me", {
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+};
+
+export const updateMe = async (
+  data: UpdateMeRequest
+): Promise<MessageResponse> => {
+  const response = await client.patch<MessageResponse>("/auth/me", data, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
     },
   });
 
