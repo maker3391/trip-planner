@@ -3,7 +3,6 @@ package com.fiveguys.trip_planner.controller;
 import com.fiveguys.trip_planner.dto.CommunityRequest;
 import com.fiveguys.trip_planner.response.CommunityResponse;
 import com.fiveguys.trip_planner.service.CommunityService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -66,6 +65,13 @@ public class CommunityController {
                     )
             );
         }
+    }
+
+    @GetMapping("/posts/{postId}")
+    public ResponseEntity<?> getPost(
+            @PathVariable("postId") Long postId
+    ) {
+        return ResponseEntity.ok(communityService.getPost(postId));
     }
 
     @PatchMapping("posts/{postId}/view")

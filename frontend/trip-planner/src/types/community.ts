@@ -32,7 +32,8 @@ export interface CommunityRequest {
 // 🔹 게시글 목록/페이징 응답
 export interface CommunityResponse {
     id: string;                 // 게시글 ID
-    route: string;              // 여정
+    category: string;           // 카테고리
+    region: string;             // 지역
     title: string;              // 제목
     content: string;            // 본문
     authorNickname: string;     // 작성자 닉네임

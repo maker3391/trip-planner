@@ -62,6 +62,28 @@ public class CommunityService {
         ).map(CommunityResponse::from);
     }
 
+    public CommunityResponse getPost(Long id) {
+        Community post = communityRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        return CommunityResponse.builder()
+                .id(post.getId())
+                .category(post.getCategory()) // 👈 추가!!
+                .region(post.getRegion())     // 👈 추가!!
+                .title(post.getTitle())
+                .content(post.getContent())
+                .authorNickname(post.getAuthorNickname())
+                .tags(post.getTags())
+                .viewCount(post.getViewCount())
+                .recommendCount(post.getRecommendCount())
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .departure(post.getDeparture())
+                .arrival(post.getArrival())
+                .rating(post.getRating())
+                .build();
+    }
+
     public void viewPost(Long postId) {
         Community community = communityRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
