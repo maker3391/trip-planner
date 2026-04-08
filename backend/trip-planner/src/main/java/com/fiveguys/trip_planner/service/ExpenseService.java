@@ -115,11 +115,6 @@ public class ExpenseService {
     }
 
     private ExpenseResponseDto convertToDto(Expense expense) {
-        return ExpenseResponseDto.builder()
-                .id(expense.getId())
-                .amount(expense.getAmount())
-                .category(expense.getCategory())
-                .description(expense.getCategory())
-                .build();
+        return new ExpenseResponseDto(expense);
     }
 }

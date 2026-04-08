@@ -1,6 +1,5 @@
 package com.fiveguys.trip_planner.entity;
 
-import com.fiveguys.trip_planner.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -53,4 +52,10 @@ public class TripPlan {
 
     @OneToMany(mappedBy = "tripPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TripMember> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "tripPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Expense> expenses = new ArrayList<>();
+
+    @OneToOne(mappedBy = "tripPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Budget budget;
 }

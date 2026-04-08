@@ -17,7 +17,7 @@ export default function MainPage() {
   const [targetTripId, setTargetTripId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tripForm, setTripForm] = useState({ title: "", destination: "", startDate: "", endDate: "" });
-
+  const [calcData, setCalcData] = useState({expenses: [], budget: 0});
   const { data: tripData, isLoading: isTripLoading } = useGetTrip(targetTripId);
   const createTripMutation = useCreateTrip();
   const updateTripMutation = useUpdateTrip(targetTripId);
@@ -49,8 +49,22 @@ export default function MainPage() {
       setPath(recoveredPath);
       setConnections(recoveredPath.map((_, i) => ({ from: i, to: i + 1 })).slice(0, -1));
       setTripForm({ title: tripData.title, destination: tripData.destination, startDate: tripData.startDate, endDate: tripData.endDate });
+      window.dispatchEvent(new CustomEvent('LOAD_CALCULATOR_DATA', {
+        detail: {
+          expenses: tripData.expenses || [],
+          budget: tripData.totalBudget || 0,
+        }
+      }));
     }
   }, [tripData]);
+
+  useEffect(() => {
+    const handleCalcSync = (e: any) => {
+      setCalcData(e.detail);
+    };
+    window.addEventListener('SYNC_CALCULATOR', handleCalcSync);
+    return () => window.removeEventListener('SYNC_CALCULATOR', handleCalcSync);
+  }, []);
 
   // 3. 저장 로직
   const handleSaveToBackend = () => {
@@ -69,13 +83,31 @@ export default function MainPage() {
       description: p.memo
     }));
 
-    const requestData: TripPlanRequest = { ...tripForm, schedules };
+    const expenses = calcData.expenses.map((item: any) => ({
+      amount: item.amount,
+      category: item.category || 'ETC',
+      description: item.description
+    }));
+    const requestData: any = { 
+      ...tripForm,        
+      schedules,          
+      expenses,           
+      totalBudget: calcData.budget
+    };
 
     const mutation = targetTripId ? updateTripMutation : createTripMutation;
+    
     mutation.mutate(requestData, {
       onSuccess: (data: any) => {
-        if (!targetTripId && data?.id) setTargetTripId(data.id);
+        if (!targetTripId && data?.id) {
+          setTargetTripId(data.id);
+        }
         setIsModalOpen(false);
+        alert("여행 계획과 예산이 안전하게 저장되었습니다! 💾");
+      },
+      onError: (error) => {
+        console.error("저장 중 오류 발생:", error);
+        alert("저장에 실패했습니다. 서버 로그를 확인해주세요.");
       }
     });
   };

@@ -1,5 +1,6 @@
 package com.fiveguys.trip_planner.service;
 
+import com.fiveguys.trip_planner.dto.ExpenseRequestDto;
 import com.fiveguys.trip_planner.dto.TripPlanRequestDto;
 import com.fiveguys.trip_planner.dto.TripPlanResponseDto;
 import com.fiveguys.trip_planner.dto.TripScheduleRequestDto;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,6 +64,30 @@ public class TripPlanService {
                 }
                 tripPlan.getSchedules().add(schedule);
             }
+        }
+        if (requestDto.getExpenses() != null) {
+            for (ExpenseRequestDto expenseDto : requestDto.getExpenses()) {
+                Expense expense = new Expense();
+                expense.setTripPlan(tripPlan);
+                expense.setAmount(expenseDto.getAmount());
+                expense.setCategory(expenseDto.getCategory() != null ? expenseDto.getCategory() : "ETC");
+                expense.setDescription(expenseDto.getDescription());
+                expense.setExpenseType("ESTIMATED");
+                expense.setCreatedAt(LocalDateTime.now());
+                expense.setPaidByUser(user);
+
+                tripPlan.getExpenses().add(expense);
+            }
+        }
+
+        if (requestDto.getTotalBudget() != null) {
+            Budget budget = new Budget();
+            budget.setTripPlan(tripPlan);
+            budget.setTotalBudget(requestDto.getTotalBudget());
+            budget.setCurrency(requestDto.getCurrency() != null ? requestDto.getCurrency() : "KRW");
+            budget.setCreatedAt(LocalDateTime.now());
+
+            tripPlan.setBudget(budget);
         }
 
         TripPlan savePlan = tripPlanRepository.save(tripPlan);
@@ -139,6 +165,34 @@ public class TripPlanService {
                     schedule.setPlace(place);
                 }
                 tripPlan.getSchedules().add(schedule);
+            }
+        }
+
+        if (requestDto.getExpenses() != null) {
+            tripPlan.getExpenses().clear();
+            for (ExpenseRequestDto expenseDto : requestDto.getExpenses()) {
+                Expense expense = new Expense();
+                expense.setTripPlan(tripPlan);
+                expense.setAmount(expenseDto.getAmount());
+                expense.setCategory(expenseDto.getCategory() != null ? expenseDto.getCategory() : "ETC");
+                expense.setDescription(expenseDto.getDescription());
+
+                tripPlan.getExpenses().add(expense);
+            }
+        }
+
+        if (requestDto.getTotalBudget() != null) {
+            if (tripPlan.getBudget() != null) {
+                tripPlan.getBudget().setTotalBudget(requestDto.getTotalBudget());
+                tripPlan.getBudget().setUpdatedAt(LocalDateTime.now());
+            } else {
+                Budget budget = new Budget();
+                budget.setTripPlan(tripPlan);
+                budget.setTotalBudget(requestDto.getTotalBudget());
+                budget.setCurrency(requestDto.getCurrency() != null ? requestDto.getCurrency() : "KRW");
+                budget.setCreatedAt(LocalDateTime.now());
+
+                tripPlan.setBudget(budget);
             }
         }
         return new TripPlanResponseDto(tripPlan);
