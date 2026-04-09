@@ -106,5 +106,4 @@ public class Community {
     public void incrementViewCount() {
         this.viewCount++;
     }
-
 }

@@ -15,7 +15,7 @@ const Size = Quill.import("attributors/style/size");
 Size.whitelist = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px", "36px"]; 
 Quill.register(Size, true);
 
-const RATING_ENABLED_CATEGORIES = ["맛집게시판", "사진게시판", "후기게시판"]; 
+const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판"]; 
 const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유", "당일치기 친구 찾기"];
 
 interface UserInfo {
@@ -46,7 +46,14 @@ export default function CommunityWritePage() {
         rating: 0 
     });
 
-    const categories = ["여행플랜 공유", "당일치기 친구 찾기", "자유게시판", "질문게시판", "사진게시판", "맛집게시판", "후기게시판" ];
+    const categories = [
+        "여행플랜 공유",
+        "자유게시판",
+        "질문게시판",
+        "맛집게시판",
+        "후기게시판",
+        "공지게시판",
+    ];
     const regions = ["서울", "경기", "인천", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -62,34 +69,34 @@ export default function CommunityWritePage() {
         setFormData(prev => ({ ...prev, rating: rate }));
     };
 
-    const imageHandler = () => {
-        const input = document.createElement("input");
-        input.setAttribute("type", "file");
-        input.setAttribute("accept", "image/*");
-        input.click();
+    // const imageHandler = () => {
+    //     const input = document.createElement("input");
+    //     input.setAttribute("type", "file");
+    //     input.setAttribute("accept", "image/*");
+    //     input.click();
 
-        input.onchange = async () => {
-            const file = input.files ? input.files[0] : null;
-            if (file) {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    const editor = quillRef.current?.getEditor();
-                    const range = editor?.getSelection();
-                    if (editor && range) {
-                        editor.insertEmbed(range.index, "image", reader.result);
-                        editor.setSelection(range.index + 1, 0);
-                    }
-                };
-            }
-        };
-    };
+    //     input.onchange = async () => {
+    //         const file = input.files ? input.files[0] : null;
+    //         if (file) {
+    //             const reader = new FileReader();
+    //             reader.readAsDataURL(file);
+    //             reader.onload = () => {
+    //                 const editor = quillRef.current?.getEditor();
+    //                 const range = editor?.getSelection();
+    //                 if (editor && range) {
+    //                     editor.insertEmbed(range.index, "image", reader.result);
+    //                     editor.setSelection(range.index + 1, 0);
+    //                 }
+    //             };
+    //         }
+    //     };
+    // };
 
     const modules = useMemo(() => ({
         toolbar: {
             container: "#toolbar", 
             handlers: {
-                image: imageHandler,
+                // image: imageHandler,
             }
         }
     }), []);
@@ -235,10 +242,10 @@ export default function CommunityWritePage() {
                                 <div style={{ width: "1px", height: "20px", backgroundColor: "#eee", margin: "0 5px" }} />
 
                                 {/* 유틸리티: 이미지 및 별점 */}
-                                <button className="ql-image" type="button" style={{ border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                                {/* <button className="ql-image" type="button" style={{ border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
                                     <span style={{ fontSize: "18px" }}>📷</span>
                                     <span style={{ fontSize: "13px", fontWeight: "600", color: "#666" }}>사진 추가</span>
-                                </button>
+                                </button> */}
                             </div>
 
                             <ReactQuill 
