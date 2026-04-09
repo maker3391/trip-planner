@@ -15,11 +15,13 @@ interface UserInfo {
   status?: string;
 }
 
-interface EditForm {
-  email: string;
+interface BasicForm {
   name: string;
   nickname: string;
   phone: string;
+}
+
+interface PasswordForm {
   currentPassword: string;
   newPassword: string;
   newPasswordConfirm: string;
@@ -27,64 +29,71 @@ interface EditForm {
 
 export default function MyPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
-  const [form, setForm] = useState<EditForm>({
-    email: "",
+
+  const [basicForm, setBasicForm] = useState<BasicForm>({
     name: "",
     nickname: "",
     phone: "",
+  });
+
+  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
     currentPassword: "",
     newPassword: "",
     newPasswordConfirm: "",
   });
-  const [isSaving, setIsSaving] = useState(false);
+
+  const [isSavingBasic, setIsSavingBasic] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+
+  const fetchUser = async () => {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token || token === "undefined") {
+      return;
+    }
+
+    try {
+      const userData = await getMe();
+      setUser(userData);
+
+      setBasicForm({
+        name: userData.name || "",
+        nickname: userData.nickname || "",
+        phone: userData.phone || "",
+      });
+    } catch (error) {
+      console.error("마이페이지 사용자 정보 조회 실패:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem("accessToken");
-
-      if (!token || token === "undefined") {
-        return;
-      }
-
-      try {
-        const userData = await getMe();
-        setUser(userData);
-
-        setForm({
-          email: userData.email || "",
-          name: userData.name || "",
-          nickname: userData.nickname || "",
-          phone: userData.phone || "",
-          currentPassword: "",
-          newPassword: "",
-          newPasswordConfirm: "",
-        });
-      } catch (error) {
-        console.error("마이페이지 사용자 정보 조회 실패:", error);
-      }
-    };
-
     fetchUser();
   }, []);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleBasicChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    setForm((prev) => ({
+    setBasicForm((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSave = async () => {
-    if (!user || isSaving) return;
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
 
-    const trimmedName = form.name.trim();
-    const trimmedNickname = form.nickname.trim();
-    const trimmedPhone = form.phone.trim();
+    setPasswordForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-    const hasPasswordInput =
-      !!form.currentPassword || !!form.newPassword || !!form.newPasswordConfirm;
+  const handleSaveBasicInfo = async () => {
+    if (!user || isSavingBasic) return;
+
+    const trimmedName = basicForm.name.trim();
+    const trimmedNickname = basicForm.nickname.trim();
+    const trimmedPhone = basicForm.phone.trim();
 
     if (!trimmedName) {
       alert("이름을 입력해주세요.");
@@ -96,62 +105,82 @@ export default function MyPage() {
       return;
     }
 
-    if (hasPasswordInput) {
-      if (!form.currentPassword) {
-        alert("현재 비밀번호를 입력해주세요.");
-        return;
-      }
-
-      if (!form.newPassword) {
-        alert("새 비밀번호를 입력해주세요.");
-        return;
-      }
-
-      if (!form.newPasswordConfirm) {
-        alert("새 비밀번호 확인을 입력해주세요.");
-        return;
-      }
-
-      if (form.newPassword !== form.newPasswordConfirm) {
-        alert("새 비밀번호 확인이 일치하지 않습니다.");
-        return;
-      }
-    }
-
     try {
-      setIsSaving(true);
+      setIsSavingBasic(true);
 
       await updateMe({
         name: trimmedName,
         nickname: trimmedNickname,
         phone: trimmedPhone,
-        currentPassword: form.currentPassword || undefined,
-        newPassword: form.newPassword || undefined,
       });
 
-      const updatedUser = await getMe();
-      setUser(updatedUser);
+      await fetchUser();
 
-      setForm({
-        email: updatedUser.email || "",
-        name: updatedUser.name || "",
-        nickname: updatedUser.nickname || "",
-        phone: updatedUser.phone || "",
+      alert("기본 정보가 수정되었습니다.");
+    } catch (error: any) {
+      console.error("기본 정보 수정 실패:", error);
+
+      alert(
+        error?.response?.data?.message ||
+          "기본 정보 수정 중 오류가 발생했습니다."
+      );
+    } finally {
+      setIsSavingBasic(false);
+    }
+  };
+
+  const handleSavePassword = async () => {
+    if (!user || isSavingPassword) return;
+
+    if (!passwordForm.currentPassword) {
+      alert("현재 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if (!passwordForm.newPassword) {
+      alert("새 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    if (!passwordForm.newPasswordConfirm) {
+      alert("새 비밀번호 확인을 입력해주세요.");
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.newPasswordConfirm) {
+      alert("새 비밀번호 확인이 일치하지 않습니다.");
+      return;
+    }
+
+    try {
+      setIsSavingPassword(true);
+
+      await updateMe({
+        name: user.name || "",
+        nickname: user.nickname || "",
+        phone: user.phone || "",
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      await fetchUser();
+
+      setPasswordForm({
         currentPassword: "",
         newPassword: "",
         newPasswordConfirm: "",
       });
 
-      alert("회원정보가 수정되었습니다.");
+      alert("비밀번호가 변경되었습니다.");
     } catch (error: any) {
-      console.error("회원정보 수정 실패:", error);
+      console.error("비밀번호 변경 실패:", error);
 
       alert(
         error?.response?.data?.message ||
-          "회원정보 수정 중 오류가 발생했습니다."
+          "비밀번호 변경 중 오류가 발생했습니다."
       );
     } finally {
-      setIsSaving(false);
+      setIsSavingPassword(false);
     }
   };
 
@@ -170,35 +199,50 @@ export default function MyPage() {
           <span className="mypage-badge">MY PAGE</span>
           <h1 className="mypage-title">내 정보</h1>
           <p className="mypage-welcome">안녕하세요, {displayName}님</p>
-          <p className="mypage-email">{user?.email || form.email}</p>
+          <p className="mypage-email">{user?.email || ""}</p>
           <p className="mypage-description">
             계정 정보를 확인하고 수정할 수 있습니다.
           </p>
         </section>
 
-        <section className="mypage-edit-card">
+        <section className="mypage-view-card">
           <h2 className="mypage-section-title">기본 정보</h2>
 
-          <div className="mypage-edit-grid">
-            <div className="mypage-form-group full">
-              <label htmlFor="email">이메일</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={form.email}
-                readOnly
-              />
+          <div className="mypage-info-grid">
+            <div className="mypage-info-item full">
+              <span className="mypage-info-label">이메일</span>
+              <div className="mypage-info-value">{user?.email || "-"}</div>
             </div>
 
+            <div className="mypage-info-item">
+              <span className="mypage-info-label">이름</span>
+              <div className="mypage-info-value">{user?.name || "-"}</div>
+            </div>
+
+            <div className="mypage-info-item">
+              <span className="mypage-info-label">닉네임</span>
+              <div className="mypage-info-value">{user?.nickname || "-"}</div>
+            </div>
+
+            <div className="mypage-info-item full">
+              <span className="mypage-info-label">전화번호</span>
+              <div className="mypage-info-value">{user?.phone || "-"}</div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mypage-edit-card">
+          <h2 className="mypage-section-title">기본 정보 수정</h2>
+
+          <div className="mypage-edit-grid">
             <div className="mypage-form-group">
               <label htmlFor="name">이름</label>
               <input
                 id="name"
                 name="name"
                 type="text"
-                value={form.name}
-                onChange={handleChange}
+                value={basicForm.name}
+                onChange={handleBasicChange}
                 placeholder="이름을 입력하세요"
               />
             </div>
@@ -209,8 +253,8 @@ export default function MyPage() {
                 id="nickname"
                 name="nickname"
                 type="text"
-                value={form.nickname}
-                onChange={handleChange}
+                value={basicForm.nickname}
+                onChange={handleBasicChange}
                 placeholder="닉네임을 입력하세요"
               />
             </div>
@@ -221,16 +265,27 @@ export default function MyPage() {
                 id="phone"
                 name="phone"
                 type="text"
-                value={form.phone}
-                onChange={handleChange}
+                value={basicForm.phone}
+                onChange={handleBasicChange}
                 placeholder="전화번호를 입력하세요"
               />
             </div>
           </div>
 
-          <h2 className="mypage-section-title password-section-title">
-            비밀번호 변경
-          </h2>
+          <div className="mypage-edit-actions">
+            <button
+              type="button"
+              className="mypage-save-btn"
+              onClick={handleSaveBasicInfo}
+              disabled={isSavingBasic}
+            >
+              {isSavingBasic ? "저장 중..." : "기본 정보 저장"}
+            </button>
+          </div>
+        </section>
+
+        <section className="mypage-edit-card password-card">
+          <h2 className="mypage-section-title">비밀번호 변경</h2>
 
           <div className="mypage-edit-grid">
             <div className="mypage-form-group full">
@@ -239,8 +294,8 @@ export default function MyPage() {
                 id="currentPassword"
                 name="currentPassword"
                 type="password"
-                value={form.currentPassword}
-                onChange={handleChange}
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordChange}
                 placeholder="현재 비밀번호를 입력하세요"
               />
             </div>
@@ -251,8 +306,8 @@ export default function MyPage() {
                 id="newPassword"
                 name="newPassword"
                 type="password"
-                value={form.newPassword}
-                onChange={handleChange}
+                value={passwordForm.newPassword}
+                onChange={handlePasswordChange}
                 placeholder="새 비밀번호를 입력하세요"
               />
             </div>
@@ -263,8 +318,8 @@ export default function MyPage() {
                 id="newPasswordConfirm"
                 name="newPasswordConfirm"
                 type="password"
-                value={form.newPasswordConfirm}
-                onChange={handleChange}
+                value={passwordForm.newPasswordConfirm}
+                onChange={handlePasswordChange}
                 placeholder="새 비밀번호를 다시 입력하세요"
               />
             </div>
@@ -274,10 +329,10 @@ export default function MyPage() {
             <button
               type="button"
               className="mypage-save-btn"
-              onClick={handleSave}
-              disabled={isSaving}
+              onClick={handleSavePassword}
+              disabled={isSavingPassword}
             >
-              {isSaving ? "저장 중..." : "저장"}
+              {isSavingPassword ? "변경 중..." : "비밀번호 변경"}
             </button>
           </div>
         </section>

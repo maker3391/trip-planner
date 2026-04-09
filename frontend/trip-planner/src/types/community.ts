@@ -26,7 +26,6 @@ export interface CommunityRequest {
     tags?: string;
     rating?: number;
     userId: number;          // 필수: 작성자 ID
-    likedByUser?: boolean;  // 현재 로그인한 사용자가 좋아요를 눌렀는지
 }
 
 // 🔹 게시글 목록/페이징 응답
@@ -40,6 +39,7 @@ export interface CommunityResponse {
     tags: string;               // 태그
     viewCount: number;          // 조회수
     recommendCount: number;     // 좋아요 수
+    shareCount: number;         // 공유수
     createdAt: string;          // 생성일
     updatedAt: string;          // 수정일
     departure?: string;         // 출발지

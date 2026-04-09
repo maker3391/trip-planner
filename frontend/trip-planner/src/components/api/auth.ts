@@ -16,9 +16,9 @@ export interface MessageResponse {
 }
 
 export interface UpdateMeRequest {
-  name: string;
-  nickname: string;
-  phone: string;
+  name?: string;
+  nickname?: string;
+  phone?: string;
   currentPassword?: string;
   newPassword?: string;
 }

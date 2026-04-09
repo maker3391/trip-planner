@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(readOnly = true) // 🔥 기본은 조회 전용
 public class CommunityService {
 
     private final CommunityRepository communityRepository;
@@ -49,33 +49,34 @@ public class CommunityService {
                 .rating(request.getRating())
                 .authorNickname(authorNickname)
                 .viewCount(0L)
-                .recommendCount(0L)
+                .recommendCount(0L) // 👉 공유수로 사용
                 .build();
 
         return communityRepository.save(community).getId();
     }
 
-    // 🔥 게시글 목록 조회 (DTO 변환)
+    // 🔥 게시글 목록 조회
     public Page<CommunityResponse> getPosts(int page, int size) {
         return communityRepository.findAll(
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
         ).map(CommunityResponse::from);
     }
 
+    // 🔥 게시글 단건 조회
     public CommunityResponse getPost(Long id) {
         Community post = communityRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
         return CommunityResponse.builder()
                 .id(post.getId())
-                .category(post.getCategory()) // 👈 추가!!
-                .region(post.getRegion())     // 👈 추가!!
+                .category(post.getCategory())
+                .region(post.getRegion())
                 .title(post.getTitle())
                 .content(post.getContent())
                 .authorNickname(post.getAuthorNickname())
                 .tags(post.getTags())
                 .viewCount(post.getViewCount())
-                .recommendCount(post.getRecommendCount())
+                .recommendCount(post.getRecommendCount()) // 👉 공유수
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .departure(post.getDeparture())
@@ -84,13 +85,15 @@ public class CommunityService {
                 .build();
     }
 
+    // 🔥 조회수 증가 (핵심 수정 부분)
+    @Transactional // ❗ 반드시 필요 (readOnly 해제)
     public void viewPost(Long postId) {
         Community community = communityRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
-        community.incrementViewCount();
+        community.incrementViewCount(); // 👉 Dirty Checking으로 자동 반영
     }
 
-    // 🔥 게시글 좋아요 증가
+    // 🔥 공유수 증가 (기존 recommendCount 재사용)
     @Transactional
     public void recommendPost(Long postId) {
         Community community = communityRepository.findById(postId)
@@ -98,7 +101,7 @@ public class CommunityService {
         community.incrementRecommend();
     }
 
-    // 🔥 게시글 좋아요 감소 (선택)
+    // 🔥 공유수 감소 (필요 시)
     @Transactional
     public void unRecommendPost(Long postId) {
         Community community = communityRepository.findById(postId)
@@ -110,28 +113,37 @@ public class CommunityService {
     private void validateRequest(CommunityRequest request) {
         if (request.getTitle() == null || request.getTitle().trim().isEmpty())
             throw new IllegalArgumentException("제목은 필수입니다.");
+
         if (request.getContent() == null || request.getContent().trim().equals("<p><br></p>"))
             throw new IllegalArgumentException("내용을 입력해주세요.");
+
         if (isPlanCategory(request.getCategory())) {
             if (isEmpty(request.getDeparture()) || isEmpty(request.getArrival()))
                 throw new IllegalArgumentException("출발지와 도착지는 필수입니다.");
         }
+
         if (isRatingCategory(request.getCategory())) {
             if (request.getRating() == null || request.getRating() < 1 || request.getRating() > 5)
                 throw new IllegalArgumentException("평점은 1~5 사이여야 합니다.");
         }
+
         if (request.getUserId() == null)
             throw new IllegalArgumentException("작성자 ID는 필수입니다.");
     }
 
     private boolean isPlanCategory(String category) {
-        return category != null && (category.equals("여행플랜 공유") || category.equals("당일치기 친구 찾기"));
+        return category != null && (
+                category.equals("여행플랜 공유") ||
+                        category.equals("당일치기 친구 찾기")
+        );
     }
 
     private boolean isRatingCategory(String category) {
-        return category != null && (category.equals("맛집게시판")
-                || category.equals("사진게시판")
-                || category.equals("후기게시판"));
+        return category != null && (
+                category.equals("맛집게시판") ||
+                        category.equals("사진게시판") ||
+                        category.equals("후기게시판")
+        );
     }
 
     private boolean isEmpty(String value) {
