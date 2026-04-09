@@ -1,13 +1,17 @@
 package com.fiveguys.trip_planner.controller;
 
 import com.fiveguys.trip_planner.dto.CommunityRequest;
+import com.fiveguys.trip_planner.entity.CommunityImage;
 import com.fiveguys.trip_planner.response.CommunityResponse;
 import com.fiveguys.trip_planner.service.CommunityService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -155,5 +159,31 @@ public class CommunityController {
                     )
             );
         }
+    }
+
+    @PostMapping("/image")
+    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
+
+        Long imageId = communityService.uploadImage(file);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "success", true,
+                        "imageId", imageId
+                )
+        );
+    }
+
+    // 🔥 이미지 조회
+    // 🔥 이미지 조회 API 수정
+    @GetMapping("/image/{id}")
+    public ResponseEntity<byte[]> getImage(@PathVariable Long id) {
+        // 직접 레포지토리를 부르는 대신 서비스에 위임합니다.
+        CommunityImage image = communityService.getImageEntity(id);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + image.getOriginalName() + "\"")
+                .body(image.getData());
     }
 }

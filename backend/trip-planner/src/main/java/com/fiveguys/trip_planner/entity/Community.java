@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -32,11 +34,8 @@ public class Community {
     @Column(nullable = false)
     private String authorNickname;
 
-    @Column
     private String departure;
     private String arrival;
-
-    @Column
     private String tags;
     private Integer rating;
 
@@ -46,11 +45,18 @@ public class Community {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @Column(nullable = false)
     private Long viewCount = 0L;
 
+    @Builder.Default
     @Column(nullable = false)
-    private Long recommendCount = 0L; // 좋아요 개수
+    private Long recommendCount = 0L; // 좋아요(공유수)
+
+    // 🔥 이미지와의 연관 관계 설정
+    @Builder.Default
+    @OneToMany(mappedBy = "community", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommunityImage> images = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
@@ -66,19 +72,11 @@ public class Community {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void update(
-            String category,
-            String region,
-            String title,
-            String content,
-            String departure,
-            String arrival,
-            String tags,
-            Integer rating,
-            String authorNickname,
-            Long viewCount,
-            Long recommendCount
-    ) {
+    // 🔥 비즈니스 로직 메서드들
+
+    // 게시글 수정용
+    public void update(String category, String region, String title, String content,
+                       String departure, String arrival, String tags, Integer rating) {
         this.category = category;
         this.region = region;
         this.title = title;
@@ -87,23 +85,31 @@ public class Community {
         this.arrival = arrival;
         this.tags = tags;
         this.rating = rating;
-        this.authorNickname = authorNickname;
-        this.viewCount = viewCount;
-        this.recommendCount = recommendCount;
     }
 
-    // 🔥 좋아요 증가 메서드
+    // 조회수 증가
+    public void incrementViewCount() {
+        this.viewCount++;
+    }
+
+    // 추천(공유)수 증가
     public void incrementRecommend() {
         this.recommendCount++;
     }
 
-    // 🔥 좋아요 감소 메서드 (선택)
+    // 추천(공유)수 감소
     public void decrementRecommend() {
         if(this.recommendCount > 0) this.recommendCount--;
     }
 
-    // 조회수 증가 메서드
-    public void incrementViewCount() {
-        this.viewCount++;
+    /**
+     * 🔥 연관 관계 편의 메서드
+     * 이미지를 게시글에 안전하게 추가하기 위해 사용합니다.
+     */
+    public void addImage(CommunityImage image) {
+        this.images.add(image);
+        if (image.getCommunity() != this) {
+            image.setCommunity(this);
+        }
     }
 }

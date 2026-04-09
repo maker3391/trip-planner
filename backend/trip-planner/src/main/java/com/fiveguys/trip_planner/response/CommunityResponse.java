@@ -1,16 +1,15 @@
 package com.fiveguys.trip_planner.response;
 
 import com.fiveguys.trip_planner.entity.Community;
+import com.fiveguys.trip_planner.entity.CommunityImage;
 import io.swagger.v3.oas.annotations.media.Schema;
-<<<<<<< Updated upstream
-import com.fiveguys.trip_planner.repository.UserRepository;
-=======
->>>>>>> Stashed changes
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Schema(description = "커뮤니티 게시글 상세 응답 객체")
 @Getter
@@ -52,13 +51,24 @@ public class CommunityResponse {
     private Long viewCount;
     private Long recommendCount;
 
-    // 🔥 작성자 닉네임 추가
+    // 🔥 작성자 닉네임
     private String authorNickname;
+
+    // 🔥 이미지 ID 리스트 추가
+    @Schema(description = "연결된 이미지 ID 목록")
+    private List<Long> imageIds;
 
     /**
      * Entity → DTO 변환
      */
     public static CommunityResponse from(Community community) {
+        // 엔티티의 images 리스트에서 ID만 추출
+        List<Long> ids = community.getImages() != null
+                ? community.getImages().stream()
+                .map(CommunityImage::getId)
+                .collect(Collectors.toList())
+                : List.of();
+
         return CommunityResponse.builder()
                 .id(community.getId())
                 .category(community.getCategory())
@@ -72,7 +82,9 @@ public class CommunityResponse {
                 .recommendCount(community.getRecommendCount())
                 .rating(community.getRating() != null ? community.getRating() : 0)
                 .createdAt(community.getCreatedAt())
-                .authorNickname(community.getAuthorNickname()) // 🔥 추가
+                .updatedAt(community.getUpdatedAt())
+                .authorNickname(community.getAuthorNickname())
+                .imageIds(ids) // 🔥 추가
                 .build();
     }
 }
