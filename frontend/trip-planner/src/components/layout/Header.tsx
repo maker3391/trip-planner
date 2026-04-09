@@ -119,6 +119,7 @@ import "./Header.css";
 import { CalculatorService } from "./calculator";
 import Calculator from "./Calculator.tsx";
 import tplanner from "../../assets/icons/tplanner2.png";
+import GuidePopup from "../guide/GuidePopup.tsx";
 
 export default function Header() {
   const navigate = useNavigate();

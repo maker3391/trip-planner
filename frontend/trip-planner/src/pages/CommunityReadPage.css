@@ -113,19 +113,40 @@
     min-height: 300px;
 }
 
+/* 본문 내 이미지 및 멀티미디어 제어 */
 .mainContent {
     flex: 1;
     line-height: 1.8;
     font-size: 16px;
     color: #333;
     margin-bottom: 30px;
-    font-family: "Pretendard", "Noto Sans KR", sans-serif;
+    word-break: break-word; /* 긴 텍스트가 영역을 벗어나지 않게 */
 }
 
+/* 🔥 핵심: Quill 에디터에서 넘어온 이미지 스타일링 */
 .mainContent img {
+    display: block; /* 이미지 주변에 불필요한 공백 제거 */
+    max-width: 100%; /* 부모 너비를 절대 넘지 않음 */
+    height: auto;    /* 비율 유지 */
+    margin: 20px auto; /* 이미지 상하 간격 및 중앙 정렬 */
+    border-radius: 8px; /* 노란 테마와 어울리는 부드러운 모서리 */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* 가벼운 그림자 */
+}
+
+/* 만약 에디터에서 가로 정렬(왼쪽/중앙/오른쪽)을 사용했다면 대응 */
+.mainContent .ql-align-center {
+    text-align: center;
+}
+
+.mainContent .ql-align-right {
+    text-align: right;
+}
+
+/* 동영상(Youtube 등)이 포함된 경우 대응 */
+.mainContent iframe {
     max-width: 100%;
-    height: auto;
     border-radius: 8px;
+    aspect-ratio: 16 / 9;
 }
 
 /* 해시태그 스타일 */
@@ -240,4 +261,33 @@
 .cancel-button:hover {
     background-color: #e6af06;
     transform: translateY(-2px);
+}
+
+.board-item-row {
+    border-bottom: 1px solid #f2f2f2;
+    font-size: 15px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+/* hover 효과 */
+.board-item-row:hover {
+    background-color: #fffdf5;
+    cursor: pointer;
+}   
+
+/* 🔥 hover + active 겹칠 때 살짝 강조 */
+.board-item-row.active-row:hover {
+    background-color: #fff7d6;
+}
+
+.board-item-row.active-row {
+    background-color: #fffdf5;
+    font-weight: 600;
+    border-left: 4px solid #ffc107; /* 🔥 포인트 라인 */
+    padding-left: calc(0px - 4px); /* 레이아웃 밀림 방지 */
+}
+
+.board-item-row.active-row .post-title-text {
+    color: #d19a00;
+    font-weight: 700;
 }
