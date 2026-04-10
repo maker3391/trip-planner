@@ -4,6 +4,8 @@ import com.fiveguys.trip_planner.dto.CommunityRequest;
 import com.fiveguys.trip_planner.entity.CommunityImage;
 import com.fiveguys.trip_planner.response.CommunityResponse;
 import com.fiveguys.trip_planner.service.CommunityService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,30 +38,26 @@ public class CommunityController {
                     )
             );
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(
-                    Map.of(
-                            "success", false,
-                            "message", e.getMessage()
-                    )
-            );
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(
-                    Map.of(
-                            "success", false,
-                            "message", "서버 오류가 발생했습니다."
-                    )
-            );
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "서버 오류가 발생했습니다."));
         }
     }
 
-    // 🔹 게시글 목록 조회
+    // 🔹 게시글 목록 조회 (필터링 및 검색 기능 추가)
+    @Operation(summary = "게시글 목록 조회", description = "카테고리, 지역, 검색 조건에 따른 게시글 목록을 반환합니다.")
     @GetMapping("/posts")
     public ResponseEntity<?> getPosts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "카테고리 (전체보기 시 null 또는 생략)") @RequestParam(required = false) String category,
+            @Parameter(description = "지역 (선택 안함 시 null 또는 생략)") @RequestParam(required = false) String region,
+            @Parameter(description = "검색 타입 (title 또는 author)") @RequestParam(required = false) String searchType,
+            @Parameter(description = "검색 키워드") @RequestParam(required = false) String keyword
     ) {
         try {
-            Page<CommunityResponse> postPage = communityService.getPosts(page, size);
+            // Service단에서 category, region, searchType, keyword를 처리할 수 있도록 전달
+            Page<CommunityResponse> postPage = communityService.getPosts(page, size, category, region, searchType, keyword);
             return ResponseEntity.ok(postPage);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(
@@ -72,9 +70,7 @@ public class CommunityController {
     }
 
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<?> getPost(
-            @PathVariable("postId") Long postId
-    ) {
+    public ResponseEntity<?> getPost(@PathVariable("postId") Long postId) {
         return ResponseEntity.ok(communityService.getPost(postId));
     }
 
@@ -82,26 +78,11 @@ public class CommunityController {
     public ResponseEntity<?> viewPost(@PathVariable("postId") Long postId) {
         try {
             communityService.viewPost(postId);
-            return ResponseEntity.ok(
-                    Map.of(
-                            "success", true,
-                            "message", "조회수가 증가했습니다."
-                    )
-            );
+            return ResponseEntity.ok(Map.of("success", true, "message", "조회수가 증가했습니다."));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(
-                    Map.of(
-                            "success", false,
-                            "message", e.getMessage()
-                    )
-            );
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(
-                    Map.of(
-                            "success", false,
-                            "message", "게시글 조회 처리 중 서버 오류가 발생했습니다."
-                    )
-            );
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "서버 오류가 발생했습니다."));
         }
     }
 
@@ -110,26 +91,9 @@ public class CommunityController {
     public ResponseEntity<?> recommendPost(@PathVariable Long postId) {
         try {
             communityService.recommendPost(postId);
-            return ResponseEntity.ok(
-                    Map.of(
-                            "success", true,
-                            "message", "좋아요가 증가했습니다."
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(
-                    Map.of(
-                            "success", false,
-                            "message", e.getMessage()
-                    )
-            );
+            return ResponseEntity.ok(Map.of("success", true, "message", "좋아요가 증가했습니다."));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(
-                    Map.of(
-                            "success", false,
-                            "message", "좋아요 처리 중 서버 오류가 발생했습니다."
-                    )
-            );
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "좋아요 처리 중 오류 발생"));
         }
     }
 
@@ -138,49 +102,22 @@ public class CommunityController {
     public ResponseEntity<?> unRecommendPost(@PathVariable Long postId) {
         try {
             communityService.unRecommendPost(postId);
-            return ResponseEntity.ok(
-                    Map.of(
-                            "success", true,
-                            "message", "좋아요가 감소했습니다."
-                    )
-            );
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(
-                    Map.of(
-                            "success", false,
-                            "message", e.getMessage()
-                    )
-            );
+            return ResponseEntity.ok(Map.of("success", true, "message", "좋아요가 감소했습니다."));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(
-                    Map.of(
-                            "success", false,
-                            "message", "좋아요 처리 중 서버 오류가 발생했습니다."
-                    )
-            );
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "좋아요 처리 중 오류 발생"));
         }
     }
 
     @PostMapping("/image")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
-
         Long imageId = communityService.uploadImage(file);
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "success", true,
-                        "imageId", imageId
-                )
-        );
+        return ResponseEntity.ok(Map.of("success", true, "imageId", imageId));
     }
 
     // 🔥 이미지 조회
-    // 🔥 이미지 조회 API 수정
     @GetMapping("/image/{id}")
     public ResponseEntity<byte[]> getImage(@PathVariable Long id) {
-        // 직접 레포지토리를 부르는 대신 서비스에 위임합니다.
         CommunityImage image = communityService.getImageEntity(id);
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(image.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + image.getOriginalName() + "\"")

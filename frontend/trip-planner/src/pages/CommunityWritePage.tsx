@@ -48,7 +48,7 @@ export default function CommunityWritePage() {
         setFormData(prev => ({ ...prev, rating: rate }));
     };
 
-    // 🔥 이미지 업로드 핸들러 수정
+    // 이미지 업로드 핸들러
     const handleImage = () => {
         const input = document.createElement("input");
         input.setAttribute("type", "file");
@@ -73,8 +73,6 @@ export default function CommunityWritePage() {
                     timeout: 30000 
                 });
                 
-                // 🔥 [수정 지점 1] res.data가 아닌 res.data.imageId를 추출해야 합니다.
-                // 서버 응답이 { success: true, imageId: 2 } 형태이기 때문입니다.
                 const imageId = res.data.imageId; 
 
                 if (!imageId) {
@@ -82,10 +80,8 @@ export default function CommunityWritePage() {
                     return;
                 }
 
-                // 2. 관리 목록에 숫자 ID만 추가
                 setUploadedImageIds(prev => [...prev, imageId]);
 
-                // 3. 에디터에 삽입
                 const imageUrl = `${client.defaults.baseURL}/community/image/${imageId}`;
                 const editor = quillRef.current?.getEditor();
                 const range = editor?.getSelection(true);
@@ -120,22 +116,11 @@ export default function CommunityWritePage() {
                 return;
             }
 
-            // 🔹 백엔드 DTO 구조에 정확히 맞춘 payload
             const payload = {
-                category: formData.category,
-                region: formData.region,
-                title: formData.title,
-                content: formData.content,
-                departure: formData.departure,
-                arrival: formData.arrival,
-                tags: formData.tags,
-                rating: formData.rating,
-                userId: userData.id, // 유저 객체가 아닌 ID 숫자값
-                imageIds: uploadedImageIds // 위에서 수정한 숫자 배열
+                ...formData,
+                userId: userData.id,
+                imageIds: uploadedImageIds 
             };
-
-            // 🔥 [디버깅 팁] 전송 전 데이터 구조 확인
-            console.log("백엔드로 날아가는 데이터:", payload);
 
             const response = await client.post("/community/posts", payload);
 
@@ -144,9 +129,7 @@ export default function CommunityWritePage() {
                 navigate("/community");
             }
         } catch (error: any) {
-            // 🔥 [디버깅 팁] 500 에러 시 서버의 메시지를 상세히 출력
-            console.error("등록 실패 상세 로그:", error.response?.data);
-            alert(`등록 실패: ${error.response?.data?.message || "서버 오류"}`);
+            alert("게시글 등록에 실패했습니다.");
         }
     };
 
@@ -156,7 +139,7 @@ export default function CommunityWritePage() {
             <div className="community-container">
                 <main className="community-main-content">
                     <form className="community-post-form" onSubmit={handleSubmit}>
-                        {/* 분류/지역 로우 */}
+                        {/* 분류/지역 로우 (1행) */}
                         <div className="form-row">
                             <div className="form-group">
                                 <label>분류</label>
@@ -172,8 +155,9 @@ export default function CommunityWritePage() {
                             </div>
                         </div>
 
-                        {/* 여행 플랜 입력 칸 */}
-                        { PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && (
+                        {/* 🌟 수정지점: 여행 플랜 또는 평점 입력 로우 (2행) */}
+                        {PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) ? (
+                            // 여행플랜 공유 카테고리일 때 (출발지/도착지)
                             <div className="form-row route-inputs">
                                 <div className="form-group">
                                     <label>출발지</label>
@@ -185,7 +169,49 @@ export default function CommunityWritePage() {
                                     <input type="text" name="arrival" placeholder="예: 부산" value={formData.arrival} onChange={handleChange} />
                                 </div>
                             </div>
-                        )}
+                        ) : RATING_ENABLED_CATEGORIES.includes(formData.category) ? (
+                            // 맛집/후기/사진 게시판일 때 (평점 - 디자인 통일)
+                            <div className="form-row rating-form-row">
+                                <div className="form-group" style={{ flex: 1 }}> {/* 레이아웃 맞추기 위해 flex 설정 */}
+                                    <label>평점</label>
+                                    <div className="rating-input-container" style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        height: '40px', // 일반 input 높이와 통일 (CSS 파일 확인 필요)
+                                        border: '1px solid #ddd', 
+                                        borderRadius: '4px', 
+                                        padding: '0 10px',
+                                        backgroundColor: '#fff'
+                                    }}>
+                                        <div className="stars" style={{ display: "flex", gap: '8px' }}>
+                                            {[1, 2, 3, 4, 5].map(num => (
+                                                <span 
+                                                    key={num} 
+                                                    onClick={() => handleRating(num)}
+                                                    style={{ 
+                                                        cursor: "pointer", 
+                                                        fontSize: '24px', // 별 크기 키움
+                                                        lineHeight: '1',
+                                                        color: num <= formData.rating ? "#FFBB00" : "#e0e0e0",
+                                                        transition: 'color 0.2s'
+                                                    }}
+                                                >
+                                                    {num <= formData.rating ? '★' : '☆'}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        {formData.rating > 0 && (
+                                            <span style={{ marginLeft: '12px', color: '#666', fontSize: '14px' }}>
+                                                ({formData.rating}점 / 5점)
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                {/* 레이아웃 균형을 위한 빈 공간 (출발지➔도착지 3단 구조와 맞춤) */}
+                                <div style={{ width: '30px' }} className="route-arrow-space"></div> 
+                                <div className="form-group" style={{ flex: 1, visibility: 'hidden' }}></div>
+                            </div>
+                        ) : null}
 
                         <div className="form-main-area">
                             <input 
@@ -198,7 +224,6 @@ export default function CommunityWritePage() {
                                 required
                             />
 
-                            {/* 커스텀 툴바 */}
                             <div id="toolbar" className="post-toolbar" style={{ 
                                 display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px", 
                                 padding: "10px 15px", border: "1px solid #ddd", borderBottom: "none",
@@ -210,29 +235,22 @@ export default function CommunityWritePage() {
                                     ))}
                                 </select>
                                 <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
+                                
+                                {/* 기본 스타일 버튼 */}
                                 <button className="ql-bold" />
                                 <button className="ql-italic" />
                                 <button className="ql-underline" />
                                 <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
+
+                                {/* 🌟 정렬 버튼 추가 (좌, 중, 우) */}
+                                <button className="ql-align" value="" defaultChecked />       {/* 좌측 정렬 (기본값) */}
+                                <button className="ql-align" value="center" /> {/* 중앙 정렬 */}
+                                <button className="ql-align" value="right" />  {/* 우측 정렬 */}
+                                <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
+
                                 <button className="ql-image" type="button">
                                     <span style={{ fontSize: "18px" }}>📷</span>
                                 </button>
-
-                                {/* 평점 영역을 툴바 안으로 이동 (디자인에 따라 조절) */}
-                                {RATING_ENABLED_CATEGORIES.includes(formData.category) && (
-                                    <div className="rating-section" style={{ display: "flex", alignItems: "center", gap: "5px", marginLeft: "10px" }}>
-                                        <span style={{ fontSize: "12px", color: "#666" }}>⭐</span>
-                                        {[1, 2, 3, 4, 5].map(num => (
-                                            <span 
-                                                key={num} 
-                                                onClick={() => handleRating(num)}
-                                                style={{ cursor: "pointer", color: num <= formData.rating ? "#FFBB00" : "#e0e0e0" }}
-                                            >
-                                                ★
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
 
                             <ReactQuill 

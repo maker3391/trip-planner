@@ -33,21 +33,17 @@ public class CommunityService {
 
     /**
      * 🔥 게시글 작성
-     * 1. 게시글을 먼저 DB에 저장합니다.
-     * 2. 요청(Request)에 포함된 이미지 ID 리스트를 순회하며 해당 이미지 엔티티에 게시글을 연결합니다.
      */
     @Transactional
     public Long createPost(CommunityRequest request) {
         validateRequest(request);
 
-        // XSS 방어 (Quill 에디터의 HTML 태그 중 안전한 것만 허용)
+        // XSS 방어
         String safeContent = Jsoup.clean(request.getContent(), Safelist.relaxed());
 
-        // 작성자 조회
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 작성자 ID입니다."));
 
-        // 1. 게시글 엔티티 생성 및 저장
         Community community = Community.builder()
                 .category(request.getCategory())
                 .region(request.getRegion())
@@ -64,11 +60,9 @@ public class CommunityService {
 
         Community savedCommunity = communityRepository.save(community);
 
-        // 2. 업로드되었던 이미지들과 게시글 연결 (community_id 업데이트)
         if (request.getImageIds() != null && !request.getImageIds().isEmpty()) {
             for (Long imageId : request.getImageIds()) {
                 communityImageRepository.findById(imageId).ifPresent(image -> {
-                    // 연관 관계 편의 메서드 호출 (이미지 엔티티에 community_id 설정)
                     image.setCommunity(savedCommunity);
                 });
             }
@@ -78,11 +72,24 @@ public class CommunityService {
     }
 
     /**
-     * 🔥 게시글 목록 조회 (페이징 처리)
+     * 🔥 게시글 목록 조회 (통합 필터링 및 페이징)
+     * 카테고리, 지역, 검색어에 따른 동적 쿼리를 수행합니다.
      */
-    public Page<CommunityResponse> getPosts(int page, int size) {
-        return communityRepository.findAll(
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
+    public Page<CommunityResponse> getPosts(int page, int size, String category, String region, String searchType, String keyword) {
+        // 1. 페이지네이션 설정 (ID 내림차순 - 최신순)
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        // 2. 검색어 전처리 (프론트에서 '전체보기'를 선택하면 null로 처리)
+        String filterCategory = ("전체보기".equals(category)) ? null : category;
+        String searchKeyword = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
+
+        // 3. 필터링된 결과 조회
+        return communityRepository.findWithFilters(
+                filterCategory,
+                region,
+                searchType,
+                searchKeyword,
+                pageable
         ).map(CommunityResponse::from);
     }
 
@@ -93,13 +100,11 @@ public class CommunityService {
         Community post = communityRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
-        // 해당 게시글에 매핑된 이미지 ID 리스트 추출
         List<Long> imageIds = communityImageRepository.findByCommunityId(id)
                 .stream()
                 .map(CommunityImage::getId)
                 .collect(Collectors.toList());
 
-        // Response DTO 생성
         return CommunityResponse.builder()
                 .id(post.getId())
                 .category(post.getCategory())
@@ -120,8 +125,7 @@ public class CommunityService {
     }
 
     /**
-     * 🔥 이미지 업로드 (바이너리 저장)
-     * 게시글 작성 전, 사용자가 사진을 선택할 때마다 호출되어 DB에 미리 저장합니다.
+     * 🔥 이미지 업로드
      */
     @Transactional
     public Long uploadImage(MultipartFile file) {
@@ -129,7 +133,7 @@ public class CommunityService {
             CommunityImage image = CommunityImage.builder()
                     .originalName(file.getOriginalFilename())
                     .contentType(file.getContentType())
-                    .data(file.getBytes()) // 원본 바이너리 데이터 추출
+                    .data(file.getBytes())
                     .build();
             return communityImageRepository.save(image).getId();
         } catch (IOException e) {
@@ -137,16 +141,10 @@ public class CommunityService {
         }
     }
 
-    /**
-     * 🔥 이미지 데이터 엔티티 조회
-     * 컨트롤러에서 ResponseEntity<byte[]>를 만들 때 사용합니다.
-     */
     public CommunityImage getImageEntity(Long id) {
         return communityImageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("이미지를 찾을 수 없습니다. ID: " + id));
     }
-
-    // --- 비즈니스 로직 (조회수/추천수) ---
 
     @Transactional
     public void viewPost(Long postId) {
