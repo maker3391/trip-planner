@@ -9,12 +9,14 @@
   padding: 40px 20px 60px;
 }
 
-.mypage-intro-card {
+.mypage-intro-card,
+.mypage-view-card,
+.mypage-edit-card {
   background: #fff;
   border-radius: 20px;
-  padding: 28px;
+  padding: 24px 28px;
   border: 1px solid #f1df9a;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
   margin-bottom: 20px;
 }
 
@@ -52,14 +54,6 @@
   line-height: 1.5;
 }
 
-.mypage-edit-card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 24px;
-  border: 1px solid #f1df9a;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
-}
-
 .mypage-section-title {
   font-size: 22px;
   font-weight: 800;
@@ -67,8 +61,38 @@
   color: #1f1f1f;
 }
 
-.password-section-title {
-  margin-top: 28px;
+.mypage-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.mypage-info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.mypage-info-item.full {
+  grid-column: 1 / -1;
+}
+
+.mypage-info-label {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.mypage-info-value {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #e3e3e3;
+  background-color: #fafafa;
+  color: #444;
+  font-size: 14px;
 }
 
 .mypage-edit-grid {
@@ -108,12 +132,6 @@
   box-shadow: 0 0 0 3px rgba(247, 197, 58, 0.15);
 }
 
-.mypage-form-group input[readonly] {
-  background-color: #f8f8f8;
-  color: #666;
-  cursor: not-allowed;
-}
-
 .mypage-edit-actions {
   margin-top: 24px;
   display: flex;
@@ -141,7 +159,12 @@
   transform: none;
 }
 
+.password-card {
+  margin-bottom: 0;
+}
+
 @media (max-width: 768px) {
+  .mypage-info-grid,
   .mypage-edit-grid {
     grid-template-columns: 1fr;
   }

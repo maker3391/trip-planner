@@ -23,6 +23,8 @@ public class ChatService {
     private final OpenAiClient openAiClient;
     private final RecommendationIntentResolverService intentResolverService;
     private final KakaoPlaceRecommendationService kakaoPlaceRecommendationService;
+    private final AttractionRecommendationService attractionRecommendationService;
+    private final CombinedRecommendationOrchestratorService combinedRecommendationOrchestratorService;
     private final RecommendationValidationService validationService;
     private final RecommendationNormalizationService normalizationService;
     private final RecommendationQualityService qualityService;
@@ -33,6 +35,8 @@ public class ChatService {
     public ChatService(OpenAiClient openAiClient,
                        RecommendationIntentResolverService intentResolverService,
                        KakaoPlaceRecommendationService kakaoPlaceRecommendationService,
+                       AttractionRecommendationService attractionRecommendationService,
+                       CombinedRecommendationOrchestratorService combinedRecommendationOrchestratorService,
                        RecommendationValidationService validationService,
                        RecommendationNormalizationService normalizationService,
                        RecommendationQualityService qualityService,
@@ -42,6 +46,8 @@ public class ChatService {
         this.openAiClient = openAiClient;
         this.intentResolverService = intentResolverService;
         this.kakaoPlaceRecommendationService = kakaoPlaceRecommendationService;
+        this.attractionRecommendationService = attractionRecommendationService;
+        this.combinedRecommendationOrchestratorService = combinedRecommendationOrchestratorService;
         this.validationService = validationService;
         this.normalizationService = normalizationService;
         this.qualityService = qualityService;
@@ -53,6 +59,14 @@ public class ChatService {
     public ChatResponse chat(ChatRequest request) {
         String message = request.getMessage();
         String intent = intentResolverService.resolve(message);
+
+        if ("COMBINED_RECOMMENDATION".equals(intent)) {
+            return combinedRecommendationOrchestratorService.recommend(request);
+        }
+
+        if ("ATTRACTION_RECOMMENDATION".equals(intent)) {
+            return attractionRecommendationService.recommend(request);
+        }
 
         if ("RESTAURANT_RECOMMENDATION".equals(intent) || "STAY_RECOMMENDATION".equals(intent)) {
             return kakaoPlaceRecommendationService.recommend(request);

@@ -110,6 +110,37 @@ public class RecommendationCacheKeyGenerator {
         return key.toString();
     }
 
+    public String generateAttractionKey(String destination,
+                                        String detailArea,
+                                        String neighborhood,
+                                        String district) {
+        StringBuilder key = new StringBuilder("recommendation:v14");
+        key.append(":ATTRACTION_RECOMMENDATION");
+        key.append(":").append(safeSegment(destination));
+
+        String specificArea = firstNonBlank(
+                detailArea,
+                neighborhood,
+                isCityOrCounty(district) ? null : district
+        );
+
+        if (StringUtils.hasText(specificArea)) {
+            key.append(":").append(safeSegment(specificArea));
+        }
+
+        key.append(":top4");
+        return key.toString();
+    }
+
+    public String generateCombinedKey(String destination, String detailArea, Integer days) {
+        StringBuilder key = new StringBuilder("recommendation:v15");
+        key.append(":COMBINED_RECOMMENDATION");
+        key.append(":").append(safeSegment(destination));
+        key.append(":").append(safeSegment(detailArea));
+        key.append(":").append(days == null ? "unknown" : days);
+        return key.toString();
+    }
+
     private String firstNonBlank(String... values) {
         for (String value : values) {
             if (StringUtils.hasText(value)) {
@@ -151,6 +182,10 @@ public class RecommendationCacheKeyGenerator {
             if (containsAny(message, "술집", "pub", "bar")) return "pub";
             if (containsAny(message, "밥집", "meal")) return "meal";
             return "restaurant";
+        }
+
+        if ("ATTRACTION_RECOMMENDATION".equals(intent)) {
+            return "single";
         }
 
         return null;
