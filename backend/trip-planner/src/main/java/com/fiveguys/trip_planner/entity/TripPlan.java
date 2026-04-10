@@ -44,6 +44,9 @@ public class TripPlan {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(unique = true)
+    private String inviteCode;
+
     @LastModifiedDate // 조회한 Entity의 값을 변경할 때 시간이 자동 저장됨
     private LocalDateTime updatedAt;
 

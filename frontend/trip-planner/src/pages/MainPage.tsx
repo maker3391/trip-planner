@@ -9,6 +9,7 @@ import ActionButtons from "../components/trip/ActionButtons";
 import { useCreateTrip, useGetTrip, useUpdateTrip } from "../components/hooks/useTrip";
 import { TripPlanRequest } from "../types/trip";
 import "./MainPage.css";
+import { useTripStore } from "../components/store/useTripStore";
 
 export default function MainPage() {
   const location = useLocation();
@@ -17,7 +18,7 @@ export default function MainPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [targetTripId, setTargetTripId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tripForm, setTripForm] = useState({ title: "", destination: "", startDate: "", endDate: "" });
+  const {tripForm, setTripForm, loadInitialData, clearTripData} = useTripStore();
 
   // 색상 상태
   const [pinColor, setPinColor] = useState("#000000");
@@ -62,29 +63,16 @@ export default function MainPage() {
 
       setPath(recoveredPath);
       setConnections(recoveredPath.map((_, i) => ({ from: i, to: i + 1 })).slice(0, -1));
-      setTripForm({ title: tripData.title, destination: tripData.destination, startDate: tripData.startDate, endDate: tripData.endDate });
-      window.dispatchEvent(new CustomEvent('LOAD_CALCULATOR_DATA', {
-        detail: {
-          expenses: tripData.expenses || [],
-          budget: tripData.totalBudget || 0,
-        }
-      }));
-      setTripForm({
-        title: tripData.title,
-        destination: tripData.destination,
-        startDate: tripData.startDate,
-        endDate: tripData.endDate
-      });
+      
+      loadInitialData(
+        { title: tripData.title, destination: tripData.destination, startDate: tripData.startDate, endDate: tripData.endDate },
+        tripData.totalBudget || 0,
+        tripData.expenses || []
+      );
+    } else if (!targetTripId) {
+      clearTripData();
     }
-  }, [tripData]);
-
-  useEffect(() => {
-    const handleCalcSync = (e: any) => {
-      setCalcData(e.detail);
-    };
-    window.addEventListener('SYNC_CALCULATOR', handleCalcSync);
-    return () => window.removeEventListener('SYNC_CALCULATOR', handleCalcSync);
-  }, []);
+  }, [tripData, targetTripId]);
 
   // 3. 저장 로직
   // 2. 저장/수정 로직 (Memo & Color 포함)
@@ -108,16 +96,19 @@ export default function MainPage() {
       lineColor: lineColor
     }));
 
-    const expenses = calcData.expenses.map((item: any) => ({
+    const { expenses, budget } = useTripStore.getState();
+
+    const finalExpenses = expenses.map((item: any) => ({
       amount: item.amount,
       category: item.category || 'ETC',
       description: item.description
     }));
+
     const requestData: any = {
       ...tripForm,
       schedules,
-      expenses,
-      totalBudget: calcData.budget
+      expenses: finalExpenses,
+      totalBudget: budget
     };
 
     const mutation = targetTripId ? updateTripMutation : createTripMutation;

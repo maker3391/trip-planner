@@ -50,6 +50,9 @@ public class TripPlanResponseDto {
     @Schema(description = "통화")
     private String currency;
 
+    @Schema(description = "초대 코드", example = "a1b2c3d4")
+    private final String inviteCode;
+
     public TripPlanResponseDto(TripPlan tripPlan) {
         this.id = tripPlan.getId();
         this.ownerId = tripPlan.getOwner().getId();
@@ -59,6 +62,7 @@ public class TripPlanResponseDto {
         this.endDate = tripPlan.getEndDate();
         this.status = tripPlan.getStatus();
         this.createdAt = tripPlan.getCreatedAt();
+        this.inviteCode = tripPlan.getInviteCode();
 
         if (tripPlan.getSchedules() != null) {
             this.schedules = tripPlan.getSchedules().stream()
