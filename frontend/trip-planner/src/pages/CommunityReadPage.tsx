@@ -152,190 +152,193 @@ export default function CommunityReadPage() {
     }, [page, totalPages]);
 
     return (
-        <div className="community-page">
+        <>
             <Header />
-            <div className="community-container">
-                {/* 🔹 사이드바 추가 */}
-                <aside className="community-sidebar">
-                    <div className="sidebar-section">
-                        <h3>카테고리</h3>
-                        <ul>
-                            {categories.map((cat) => (
-                                <li
-                                    key={cat}
-                                    className={selectedCategory === cat ? "active" : ""}
-                                    onClick={() => { setSelectedCategory(cat); setPage(0); }}
-                                >
-                                    {cat}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div className="sidebar-section">
-                        <h3>지역별</h3>
-                        <div className="region-grid">
-                            {regions.map((reg) => (
-                                <span
-                                    key={reg}
-                                    className={selectedRegion === reg ? "active" : ""}
-                                    onClick={() => { setSelectedRegion(reg); setPage(0); }}
-                                >
-                                    {reg}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="filter-reset-area">
-                        <button className="filter-reset-btn" onClick={handleReset}>
-                            <RestartAltIcon fontSize="inherit" /> 필터 초기화
-                        </button>
-                    </div>
-                </aside>
-
-                <main className="community-main-content">
-                    {/* 게시글 상세 영역 */}
-                    <article className="community-post-form">
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>분류</label>
-                                <div>{post?.category}</div>
-                            </div>
-                            <div className="form-group">
-                                <label>지역</label>
-                                <div>{post?.region}</div>
-                            </div>
-                            {RATING_ENABLED_CATEGORIES.includes(String(post?.category)) && (
-                                <div className="rating-display" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "5px" }}>
-                                    <span style={{ fontSize: "13px", color: "#666" }}>⭐ 평점</span>
-                                    <span style={{ color: "#FFBB00" }}>{"★".repeat(post?.rating || 0)}{"☆".repeat(5 - (post?.rating || 0))}</span>
-                                </div>
-                            )}
+            <div className="community-page">
+                
+                <div className="community-container">
+                    {/* 🔹 사이드바 추가 */}
+                    <aside className="community-sidebar">
+                        <div className="sidebar-section">
+                            <h3>카테고리</h3>
+                            <ul>
+                                {categories.map((cat) => (
+                                    <li
+                                        key={cat}
+                                        className={selectedCategory === cat ? "active" : ""}
+                                        onClick={() => { setSelectedCategory(cat); setPage(0); }}
+                                    >
+                                        {cat}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
 
-                        {PLAN_SHARE_ENABLED_CATEGORIES.includes(String(post?.category)) && (
-                            <div className="form-row route-inputs">
-                                <div className="form-group">
-                                    <label>출발지</label>
-                                    <div>{post?.departure}</div>
-                                </div>
-                                <div className="route-arrow">➔</div>
-                                <div className="form-group">
-                                    <label>도착지</label>
-                                    <div>{post?.arrival}</div>
-                                </div>
+                        <div className="sidebar-section">
+                            <h3>지역별</h3>
+                            <div className="region-grid">
+                                {regions.map((reg) => (
+                                    <span
+                                        key={reg}
+                                        className={selectedRegion === reg ? "active" : ""}
+                                        onClick={() => { setSelectedRegion(reg); setPage(0); }}
+                                    >
+                                        {reg}
+                                    </span>
+                                ))}
                             </div>
-                        )}
+                        </div>
 
-                        <div className="form-main-area">
-                            <div className="PostHeader">
-                                <h1 className="PostTitle">{post?.title}</h1>
-                                <div className="PostMeta">
-                                    <span>작성자: <strong>{post?.authorNickname}</strong></span>
-                                    <span> | {post?.createdAt?.slice(0, 10)}</span>
+                        <div className="filter-reset-area">
+                            <button className="filter-reset-btn" onClick={handleReset}>
+                                <RestartAltIcon fontSize="inherit" /> 필터 초기화
+                            </button>
+                        </div>
+                    </aside>
+
+                    <main className="community-main-content">
+                        {/* 게시글 상세 영역 */}
+                        <article className="community-post-form">
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>분류</label>
+                                    <div>{post?.category}</div>
                                 </div>
-                            </div>
-
-                            <div className="PostContent">
-                                <div className="mainContent ql-editor" dangerouslySetInnerHTML={{ __html: post?.content || "" }} />
-                                {post?.tags && (
-                                    <div className="tags">
-                                        {post.tags.split(",").map((tag, idx) => (
-                                            <span key={idx} className="tag">#{tag.trim().replace('#', '')}</span>
-                                        ))}
+                                <div className="form-group">
+                                    <label>지역</label>
+                                    <div>{post?.region}</div>
+                                </div>
+                                {RATING_ENABLED_CATEGORIES.includes(String(post?.category)) && (
+                                    <div className="rating-display" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "5px" }}>
+                                        <span style={{ fontSize: "13px", color: "#666" }}>⭐ 평점</span>
+                                        <span style={{ color: "#FFBB00" }}>{"★".repeat(post?.rating || 0)}{"☆".repeat(5 - (post?.rating || 0))}</span>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="PostFooter">
-                                <div><RemoveRedEyeIcon /> 조회수: {post?.viewCount}</div>
-                                <div><button onClick={handleShare}><ShareIcon /></button> 공유하기: {post?.recommendCount}</div>
-                            </div>
-                        </div>
-                    </article>
-
-                    <div id="list-section" style={{ marginTop: "40px" }}>
-                        {/* 검색바 */}
-                        <div className="community-search-bar" style={{ marginBottom: "15px" }}>
-                            <select value={searchType} onChange={(e) => setSearchType(e.target.value as any)}>
-                                <option value="title">제목</option>
-                                <option value="author">작성자</option>
-                            </select>
-                            <div className="search-input-box">
-                                <input
-                                    type="text"
-                                    placeholder="결과 내 검색"
-                                    value={keyword}
-                                    onChange={(e) => setKeyword(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                                />
-                                <button onClick={handleSearch}><SearchIcon fontSize="small" /></button>
-                            </div>
-                        </div>
-
-                        {/* 리스트 테이블 */}
-                        <div className="community-board-container">
-                            <div className="board-header-row">
-                                <div className="col-id">번호</div>
-                                <div className="col-route">기타</div>
-                                <div className="col-title">제목</div>
-                                <div className="col-author">작성자</div>
-                                <div className="col-date">날짜</div>
-                                <div className="col-views">조회</div>
-                                <div className="col-stats">공유</div>
-                            </div>
-
-                            <div className="board-body">
-                                {posts.map(item => (
-                                    <div
-                                        key={item.id}
-                                        className={`board-item-row ${id === String(item.id) ? "active-row" : ""}`}
-                                        onClick={async () => {
-                                            await handleView(Number(item.id));
-                                            navigate(`/community/${item.id}`);
-                                            window.scrollTo(0, 0);
-                                        }}
-                                    >
-                                        <div className="col-id">{item.id}</div>
-                                        <div className="col-route">
-                                            {item.departure || ""} {item.arrival ? `➔ ${item.arrival}` : ""}
-                                        </div>
-                                        <div className="col-title" style={{ fontWeight: id === String(item.id) ? "bold" : "normal" }}>
-                                            {item.title} {id === String(item.id) && " (현재글)"}
-                                        </div>
-                                        <div className="col-author">{item.authorNickname}</div>
-                                        <div className="col-date">{item.createdAt?.split("T")[0]}</div>
-                                        <div className="col-views">{item.viewCount}</div>
-                                        <div className="col-stats">
-                                            <ShareIcon fontSize="inherit" /> {item.recommendCount} {/* ✅ item.recommendCount로 수정 */}
-                                        </div>
+                            {PLAN_SHARE_ENABLED_CATEGORIES.includes(String(post?.category)) && (
+                                <div className="form-row route-inputs">
+                                    <div className="form-group">
+                                        <label>출발지</label>
+                                        <div>{post?.departure}</div>
                                     </div>
-                                ))}
+                                    <div className="route-arrow">➔</div>
+                                    <div className="form-group">
+                                        <label>도착지</label>
+                                        <div>{post?.arrival}</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="form-main-area">
+                                <div className="PostHeader">
+                                    <h1 className="PostTitle">{post?.title}</h1>
+                                    <div className="PostMeta">
+                                        <span>작성자: <strong>{post?.authorNickname}</strong></span>
+                                        <span> | {post?.createdAt?.slice(0, 10)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="PostContent">
+                                    <div className="mainContent ql-editor" dangerouslySetInnerHTML={{ __html: post?.content || "" }} />
+                                    {post?.tags && (
+                                        <div className="tags">
+                                            {post.tags.split(",").map((tag, idx) => (
+                                                <span key={idx} className="tag">#{tag.trim().replace('#', '')}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="PostFooter">
+                                    <div><RemoveRedEyeIcon /> 조회수: {post?.viewCount}</div>
+                                    <div><button onClick={handleShare}><ShareIcon /></button> 공유하기: {post?.recommendCount}</div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <div id="list-section" style={{ marginTop: "40px" }}>
+                            {/* 검색바 */}
+                            <div className="community-search-bar" style={{ marginBottom: "15px" }}>
+                                <select value={searchType} onChange={(e) => setSearchType(e.target.value as any)}>
+                                    <option value="title">제목</option>
+                                    <option value="author">작성자</option>
+                                </select>
+                                <div className="search-input-box">
+                                    <input
+                                        type="text"
+                                        placeholder="결과 내 검색"
+                                        value={keyword}
+                                        onChange={(e) => setKeyword(e.target.value)}
+                                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                                    />
+                                    <button onClick={handleSearch}><SearchIcon fontSize="small" /></button>
+                                </div>
                             </div>
 
-                            {/* 페이지네이션 */}
-                            <div className="pagination">
-                                <button onClick={() => goToPage(0)} disabled={page === 0}>{"<<"}</button>
-                                {pageNumbers.map(p => (
-                                    <button
-                                        key={p}
-                                        onClick={() => goToPage(p)}
-                                        className={page === p ? "active-page" : ""}
-                                    >
-                                        {p + 1}
-                                    </button>
-                                ))}
-                                <button onClick={() => goToPage(totalPages - 1)} disabled={page === totalPages - 1}>{">>"}</button>
+                            {/* 리스트 테이블 */}
+                            <div className="community-board-container">
+                                <div className="board-header-row">
+                                    <div className="col-id">번호</div>
+                                    <div className="col-route">기타</div>
+                                    <div className="col-title">제목</div>
+                                    <div className="col-author">작성자</div>
+                                    <div className="col-date">날짜</div>
+                                    <div className="col-views">조회</div>
+                                    <div className="col-stats">공유</div>
+                                </div>
+
+                                <div className="board-body">
+                                    {posts.map(item => (
+                                        <div
+                                            key={item.id}
+                                            className={`board-item-row ${id === String(item.id) ? "active-row" : ""}`}
+                                            onClick={async () => {
+                                                await handleView(Number(item.id));
+                                                navigate(`/community/${item.id}`);
+                                                window.scrollTo(0, 0);
+                                            }}
+                                        >
+                                            <div className="col-id">{item.id}</div>
+                                            <div className="col-route">
+                                                {item.departure || ""} {item.arrival ? `➔ ${item.arrival}` : ""}
+                                            </div>
+                                            <div className="col-title" style={{ fontWeight: id === String(item.id) ? "bold" : "normal" }}>
+                                                {item.title} {id === String(item.id) && " (현재글)"}
+                                            </div>
+                                            <div className="col-author">{item.authorNickname}</div>
+                                            <div className="col-date">{item.createdAt?.split("T")[0]}</div>
+                                            <div className="col-views">{item.viewCount}</div>
+                                            <div className="col-stats">
+                                                <ShareIcon fontSize="inherit" /> {item.recommendCount} {/* ✅ item.recommendCount로 수정 */}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* 페이지네이션 */}
+                                <div className="pagination">
+                                    <button onClick={() => goToPage(0)} disabled={page === 0}>{"<<"}</button>
+                                    {pageNumbers.map(p => (
+                                        <button
+                                            key={p}
+                                            onClick={() => goToPage(p)}
+                                            className={page === p ? "active-page" : ""}
+                                        >
+                                            {p + 1}
+                                        </button>
+                                    ))}
+                                    <button onClick={() => goToPage(totalPages - 1)} disabled={page === totalPages - 1}>{">>"}</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="community-footer">
-                        <button className="write-button" onClick={() => navigate("/community/write")}>글쓰기</button>
-                    </div>
-                </main>
+                        <div className="community-footer">
+                            <button className="write-button" onClick={() => navigate("/community/write")}>글쓰기</button>
+                        </div>
+                    </main>
+                </div>
             </div>
-        </div>
+        </>
     );
 }

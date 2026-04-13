@@ -134,152 +134,155 @@ export default function CommunityWritePage() {
     };
 
     return (
-        <div className="community-page">
+        <>
             <Header />
-            <div className="community-container">
-                <main className="community-main-content">
-                    <form className="community-post-form" onSubmit={handleSubmit}>
-                        {/* 분류/지역 로우 (1행) */}
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>분류</label>
-                                <select name="category" value={formData.category} onChange={handleChange}>
-                                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                </select>
+            <div className="community-page">
+                
+                <div className="community-container">
+                    <main className="community-main-content">
+                        <form className="community-post-form" onSubmit={handleSubmit}>
+                            {/* 분류/지역 로우 (1행) */}
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>분류</label>
+                                    <select name="category" value={formData.category} onChange={handleChange}>
+                                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>지역</label>
+                                    <select name="region" value={formData.region} onChange={handleChange}>
+                                        {regions.map(reg => <option key={reg} value={reg}>{reg}</option>)}
+                                    </select>
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label>지역</label>
-                                <select name="region" value={formData.region} onChange={handleChange}>
-                                    {regions.map(reg => <option key={reg} value={reg}>{reg}</option>)}
-                                </select>
-                            </div>
-                        </div>
 
-                        {/* 🌟 수정지점: 여행 플랜 또는 평점 입력 로우 (2행) */}
-                        {PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) ? (
-                            // 여행플랜 공유 카테고리일 때 (출발지/도착지)
-                            <div className="form-row route-inputs">
-                                <div className="form-group">
-                                    <label>출발지</label>
-                                    <input type="text" name="departure" placeholder="예: 서울" value={formData.departure} onChange={handleChange} />
-                                </div>
-                                <div className="route-arrow">➔</div>
-                                <div className="form-group">
-                                    <label>도착지</label>
-                                    <input type="text" name="arrival" placeholder="예: 부산" value={formData.arrival} onChange={handleChange} />
-                                </div>
-                            </div>
-                        ) : RATING_ENABLED_CATEGORIES.includes(formData.category) ? (
-                            // 맛집/후기/사진 게시판일 때 (평점 - 디자인 통일)
-                            <div className="form-row rating-form-row">
-                                <div className="form-group" style={{ flex: 1 }}> {/* 레이아웃 맞추기 위해 flex 설정 */}
-                                    <label>평점</label>
-                                    <div className="rating-input-container" style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        height: '40px', // 일반 input 높이와 통일 (CSS 파일 확인 필요)
-                                        border: '1px solid #ddd', 
-                                        borderRadius: '4px', 
-                                        padding: '0 10px',
-                                        backgroundColor: '#fff'
-                                    }}>
-                                        <div className="stars" style={{ display: "flex", gap: '8px' }}>
-                                            {[1, 2, 3, 4, 5].map(num => (
-                                                <span 
-                                                    key={num} 
-                                                    onClick={() => handleRating(num)}
-                                                    style={{ 
-                                                        cursor: "pointer", 
-                                                        fontSize: '24px', // 별 크기 키움
-                                                        lineHeight: '1',
-                                                        color: num <= formData.rating ? "#FFBB00" : "#e0e0e0",
-                                                        transition: 'color 0.2s'
-                                                    }}
-                                                >
-                                                    {num <= formData.rating ? '★' : '☆'}
-                                                </span>
-                                            ))}
-                                        </div>
-                                        {formData.rating > 0 && (
-                                            <span style={{ marginLeft: '12px', color: '#666', fontSize: '14px' }}>
-                                                ({formData.rating}점 / 5점)
-                                            </span>
-                                        )}
+                            {/* 🌟 수정지점: 여행 플랜 또는 평점 입력 로우 (2행) */}
+                            {PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) ? (
+                                // 여행플랜 공유 카테고리일 때 (출발지/도착지)
+                                <div className="form-row route-inputs">
+                                    <div className="form-group">
+                                        <label>출발지</label>
+                                        <input type="text" name="departure" placeholder="예: 서울" value={formData.departure} onChange={handleChange} />
+                                    </div>
+                                    <div className="route-arrow">➔</div>
+                                    <div className="form-group">
+                                        <label>도착지</label>
+                                        <input type="text" name="arrival" placeholder="예: 부산" value={formData.arrival} onChange={handleChange} />
                                     </div>
                                 </div>
-                                {/* 레이아웃 균형을 위한 빈 공간 (출발지➔도착지 3단 구조와 맞춤) */}
-                                <div style={{ width: '30px' }} className="route-arrow-space"></div> 
-                                <div className="form-group" style={{ flex: 1, visibility: 'hidden' }}></div>
-                            </div>
-                        ) : null}
+                            ) : RATING_ENABLED_CATEGORIES.includes(formData.category) ? (
+                                // 맛집/후기/사진 게시판일 때 (평점 - 디자인 통일)
+                                <div className="form-row rating-form-row">
+                                    <div className="form-group" style={{ flex: 1 }}> {/* 레이아웃 맞추기 위해 flex 설정 */}
+                                        <label>평점</label>
+                                        <div className="rating-input-container" style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            height: '40px', // 일반 input 높이와 통일 (CSS 파일 확인 필요)
+                                            border: '1px solid #ddd', 
+                                            borderRadius: '4px', 
+                                            padding: '0 10px',
+                                            backgroundColor: '#fff'
+                                        }}>
+                                            <div className="stars" style={{ display: "flex", gap: '8px' }}>
+                                                {[1, 2, 3, 4, 5].map(num => (
+                                                    <span 
+                                                        key={num} 
+                                                        onClick={() => handleRating(num)}
+                                                        style={{ 
+                                                            cursor: "pointer", 
+                                                            fontSize: '24px', // 별 크기 키움
+                                                            lineHeight: '1',
+                                                            color: num <= formData.rating ? "#FFBB00" : "#e0e0e0",
+                                                            transition: 'color 0.2s'
+                                                        }}
+                                                    >
+                                                        {num <= formData.rating ? '★' : '☆'}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            {formData.rating > 0 && (
+                                                <span style={{ marginLeft: '12px', color: '#666', fontSize: '14px' }}>
+                                                    ({formData.rating}점 / 5점)
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {/* 레이아웃 균형을 위한 빈 공간 (출발지➔도착지 3단 구조와 맞춤) */}
+                                    <div style={{ width: '30px' }} className="route-arrow-space"></div> 
+                                    <div className="form-group" style={{ flex: 1, visibility: 'hidden' }}></div>
+                                </div>
+                            ) : null}
 
-                        <div className="form-main-area">
-                            <input 
-                                className="post-input-title" 
-                                name="title"
-                                type="text" 
-                                placeholder="제목을 입력하세요" 
-                                value={formData.title}
-                                onChange={handleChange}
-                                required
-                            />
+                            <div className="form-main-area">
+                                <input 
+                                    className="post-input-title" 
+                                    name="title"
+                                    type="text" 
+                                    placeholder="제목을 입력하세요" 
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    required
+                                />
 
-                            <div id="toolbar" className="post-toolbar" style={{ 
-                                display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px", 
-                                padding: "10px 15px", border: "1px solid #ddd", borderBottom: "none",
-                                backgroundColor: "#fff", borderRadius: "8px 8px 0 0"
-                            }}>
-                                <select className="ql-size" defaultValue="16px">
-                                    {Size.whitelist.map((size: string) => (
-                                        <option key={size} value={size}>{size}</option>
-                                    ))}
-                                </select>
-                                <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
+                                <div id="toolbar" className="post-toolbar" style={{ 
+                                    display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px", 
+                                    padding: "10px 15px", border: "1px solid #ddd", borderBottom: "none",
+                                    backgroundColor: "#fff", borderRadius: "8px 8px 0 0"
+                                }}>
+                                    <select className="ql-size" defaultValue="16px">
+                                        {Size.whitelist.map((size: string) => (
+                                            <option key={size} value={size}>{size}</option>
+                                        ))}
+                                    </select>
+                                    <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
+                                    
+                                    {/* 기본 스타일 버튼 */}
+                                    <button className="ql-bold" />
+                                    <button className="ql-italic" />
+                                    <button className="ql-underline" />
+                                    <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
+
+                                    {/* 🌟 정렬 버튼 추가 (좌, 중, 우) */}
+                                    <button className="ql-align" value="" defaultChecked />       {/* 좌측 정렬 (기본값) */}
+                                    <button className="ql-align" value="center" /> {/* 중앙 정렬 */}
+                                    <button className="ql-align" value="right" />  {/* 우측 정렬 */}
+                                    <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
+
+                                    <button className="ql-image" type="button">
+                                        <span style={{ fontSize: "18px" }}>📷</span>
+                                    </button>
+                                </div>
+
+                                <ReactQuill 
+                                    ref={quillRef}
+                                    theme="snow"
+                                    value={formData.content}
+                                    onChange={handleContentChange}
+                                    modules={modules}
+                                    placeholder="글을 작성해보세요..."
+                                    style={{ height: "500px", marginBottom: "60px" }}
+                                />
                                 
-                                {/* 기본 스타일 버튼 */}
-                                <button className="ql-bold" />
-                                <button className="ql-italic" />
-                                <button className="ql-underline" />
-                                <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
-
-                                {/* 🌟 정렬 버튼 추가 (좌, 중, 우) */}
-                                <button className="ql-align" value="" defaultChecked />       {/* 좌측 정렬 (기본값) */}
-                                <button className="ql-align" value="center" /> {/* 중앙 정렬 */}
-                                <button className="ql-align" value="right" />  {/* 우측 정렬 */}
-                                <div style={{ width: "1px", height: "20px", backgroundColor: "#eee" }} />
-
-                                <button className="ql-image" type="button">
-                                    <span style={{ fontSize: "18px" }}>📷</span>
-                                </button>
+                                <input 
+                                    className="post-input-tags" 
+                                    name="tags"
+                                    type="text" 
+                                    placeholder="#태그 입력 (쉼표로 구분)" 
+                                    value={formData.tags}
+                                    onChange={handleChange}
+                                />
                             </div>
 
-                            <ReactQuill 
-                                ref={quillRef}
-                                theme="snow"
-                                value={formData.content}
-                                onChange={handleContentChange}
-                                modules={modules}
-                                placeholder="글을 작성해보세요..."
-                                style={{ height: "500px", marginBottom: "60px" }}
-                            />
-                            
-                            <input 
-                                className="post-input-tags" 
-                                name="tags"
-                                type="text" 
-                                placeholder="#태그 입력 (쉼표로 구분)" 
-                                value={formData.tags}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div className="community-footer">
-                            <button type="button" className="cancel-button" onClick={() => navigate("/community")}>취소</button>
-                            <button type="submit" className="write-button">게시하기</button>
-                        </div>
-                    </form>
-                </main>
+                            <div className="community-footer">
+                                <button type="button" className="cancel-button" onClick={() => navigate("/community")}>취소</button>
+                                <button type="submit" className="write-button">게시하기</button>
+                            </div>
+                        </form>
+                    </main>
+                </div>
             </div>
-        </div>
+        </>
     );
 }
