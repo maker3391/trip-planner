@@ -1,25 +1,42 @@
-import { useEffect, useState } from "react";
-import { useLocation } from 'react-router-dom';
+import { useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import MyMapApp from "./MyMapApp";
 import { PlacePoint, Connection } from "../types/map";
+import { SearchPlace } from "../types/searchPlace.ts";
 import SaveModal from "../components/trip/SaveModal";
 import ActionButtons from "../components/trip/ActionButtons";
-import { useCreateTrip, useGetTrip, useUpdateTrip } from "../components/hooks/useTrip";
-import { TripPlanRequest } from "../types/trip";
+import SearchResultModal from "../components/map/SearchResultModal";
+import {
+  useCreateTrip,
+  useGetTrip,
+  useUpdateTrip,
+} from "../components/hooks/useTrip";
+import { useNavigate } from "react-router-dom";
 import "./MainPage.css";
 
 export default function MainPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchPlace[]>([]);
+  const [selectedSearchPlace, setSelectedSearchPlace] =
+    useState<SearchPlace | null>(null);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+
   const [path, setPath] = useState<PlacePoint[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [targetTripId, setTargetTripId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tripForm, setTripForm] = useState({ title: "", destination: "", startDate: "", endDate: "" });
+  const [tripForm, setTripForm] = useState({
+    title: "",
+    destination: "",
+    startDate: "",
+    endDate: "",
+  });
+  const [calcData, setCalcData] = useState({ expenses: [], budget: 0 });
 
-  // 색상 상태
   const [pinColor, setPinColor] = useState("#000000");
   const [selectedPinColor, setSelectedPinColor] = useState("#4285F4");
   const [lineColor, setLineColor] = useState("#FF4D4F");
@@ -28,7 +45,6 @@ export default function MainPage() {
   const createTripMutation = useCreateTrip();
   const updateTripMutation = useUpdateTrip(targetTripId);
 
-  // 1. URL ID 체크
   useEffect(() => {
     const state = location.state as { tripId?: number };
     if (state?.tripId) {
@@ -37,7 +53,6 @@ export default function MainPage() {
     }
   }, [location]);
 
-  // 1. 서버 데이터 로드 시 변환 (Memo & Color 복구)
   useEffect(() => {
     if (tripData && tripData.schedules) {
       if (tripData.schedules.length > 0) {
@@ -47,34 +62,39 @@ export default function MainPage() {
         if (first.lineColor) setLineColor(first.lineColor);
       }
 
-      const recoveredPath: PlacePoint[] = tripData.schedules
-        ?.sort((a: any, b: any) => a.visitOrder - b.visitOrder)
-        .map((s: any) => ({
-          lat: s.latitude || 0,
-          lng: s.longitude || 0,
-          name: s.placeName || s.title,
-          address: s.placeAddress || "",
-          placeId: s.googlePlaceId || undefined,
-          customTitle: s.title,
-          // 중요: 서버에서 받아온 memo 필드를 프론트 path에 저장
-          memo: s.memo || ""
-        })) || [];
+      const recoveredPath: PlacePoint[] =
+        tripData.schedules
+          ?.sort((a: any, b: any) => a.visitOrder - b.visitOrder)
+          .map((s: any) => ({
+            lat: s.latitude || 0,
+            lng: s.longitude || 0,
+            name: s.placeName || s.title,
+            address: s.placeAddress || "",
+            placeId: s.googlePlaceId || undefined,
+            customTitle: s.title,
+            memo: s.memo || "",
+          })) || [];
 
       setPath(recoveredPath);
-      setConnections(recoveredPath.map((_, i) => ({ from: i, to: i + 1 })).slice(0, -1));
-      setTripForm({ title: tripData.title, destination: tripData.destination, startDate: tripData.startDate, endDate: tripData.endDate });
-      window.dispatchEvent(new CustomEvent('LOAD_CALCULATOR_DATA', {
-        detail: {
-          expenses: tripData.expenses || [],
-          budget: tripData.totalBudget || 0,
-        }
-      }));
+      setConnections(
+        recoveredPath.map((_, i) => ({ from: i, to: i + 1 })).slice(0, -1)
+      );
+
       setTripForm({
         title: tripData.title,
         destination: tripData.destination,
         startDate: tripData.startDate,
-        endDate: tripData.endDate
+        endDate: tripData.endDate,
       });
+
+      window.dispatchEvent(
+        new CustomEvent("LOAD_CALCULATOR_DATA", {
+          detail: {
+            expenses: tripData.expenses || [],
+            budget: tripData.totalBudget || 0,
+          },
+        })
+      );
     }
   }, [tripData]);
 
@@ -82,12 +102,33 @@ export default function MainPage() {
     const handleCalcSync = (e: any) => {
       setCalcData(e.detail);
     };
-    window.addEventListener('SYNC_CALCULATOR', handleCalcSync);
-    return () => window.removeEventListener('SYNC_CALCULATOR', handleCalcSync);
+
+    window.addEventListener("SYNC_CALCULATOR", handleCalcSync);
+    return () => window.removeEventListener("SYNC_CALCULATOR", handleCalcSync);
   }, []);
 
-  // 3. 저장 로직
-  // 2. 저장/수정 로직 (Memo & Color 포함)
+  const openSearchModal = useCallback(() => {
+    setIsSearchModalOpen(true);
+  }, []);
+
+  const clearSelectedSearchPlace = useCallback(() => {
+    setSelectedSearchPlace(null);
+  }, []);
+
+  const closeSearchModal = useCallback(() => {
+    setIsSearchModalOpen(false);
+    setSearchKeyword("");
+    setSearchResults([]);
+  }, []);
+
+  const handleSearchResultSelect = useCallback(
+    (place: SearchPlace) => {
+      setSelectedSearchPlace(place);
+      closeSearchModal();
+    },
+    [closeSearchModal]
+  );
+
   const handleSaveToBackend = () => {
     if (!tripForm.title) return alert("제목을 입력해주세요.");
 
@@ -101,23 +142,23 @@ export default function MainPage() {
       latitude: p.lat,
       longitude: p.lng,
       googlePlaceId: p.placeId,
-      // 중요: 백엔드 DTO 필드명인 'memo'로 전송
       memo: p.memo,
       pinColor: pinColor,
       selectedPinColor: selectedPinColor,
-      lineColor: lineColor
+      lineColor: lineColor,
     }));
 
     const expenses = calcData.expenses.map((item: any) => ({
       amount: item.amount,
-      category: item.category || 'ETC',
-      description: item.description
+      category: item.category || "ETC",
+      description: item.description,
     }));
+
     const requestData: any = {
       ...tripForm,
       schedules,
       expenses,
-      totalBudget: calcData.budget
+      totalBudget: calcData.budget,
     };
 
     const mutation = targetTripId ? updateTripMutation : createTripMutation;
@@ -129,29 +170,46 @@ export default function MainPage() {
         }
         setIsModalOpen(false);
         alert("여행 계획과 예산이 안전하게 저장되었습니다! 💾");
+        navigate("/trip-list");
       },
       onError: (error) => {
         console.error("저장 중 오류 발생:", error);
         alert("저장에 실패했습니다. 서버 로그를 확인해주세요.");
-      }
+      },
     });
   };
 
   return (
     <div className="main-page">
       <Header />
-      <div className="main-page-body" style={{ display: 'flex', height: 'calc(100vh - 60px)' }}>
-        <Sidebar onSearch={setSearchKeyword} />
-        <main className="map-area" style={{ flexGrow: 1, position: 'relative' }}>
-          
+
+      <div
+        className="main-page-body"
+        style={{ display: "flex", height: "calc(100vh - 60px)" }}
+      >
+        <Sidebar
+          onSearch={(keyword) => {
+            setSearchKeyword(keyword);
+          }}
+        />
+
+        <main className="map-area" style={{ flexGrow: 1, position: "relative" }}>
           <ActionButtons
-            onOpenSaveModal={() => path.length > 0 ? setIsModalOpen(true) : alert("장소를 추가해주세요.")}
+            onOpenSaveModal={() =>
+              path.length > 0
+                ? setIsModalOpen(true)
+                : alert("장소를 추가해주세요.")
+            }
             isLoading={isTripLoading}
           />
-          
-          <div style={{ width: '100%', height: '100%' }}>
+
+          <div style={{ width: "100%", height: "100%" }}>
             <MyMapApp
               searchKeyword={searchKeyword}
+              setSearchResults={setSearchResults}
+              openSearchModal={openSearchModal}
+              selectedSearchPlace={selectedSearchPlace}
+              clearSelectedSearchPlace={clearSelectedSearchPlace}
               path={path}
               setPath={setPath}
               connections={connections}
@@ -164,16 +222,23 @@ export default function MainPage() {
               setLineColor={setLineColor}
             />
           </div>
-
         </main>
       </div>
 
-      <SaveModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSave={handleSaveToBackend} 
-        tripForm={tripForm} 
-        setTripForm={setTripForm} 
+      <SearchResultModal
+        open={isSearchModalOpen}
+        keyword={searchKeyword}
+        results={searchResults}
+        onClose={closeSearchModal}
+        onSelect={handleSearchResultSelect}
+      />
+
+      <SaveModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveToBackend}
+        tripForm={tripForm}
+        setTripForm={setTripForm}
       />
     </div>
   );

@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,13 +83,18 @@ public class TripPlanService {
         }
 
         if (requestDto.getTotalBudget() != null) {
-            Budget budget = new Budget();
-            budget.setTripPlan(tripPlan);
-            budget.setTotalBudget(requestDto.getTotalBudget());
-            budget.setCurrency(requestDto.getCurrency() != null ? requestDto.getCurrency() : "KRW");
-            budget.setCreatedAt(LocalDateTime.now());
+            BigDecimal safeBudget = requestDto.getTotalBudget().setScale(2, RoundingMode.HALF_UP);
 
-            tripPlan.setBudget(budget);
+            if (tripPlan.getBudget() != null) {
+                tripPlan.getBudget().setTotalBudget(safeBudget);
+            } else {
+                Budget budget = new Budget();
+                budget.setTripPlan(tripPlan);
+                budget.setTotalBudget(safeBudget);
+                budget.setCurrency(requestDto.getCurrency() != null ? requestDto.getCurrency() : "KRW");
+                budget.setCreatedAt(LocalDateTime.now());
+                tripPlan.setBudget(budget);
+            }
         }
 
         TripPlan savePlan = tripPlanRepository.save(tripPlan);
@@ -176,6 +183,9 @@ public class TripPlanService {
                 expense.setAmount(expenseDto.getAmount());
                 expense.setCategory(expenseDto.getCategory() != null ? expenseDto.getCategory() : "ETC");
                 expense.setDescription(expenseDto.getDescription());
+                expense.setExpenseType("ESTIMATED");
+                expense.setCreatedAt(LocalDateTime.now());
+                expense.setPaidByUser(user);
 
                 tripPlan.getExpenses().add(expense);
             }

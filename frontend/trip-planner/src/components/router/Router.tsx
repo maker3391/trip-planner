@@ -38,9 +38,9 @@ export default function Router() {
         />
         <Route path="/community" element={<CommunityPage />} />
         <Route path="/community/write" element={<CommunityWritePage />} />
-        <Route 
-          path="/community/:id" 
-          element={<CommunityReadPage />} 
+        <Route
+          path="/community/:id"
+          element={<CommunityReadPage />}
         />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         <Route
@@ -53,7 +53,7 @@ export default function Router() {
         />
       </Routes>
 
-      <ChatBotButton onClick={() => setOpenChatBot(true)} />
+      <ChatBotButton onClick={() => setOpenChatBot((prev) => !prev)} />
 
       <ChatBotModal
         open={openChatBot}

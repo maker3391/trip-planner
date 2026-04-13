@@ -2,10 +2,7 @@ package com.fiveguys.trip_planner.response;
 
 import com.fiveguys.trip_planner.entity.Community;
 import io.swagger.v3.oas.annotations.media.Schema;
-<<<<<<< Updated upstream
 import com.fiveguys.trip_planner.repository.UserRepository;
-=======
->>>>>>> Stashed changes
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
