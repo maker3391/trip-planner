@@ -118,14 +118,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         if (userInfo.email() != null && !userInfo.email().isBlank()) {
             user.setEmail(userInfo.email());
         }
+
         user.setName(userInfo.name());
 
-        if (user.getNickname() == null || user.getNickname().isBlank() // 추가
-                || user.getNickname().startsWith("google_")
-                || user.getNickname().startsWith("kakao_")
-                || user.getNickname().startsWith("GOOGLE_")
-                || user.getNickname().startsWith("KAKAO_")) {
-            user.setNickname(userInfo.name());
+        if (user.getNickname() == null || user.getNickname().isBlank()) {
+            user.setNickname(generateUniqueNickname(userInfo.name()));
         }
 
         return userRepository.save(user);
@@ -150,16 +147,51 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             user.setEmail(userInfo.email());
         }
 
+        if (user.getNickname() == null || user.getNickname().isBlank()) {
+            user.setNickname(generateUniqueNickname(userInfo.name()));
+        }
+
         return userRepository.save(user);
     }
 
     private User createNewOAuthUser(OAuth2UserInfo userInfo) {
+        String uniqueNickname = generateUniqueNickname(userInfo.name());
+
         User newUser = User.createOAuthUser(
                 userInfo.email(),
                 userInfo.name(),
+                uniqueNickname,
                 userInfo.provider(),
                 userInfo.providerId()
         );
+
         return userRepository.save(newUser);
+    }
+
+    private String generateUniqueNickname(String baseNickname) {
+        String nickname = (baseNickname == null || baseNickname.isBlank())
+                ? "user"
+                : baseNickname.trim();
+
+        if (nickname.length() > 20) {
+            nickname = nickname.substring(0, 20);
+        }
+
+        String candidate = nickname;
+        int suffix = 1;
+
+        while (userRepository.existsByNickname(candidate)) {
+            String suffixText = String.valueOf(suffix);
+            int maxBaseLength = 30 - suffixText.length();
+
+            String shortenedBase = nickname.length() > maxBaseLength
+                    ? nickname.substring(0, maxBaseLength)
+                    : nickname;
+
+            candidate = shortenedBase + suffixText;
+            suffix++;
+        }
+
+        return candidate;
     }
 }

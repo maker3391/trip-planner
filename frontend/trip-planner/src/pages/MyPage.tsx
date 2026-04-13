@@ -1,4 +1,5 @@
 import { useEffect, useState, ChangeEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import { getMe, updateMe } from "../components/api/auth.ts";
 import "./MyPage.css";
@@ -28,6 +29,7 @@ interface PasswordForm {
 }
 
 export default function MyPage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<UserInfo | null>(null);
 
   const [basicForm, setBasicForm] = useState<BasicForm>({
@@ -45,10 +47,18 @@ export default function MyPage() {
   const [isSavingBasic, setIsSavingBasic] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
 
+  const clearAuthAndMoveLogin = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    setUser(null);
+    navigate("/login", { replace: true });
+  };
+
   const fetchUser = async () => {
     const token = localStorage.getItem("accessToken");
 
     if (!token || token === "undefined") {
+      clearAuthAndMoveLogin();
       return;
     }
 
@@ -63,6 +73,7 @@ export default function MyPage() {
       });
     } catch (error) {
       console.error("마이페이지 사용자 정보 조회 실패:", error);
+      clearAuthAndMoveLogin();
     }
   };
 
@@ -115,10 +126,15 @@ export default function MyPage() {
       });
 
       await fetchUser();
-
       alert("기본 정보가 수정되었습니다.");
     } catch (error: any) {
       console.error("기본 정보 수정 실패:", error);
+
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        alert("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
+        clearAuthAndMoveLogin();
+        return;
+      }
 
       alert(
         error?.response?.data?.message ||
@@ -174,6 +190,12 @@ export default function MyPage() {
       alert("비밀번호가 변경되었습니다.");
     } catch (error: any) {
       console.error("비밀번호 변경 실패:", error);
+
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        alert("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
+        clearAuthAndMoveLogin();
+        return;
+      }
 
       alert(
         error?.response?.data?.message ||

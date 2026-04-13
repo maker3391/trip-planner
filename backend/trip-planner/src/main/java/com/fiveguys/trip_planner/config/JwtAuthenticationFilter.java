@@ -25,6 +25,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+
+        return path.startsWith("/oauth2/")
+                || path.startsWith("/login/oauth2/")
+                || path.equals("/api/auth/login")
+                || path.equals("/api/auth/signup")
+                || path.equals("/api/auth/refresh")
+                || path.startsWith("/swagger-ui/")
+                || path.startsWith("/v3/api-docs/");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
@@ -32,7 +45,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorizationHeader = request.getHeader("Authorization");
         String token = jwtTokenProvider.resolveToken(authorizationHeader);
 
-        if (token != null && jwtTokenProvider.validateToken(token) && jwtTokenProvider.isAccessToken(token)) {
+        if (token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (jwtTokenProvider.validateToken(token) && jwtTokenProvider.isAccessToken(token)) {
             Long userId = jwtTokenProvider.getUserId(token);
 
             User user = userRepository.findById(userId).orElse(null);

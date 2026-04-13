@@ -30,24 +30,14 @@ export const getMe = async (): Promise<UserMeResponse> => {
     throw new Error("accessToken이 없습니다.");
   }
 
-  const response = await client.get<UserMeResponse>("/auth/me", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
+  const response = await client.get<UserMeResponse>("/auth/me");
   return response.data;
 };
 
 export const updateMe = async (
   data: UpdateMeRequest
 ): Promise<MessageResponse> => {
-  const response = await client.patch<MessageResponse>("/auth/me", data, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-    },
-  });
-
+  const response = await client.patch<MessageResponse>("/auth/me", data);
   return response.data;
 };
 

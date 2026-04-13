@@ -1,6 +1,6 @@
 import { AppBar, Toolbar, Button } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
-import { useNavigate, useLocation } from "react-router-dom"; // 🔥 useLocation 추가!
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
@@ -8,19 +8,24 @@ import { CalculatorService } from "./calculator";
 import Calculator from "./Calculator.tsx";
 import tplanner from "../../assets/icons/tplanner2.png";
 import GuidePopup from "../guide/GuidePopup.tsx";
+import { getMe } from "../api/auth.ts";
 
 export default function Header() {
   const navigate = useNavigate();
-  const location = useLocation(); // 🔥 현재 주소창 정보 가져오기
+  const location = useLocation();
+
   const [openTutorial, setOpenTutorial] = useState(false);
   const [openGuidePopup, setOpenGuidePopup] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-
-  // 💡 URL에서 첫 번째로 발견되는 숫자(여행 ID)를 쏙 빼오는 마법의 정규식!
-  // 예: "/plan/12" -> 12 추출 / 메인페이지("/") -> null
   const match = location.pathname.match(/\d+/);
   const currentTripId = match ? parseInt(match[0], 10) : 1;
+
+  const clearAuth = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+  };
 
   useEffect(() => {
     const today = new Date().toLocaleDateString("sv-SE");
@@ -31,41 +36,88 @@ export default function Header() {
     }
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.setItem("isLoggedIn", "false");
-    alert("로그아웃되었습니다.");
-    navigate("/login");
+  useEffect(() => {
+    let isMounted = true;
+
+    const validateLogin = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token || token === "undefined") {
+        if (isMounted) {
+          setIsLoggedIn(false);
+          setIsCheckingAuth(false);
+        }
+        return;
+      }
+
+      try {
+        await getMe();
+
+        if (isMounted) {
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        clearAuth();
+
+        if (isMounted) {
+          setIsLoggedIn(false);
+        }
+      } finally {
+        if (isMounted) {
+          setIsCheckingAuth(false);
+        }
+      }
+    };
+
+    setIsCheckingAuth(true);
+    validateLogin();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:8080/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("백엔드 로그아웃 요청 실패:", error);
+    } finally {
+      clearAuth();
+      setIsLoggedIn(false);
+      alert("로그아웃되었습니다.");
+      navigate("/login");
+    }
   };
 
   const handleTripListClick = () => {
+    if (isCheckingAuth) return;
+
     if (!isLoggedIn) {
       alert("로그인 후 이용 가능합니다.");
-      localStorage.setItem("isLoggedIn","false");
       navigate("/login");
       return;
     }
+
     navigate("/trip-list");
   };
 
   const handleCommunityClick = () => {
+    if (isCheckingAuth) return;
+
     if (!isLoggedIn) {
       alert("로그인 후 이용 가능합니다.");
-      localStorage.setItem("isLoggedIn","false");
       navigate("/login");
       return;
     }
+
     navigate("/community");
   };
 
-  // 💡 장바구니(계산기) 버튼 클릭 핸들러 추가
   const handleCalculatorClick = () => {
-    // 🚨 너무 깐깐했던 문지기(알림창)는 일단 주석 처리!
-    // if (!currentTripId) {
-    //   alert("여행 계획 상세 페이지에서만 예산 계산기를 사용할 수 있습니다!");
-    //   return;
-    // }
     CalculatorService.openCalculator();
   };
 
@@ -88,14 +140,14 @@ export default function Header() {
             <span className="header-icon">
               <button
                 type="button"
-                onClick={handleCalculatorClick} 
+                onClick={handleCalculatorClick}
                 className="header-icon-btn"
               >
                 <ShoppingCartOutlinedIcon />
               </button>
             </span>
 
-            {isLoggedIn ? (
+            {!isCheckingAuth && isLoggedIn ? (
               <>
                 <Button
                   className="header-login-btn"
@@ -107,7 +159,7 @@ export default function Header() {
                   로그아웃
                 </Button>
               </>
-            ) : (
+            ) : !isCheckingAuth ? (
               <>
                 <Button
                   className="header-login-signup-btn"
@@ -122,7 +174,7 @@ export default function Header() {
                   회원가입
                 </Button>
               </>
-            )}
+            ) : null}
           </div>
         </Toolbar>
       </AppBar>
@@ -136,6 +188,7 @@ export default function Header() {
         open={openTutorial}
         onClose={() => setOpenTutorial(false)}
       />
+
       {currentTripId && <Calculator tripId={currentTripId} />}
     </>
   );
