@@ -91,35 +91,6 @@ export default function CommunityPage() {
     fetchPosts();
   }, [page, selectedCategory, selectedRegion, searchType, keyword]);
 
-  // 🔥 조회수 증가 + URL 복사
-  const handleView = async (postId: number) => {
-    const url = window.location.origin + `/community/${postId}`;
-
-    // 🔹 1. URL 복사 (실패해도 무시)
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch (e) {
-      console.warn("클립보드 복사 실패 (무시됨)");
-    }
-
-    try {
-      // 🔹 2. 조회수 증가 API 호출
-      await client.patch(`/community/posts/${postId}/view`);
-
-      // 🔹 3. UI 즉시 반영 (UX 향상)
-      setPosts(prev =>
-        prev.map(p =>
-          Number(p.id) === postId
-            ? { ...p, viewCount: p.viewCount + 1 }
-            : p
-        )
-      );
-
-    } catch (error) {
-      console.error("조회수 증가 실패:", error);
-    }
-  };
-
   // 🔹 페이지 번호 계산
   const getPageNumbers = () => {
     const range = 5;
@@ -256,7 +227,8 @@ export default function CommunityPage() {
               <div className="col-author">작성자</div>
               <div className="col-date">날짜</div>
               <div className="col-views">조회</div>
-              <div className="col-stats">공유</div>
+              <div className="col-stats">좋아요</div>
+              <div className="col-share">공유</div>
             </div>
 
             {/* 🔹 리스트 */}
@@ -269,9 +241,7 @@ export default function CommunityPage() {
                     key={post.id}
                     className="board-item-row"
                     // 🔥 클릭 시 조회수 증가 + 페이지 이동
-                    onClick={async () => {
-                      await handleView(Number(post.id)); // ✅ 조회수 증가 완료 후
-                      navigate(`/community/${post.id}`); // ✅ 상세 이동
+                    onClick={async () => {navigate(`/community/${post.id}`); // ✅ 상세 이동
                     }}
                   >
                     <div className="col-id">{post.id}</div>
@@ -290,10 +260,12 @@ export default function CommunityPage() {
 
                     <div className="col-views">{post.viewCount}</div>
 
+                    <div className="col-stats">{post.likeCount}</div>
+
                     {/* 🔥 공유 수 (recommendCount 재사용) */}
-                    <div className="col-stats">
+                    <div className="col-share">
                       <ShareIcon fontSize="inherit" />{" "}
-                      {post.recommendCount}
+                      {post.shareCount}
                     </div>
                   </div>
                 ))

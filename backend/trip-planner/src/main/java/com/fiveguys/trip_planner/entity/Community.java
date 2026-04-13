@@ -51,20 +51,31 @@ public class Community {
 
     @Builder.Default
     @Column(nullable = false)
-    private Long recommendCount = 0L; // 좋아요(공유수)
+    private Long shareCount = 0L;
 
-    // 🔥 이미지와의 연관 관계 설정
+    // 🔥 추가 (핵심)
+    @Builder.Default
+    @Column(nullable = false)
+    private Long likeCount = 0L;
+
+    // 🔥 이미지 관계
     @Builder.Default
     @OneToMany(mappedBy = "community", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommunityImage> images = new ArrayList<>();
+
+    // 좋아요 관련
+    @OneToMany(mappedBy = "community", cascade = CascadeType.REMOVE)
+    private List<CommunityLike> likes;
 
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
-        if(this.viewCount == null) this.viewCount = 0L;
-        if(this.recommendCount == null) this.recommendCount = 0L;
+
+        if (this.viewCount == null) this.viewCount = 0L;
+        if (this.shareCount == null) this.shareCount = 0L;
+        if (this.likeCount == null) this.likeCount = 0L; // 🔥 추가
     }
 
     @PreUpdate
@@ -72,9 +83,10 @@ public class Community {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // 🔥 비즈니스 로직 메서드들
+    // =========================
+    // 비즈니스 로직
+    // =========================
 
-    // 게시글 수정용
     public void update(String category, String region, String title, String content,
                        String departure, String arrival, String tags, Integer rating) {
         this.category = category;
@@ -92,19 +104,25 @@ public class Community {
         this.viewCount++;
     }
 
-    // 추천(공유)수 증가
-    public void incrementRecommend() {
-        this.recommendCount++;
+    // 공유 증가
+    public void incrementShareCount() {
+        this.shareCount++;
     }
 
-    // 추천(공유)수 감소
-    public void decrementRecommend() {
-        if(this.recommendCount > 0) this.recommendCount--;
+    // =========================
+    // 🔥 좋아요 로직 (추가)
+    // =========================
+
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) this.likeCount--;
     }
 
     /**
      * 🔥 연관 관계 편의 메서드
-     * 이미지를 게시글에 안전하게 추가하기 위해 사용합니다.
      */
     public void addImage(CommunityImage image) {
         this.images.add(image);

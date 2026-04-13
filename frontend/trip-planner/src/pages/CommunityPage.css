@@ -1,4 +1,6 @@
-/* 1. 전체 레이아웃 (본문 확장형) */
+/* ========================= */
+/* 🔥 전체 레이아웃 */
+/* ========================= */
 .community-page {
     max-width: 1200px;
     margin: 80px auto 40px auto;
@@ -14,51 +16,92 @@
     margin-top: 20px;
 }
 
-/* 2. 사이드바 스타일 (슬림화) */
+/* ========================= */
+/* 🔥 사이드바 */
+/* ========================= */
 .community-sidebar {
-    width: 180px;
-    flex-shrink: 0;
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    width: 250px;
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+    background: #fffef8; /* 살짝 따뜻한 배경 */
+    border-radius: 10px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #f5e6b3;
+}
+
+.sidebar-section {
+    margin-bottom: 24px;
 }
 
 .sidebar-section h3 {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
-    margin-bottom: 10px;
-    color: #222;
-    padding-bottom: 6px;
-    border-bottom: 2px solid #ffc107;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #ffd54f;
 }
 
+/* 카테고리 */
 .sidebar-section ul {
     list-style: none;
     padding: 0;
-    margin: 0 0 15px 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .sidebar-section li {
-    padding: 7px 10px;
-    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
     cursor: pointer;
-    border-radius: 4px;
-    transition: 0.2s;
+    transition: all 0.2s;
     color: #666;
 }
 
-.sidebar-section li:hover,
+.sidebar-section li:hover {
+    background-color: #fff8e1;
+    color: #222;
+}
+
 .sidebar-section li.active {
-    background-color: #fffdf5;
-    color: #ffc107;
+    background-color: #ffc107;
+    color: #222;
+    font-weight: 700;
+}
+
+/* 지역 */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.region-grid span {
+    background: #fffaf0;
+    padding: 6px;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.region-grid span:hover {
+    background: #ffe082;
+}
+
+.region-grid span.active {
+    background: #ffc107;
     font-weight: 600;
 }
 
-/* 사이드바 필터 초기화 버튼 */
+/* 필터 초기화 */
 .filter-reset-area {
-    margin-top: 5px;
+    margin-top: 10px;
     padding-top: 12px;
     border-top: 1px dashed #eee;
 }
@@ -67,49 +110,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
     width: 100%;
-    padding: 6px;
-    background-color: #f8f8f8;
-    color: #999;
-    border: 1px solid #eee;
+    padding: 8px;
+    background-color: #fffaf0;
+    color: #888;
+    border: 1px solid #f0d98c;
     border-radius: 6px;
     font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.filter-reset-btn:hover {
-    background-color: #fffdf5;
-    color: #ffc107;
-    border-color: #ffc107;
-}
-
-/* 지역 그리드 */
-.region-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-}
-
-.region-grid span {
-    background: #f8f8f8;
-    padding: 5px;
-    font-size: 11px;
-    text-align: center;
-    border-radius: 4px;
     cursor: pointer;
     transition: 0.2s;
 }
 
-.region-grid span.active {
-    background: #ffc107;
-    color: #222;
-    font-weight: 600;
+.filter-reset-btn:hover {
+    background-color: #fff3cd;
+    color: #ffb300;
+    border-color: #ffc107;
 }
 
-/* 3. 메인 컨텐츠 영역 (게시판 위주 확장) */
+/* ========================= */
+/* 🔥 메인 */
+/* ========================= */
 .community-main-content {
     flex: 1;
     min-width: 0;
@@ -120,29 +141,31 @@
     justify-content: space-between;
     align-items: flex-end;
     margin-bottom: 25px;
+    gap: 20px;
 }
 
 .community-content-header h1 {
     font-size: 28px;
     font-weight: 700;
-    margin: 0 0 8px 0;
-    letter-spacing: -0.5px;
+    margin: 0 0 6px 0;
 }
 
 .community-content-header p {
-    color: #777;
     margin: 0;
+    color: #777;
+    font-size: 14px;
 }
 
-/* 검색바 스타일 */
+/* 검색 */
 .community-search-bar {
     display: flex;
     gap: 8px;
+    align-items: center;
 }
 
 .community-search-bar select {
-    padding: 6px 10px;
-    border: 1px solid #ddd;
+    padding: 7px 10px;
+    border: 1px solid #e6c96b;
     border-radius: 6px;
     font-size: 13px;
     outline: none;
@@ -151,10 +174,10 @@
 .search-input-box {
     display: flex;
     align-items: center;
-    border: 1px solid #ddd;
+    border: 1px solid #e6c96b;
     border-radius: 6px;
     padding: 0 10px;
-    background: #fff;
+    background: #fffef8;
 }
 
 .search-input-box input {
@@ -168,98 +191,187 @@
 .search-input-box button {
     background: none;
     border: none;
-    color: #ffc107;
+    color: #ffb300;
     cursor: pointer;
     display: flex;
 }
 
-/* 4. 게시판 테이블 (비율 유지) */
+/* ========================= */
+/* 🔥 게시판 */
+/* ========================= */
 .community-board-container {
     border-top: 2px solid #222;
     border-bottom: 1px solid #ddd;
-    background-color: #fff;
+    background-color: #fffef8;
 }
 
+/* 🔥 컬럼 비율 */
 .board-header-row,
 .board-item-row {
     display: grid;
-    grid-template-columns: 60px 120px 1fr 130px 100px 70px 60px; /* 번호, 여정, 제목, 작성자, 날짜, 조회, 추천 */
+    grid-template-columns: 
+        60px
+        140px
+        1fr
+        120px
+        100px
+        70px
+        70px
+        90px;
     align-items: center;
-    padding: 15px 0;
+    padding: 14px 0;
     text-align: center;
 }
 
 .board-header-row {
-    background-color: #fcfcfc;
+    background-color: #fff8e1;
     font-weight: 600;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #f0e0a0;
     font-size: 14px;
     color: #555;
 }
 
 .board-item-row {
-    border-bottom: 1px solid #f2f2f2;
-    font-size: 15px;
-    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #f3e7b0;
+    font-size: 14px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .board-item-row:hover {
-    background-color: #fffdf5;
+    background-color: #fff8e1;
     cursor: pointer;
+    transform: translateY(-1px);
 }
 
-/* 제목/여정 스타일 */
+/* ========================= */
+/* 🔥 컬럼 디테일 */
+/* ========================= */
 .col-title {
     text-align: left;
-    padding: 0 20px;
+    padding: 0 15px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.col-title span {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.post-title-text {
-    font-weight: 500;
-    color: #222;
-}
-
-.comment-count {
-    color: #ff4d4f;
-    font-size: 13px;
-    font-weight: 600;
-}
-
+/* 🔥 기존 파란 route 제거 → 노란 포인트 */
 .col-route {
-    color: #4A90E2; 
+    /* 1. 고정 크기 설정 */
+    width: 85px;          /* 박스의 너비를 적절하게 고정 (내용에 맞춰 조절하세요) */
+    flex-shrink: 0;       /* 부모 요소가 좁아져도 박스 크기가 줄어들지 않게 고정 */
+    
+    /* 2. 텍스트 중앙 정렬 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    
+    /* 3. 내용이 넘칠 경우 처리 (선택 사항) */
+    white-space: nowrap;  /* 텍스트가 줄바꿈되지 않게 함 */
+    overflow: hidden;     /* 넘치는 텍스트 숨김 */
+    text-overflow: ellipsis; /* 너무 길면 ... 표시 */
+
+    /* 기존 스타일 유지 */
     font-size: 11px;
     font-weight: 600;
-    background: #f0f7ff;
+    color: #b8860b;
+    background: #fff3cd;
     padding: 3px 6px;
     border-radius: 4px;
-    margin: 0 10px;
 }
-
 .col-author {
-    font-size: 14px;
+    font-size: 13px;
     color: #444;
-    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 푸터 및 글쓰기 버튼 */
+.col-date,
+.col-views,
+.col-stats,
+.col-share {
+    font-size: 13px;
+    color: #888;
+}
+
+/* 🔥 공유 아이콘 (청록 제거 → 노란톤) */
+.col-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #ffb300;
+    font-weight: 500;
+}
+
+/* 게시글 없음 */
+.board-body .no-posts {
+    text-align: center;
+    color: #aaa;
+    padding: 40px 0;
+    font-size: 14px;
+}
+
+/* ========================= */
+/* 🔥 페이지네이션 */
+/* ========================= */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.pagination button {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #e6c96b;
+    background: #fffef8;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+.pagination button:hover {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+}
+
+.pagination button.active-page {
+    background-color: #ffc107;
+    color: #222;
+    font-weight: 700;
+    border-color: #ffc107;
+}
+
+.pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ========================= */
+/* 🔥 하단 버튼 */
+/* ========================= */
 .community-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 25px;
+    margin-top: 20px;
 }
 
 .write-button {
     padding: 12px 30px;
-    background-color: #ffc107; 
+    background-color: #ffc107;
     color: #222;
     border: none;
     border-radius: 6px;
@@ -275,62 +387,37 @@
     transform: translateY(-1px);
 }
 
-.col-stats,
-.col-author,
-.col-date,
-.col-views {
-    color: #888;
-    font-size: 14px;
-}
+/* ========================= */
+/* 🔥 반응형 */
+/* ========================= */
+@media (max-width: 900px) {
+    .community-container {
+        flex-direction: column;
+    }
 
-.stat-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-}
+    .community-sidebar {
+        width: 100%;
+        position: relative;
+        top: 0;
+    }
 
-/* 게시글 없음 메시지 */
-.board-body .no-posts {
-    text-align: center;
-    color: #aaa;
-    padding: 40px 0;
-    font-size: 14px;
-}
+    .board-header-row,
+    .board-item-row {
+        grid-template-columns: 
+            50px 
+            1fr 
+            90px 
+            70px;
+    }
 
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
+    .col-route,
+    .col-date,
+    .col-stats,
+    .col-share {
+        display: none;
+    }
 
-.pagination button {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
-    border: 1px solid #ddd;
-    background: #fff;
-    cursor: pointer;
-    border-radius: 6px;
-    font-size: 13px;
-    transition: 0.2s;
-}
-
-.pagination button:hover {
-    background-color: #fffdf5;
-    border-color: #ffc107;
-}
-
-.pagination button.active-page {
-    background-color: #ffc107;
-    color: #222;
-    font-weight: 700;
-    border-color: #ffc107;
-}
-
-.pagination button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    .search-input-box input {
+        width: 140px;
+    }
 }

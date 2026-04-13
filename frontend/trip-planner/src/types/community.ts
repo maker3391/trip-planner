@@ -38,8 +38,8 @@ export interface CommunityResponse {
     authorNickname: string;     // 작성자 닉네임
     tags: string;               // 태그
     viewCount: number;          // 조회수
-    recommendCount: number;     // 좋아요 수
     shareCount: number;         // 공유수
+    likeCount: number;          // 좋아요 수
     createdAt: string;          // 생성일
     updatedAt: string;          // 수정일
     departure?: string;         // 출발지

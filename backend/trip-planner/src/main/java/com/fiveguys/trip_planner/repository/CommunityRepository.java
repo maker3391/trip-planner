@@ -7,21 +7,20 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
-
 public interface CommunityRepository extends JpaRepository<Community, Long> {
 
     /**
      * 🔥 커뮤니티 통합 필터링 조회 (동적 쿼리)
-     * 카테고리, 지역, 검색 조건에 따라 결과를 반환합니다.
+     * - category, region, keyword, searchType 기반 필터링
+     * - keyword는 부분 검색 (LIKE %keyword%)
      */
     @Query("SELECT c FROM Community c WHERE " +
             "(:category IS NULL OR c.category = :category) AND " +
             "(:region IS NULL OR c.region = :region) AND " +
             "(" +
             "  :keyword IS NULL OR " +
-            "  (:searchType = 'title' AND c.title LIKE :keyword) OR " +
-            "  (:searchType = 'author' AND c.authorNickname LIKE :keyword)" +
+            "  (:searchType = 'title' AND c.title LIKE CONCAT('%', :keyword, '%')) OR " +
+            "  (:searchType = 'author' AND c.authorNickname LIKE CONCAT('%', :keyword, '%'))" +
             ")")
     Page<Community> findWithFilters(
             @Param("category") String category,
@@ -31,23 +30,36 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
             Pageable pageable
     );
 
-    // --- 아래는 특정 상황에서 단독으로 사용할 수 있는 기존 메서드들입니다 ---
+    // =========================
+    // 기본 조회
+    // =========================
 
-    // 카테고리별 조회
     Page<Community> findByCategory(String category, Pageable pageable);
 
-    // 지역별 조회
     Page<Community> findByRegion(String region, Pageable pageable);
 
-    // 제목 검색
     Page<Community> findByTitleContaining(String keyword, Pageable pageable);
 
-    // 작성자 기준 검색
-    Page<Community> findByAuthorNickname(String authorNickname, Pageable pageable);
+    Page<Community> findByAuthorNicknameContaining(String keyword, Pageable pageable);
 
-    // 조회수 기준 내림차순
+    // =========================
+    // 정렬 기준
+    // =========================
+
+    // 조회수 기준
     Page<Community> findByOrderByViewCountDesc(Pageable pageable);
 
-    // 추천수 기준 내림차순
-    Page<Community> findByOrderByRecommendCountDesc(Pageable pageable);
+    // 🔥 공유수 기준 (recommendCount 제거 → shareCount로 대체)
+    Page<Community> findByOrderByShareCountDesc(Pageable pageable);
+
+    // 🔥 좋아요수 기준
+    Page<Community> findByOrderByLikeCountDesc(Pageable pageable);
+
+    // =========================
+    // 🔥 인기글 (커스텀 정렬)
+    // =========================
+    // 좋아요 + 조회수 + 공유수 가중치 반영
+
+    @Query("SELECT c FROM Community c ORDER BY (c.likeCount * 3 + c.shareCount * 5 + c.viewCount) DESC")
+    Page<Community> findPopularPosts(Pageable pageable);
 }

@@ -1,10 +1,14 @@
-/* 전체 폼 */
+/* =========================
+   전체 폼
+========================= */
 .community-post-form {
-    background: #fff;
+    background: #fffef8;
     padding-top: 30px;
 }
 
-/* 상단 드롭다운 및 기본 로우 */
+/* =========================
+   상단 드롭다운 / 공통 로우
+========================= */
 .form-row {
     display: flex;
     gap: 20px;
@@ -25,53 +29,59 @@
     color: #666;
 }
 
+/* input / select 공통 높이 통일 */
 .form-group select,
 .form-group input {
     padding: 10px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid #e6c96b;
     border-radius: 6px;
     font-size: 14px;
     outline: none;
     transition: all 0.2s;
-    height: 42px; /* 높이를 명시적으로 지정하여 평점 컨테이너와 통일 */
+    height: 42px;
     box-sizing: border-box;
+    background: #fffef8;
 }
 
 .form-group select:focus,
 .form-group input:focus {
     border-color: #ffc107;
-    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.15);
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
 }
 
-/* ✈️ 여행 경로 (당일치기/여행플랜) */
+/* =========================
+   ✈️ 여행 경로
+========================= */
 .route-inputs {
-    background: #f5f9ff;
+    background: #fff8e1;
     padding: 15px;
     border-radius: 8px;
-    border: 1px solid #e3edff;
+    border: 1px solid #ffe082;
 }
 
 .route-arrow {
     padding-bottom: 10px;
-    color: #4A90E2;
+    color: #ffb300;
     font-weight: bold;
     font-size: 18px;
 }
 
-/* ⭐ 평점 영역 (맛집/후기/사진 게시판) */
+/* =========================
+   ⭐ 평점 영역
+========================= */
 .rating-form-row {
-    background: #fff9e6; /* 기존 디자인의 노란색 톤 유지 */
+    background: #fff8e1;
     padding: 15px;
     border-radius: 8px;
-    border: 1px solid #ffe08a;
+    border: 1px solid #ffd54f;
 }
 
 .rating-input-container {
     display: flex;
     align-items: center;
-    height: 42px; /* input, select와 동일한 높이 */
-    background: #fff;
-    border: 1px solid #ddd;
+    height: 42px;
+    background: #fffef8;
+    border: 1px solid #e6c96b;
     border-radius: 6px;
     padding: 0 15px;
     box-sizing: border-box;
@@ -82,12 +92,7 @@
     border-color: #ffc107;
 }
 
-/* 레이아웃 균형을 위한 빈 공간 (출발지 ➔ 도착지 화살표 공간과 너비 동일) */
-.route-arrow-space {
-    width: 25px; 
-}
-
-/* 별 스타일 및 hover 효과 */
+/* 별 영역 */
 .stars {
     display: flex;
     gap: 8px;
@@ -95,78 +100,118 @@
 }
 
 .stars span {
-    transition: transform 0.15s, color 0.15s;
     font-size: 24px;
     line-height: 1;
+    cursor: pointer;
+    transition: transform 0.15s, color 0.15s;
+    color: #ffc107;
 }
 
 .stars span:hover {
     transform: scale(1.2);
 }
 
-/* 메인 영역 */
+/* 평점 텍스트 */
+.rating-text {
+    margin-left: 12px;
+    color: #666;
+    font-size: 14px;
+}
+
+/* 레이아웃 균형 */
+.route-arrow-space {
+    width: 30px;
+}
+
+/* =========================
+   메인 영역
+========================= */
 .form-main-area {
     display: flex;
     flex-direction: column;
-    border: 1px solid #eee;
+    border: 1px solid #f0d98c;
     border-radius: 10px;
     overflow: hidden;
     margin-top: 10px;
-    background: #fff;
+    background: #fffef8;
 }
 
-/* 제목 */
+/* =========================
+   제목
+========================= */
 .post-input-title {
     border: none;
     padding: 18px 20px;
     font-size: 20px;
     font-weight: 700;
     outline: none;
-    border-bottom: 1px solid #f2f2f2;
-    height: auto !important; /* 위에서 설정한 42px 무시하고 패딩에 맞춤 */
+    border-bottom: 1px solid #f3e7b0;
+    height: auto !important;
+    background: #fffef8;
 }
 
-/* 🔥 툴바 */
+/* =========================
+   🔥 툴바
+========================= */
 .post-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    padding: 10px 15px;
     border: none !important;
-    border-bottom: 1px solid #eee !important;
-    background: #fafafa !important;
+    border-bottom: 1px solid #f0d98c !important;
+    background: #fff8e1 !important;
 }
 
-/* 툴바 버튼 */
+/* 구분선 */
+.toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background-color: #f0d98c;
+}
+
+/* 버튼 hover */
 .post-toolbar button:hover {
-    background: #f0f0f0;
+    background: #fff3cd;
     border-radius: 4px;
 }
 
-/* 🔥 ReactQuill 컨테이너 */
+/* 정렬 버튼 크기 */
+.post-toolbar button.ql-align {
+    width: 28px;
+    height: 28px;
+}
+
+/* =========================
+   🔥 ReactQuill 컨테이너
+========================= */
 .ql-container {
     border: none !important;
     font-size: 15px;
     font-family: "Pretendard", "Noto Sans KR", sans-serif;
 }
 
-/* 🔥 실제 글 영역 */
+/* 실제 글 영역 */
 .ql-editor {
     padding: 20px;
     min-height: 420px;
     line-height: 1.7;
     color: #333;
+    background: #fffef8;
 }
 
 /* placeholder */
 .ql-editor.ql-blank::before {
     color: #bbb;
     font-style: normal;
+    left: 15px;
 }
 
-/* CommunityWritePage.css 또는 글로벌 CSS */
-
-/* 에디터 내부 정렬 스타일 적용 */
-.ql-editor.ql-blank::before {
-    left: 15px; /* placeholder 위치 보정 */
-}
-
+/* =========================
+   정렬 클래스 (Quill 대응)
+========================= */
 .ql-align-center {
     text-align: center;
 }
@@ -179,25 +224,23 @@
     text-align: left;
 }
 
-/* 툴바 아이콘 크기 및 정렬 버튼 디자인 미세 조정 */
-.post-toolbar button.ql-align {
-    width: 28px;
-    height: 28px;
-}
-
-/* 태그 */
+/* =========================
+   태그 입력
+========================= */
 .post-input-tags {
     border: none;
     padding: 14px 20px;
     font-size: 14px;
-    color: #4A90E2;
+    color: #b8860b;
     outline: none;
-    border-top: 1px solid #f2f2f2;
-    background-color: #fafafa;
-    height: auto !important; /* 위에서 설정한 42px 무시 */
+    border-top: 1px solid #f3e7b0;
+    background-color: #fff8e1;
+    height: auto !important;
 }
 
-/* 하단 버튼 */
+/* =========================
+   하단 버튼
+========================= */
 .community-footer {
     display: flex;
     justify-content: flex-end;
@@ -207,7 +250,7 @@
 
 .cancel-button {
     padding: 12px 25px;
-    background-color: #eee;
+    background-color: #f5e6b3;
     color: #666;
     border: none;
     border-radius: 6px;
@@ -217,7 +260,7 @@
 }
 
 .cancel-button:hover {
-    background-color: #ddd;
+    background-color: #e6d28a;
 }
 
 .write-button {
