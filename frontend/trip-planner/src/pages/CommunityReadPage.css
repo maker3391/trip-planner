@@ -291,3 +291,30 @@
     color: #d19a00;
     font-weight: 700;
 }
+
+/* 사이드바가 포함된 부모 컨테이너 */
+.community-container {
+    display: flex;
+    align-items: flex-start; /* sticky 작동을 위해 필수 */
+    gap: 30px;
+    position: relative;
+}
+
+/* 🔹 스크롤을 따라다니는 사이드바 설정 */
+.community-sidebar {
+    width: 250px;
+    position: sticky; /* 🔥 핵심: 스크롤 시 고정 */
+    top: 100px;       /* 🔥 헤더 높이를 고려하여 상단에서 얼마나 떨어질지 설정 */
+    height: fit-content; /* 자기 내용물 크기만큼만 가짐 */
+    
+    /* 기존 스타일들 유지... */
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* 상세 페이지 본문과 리스트가 들어가는 메인 영역 */
+.community-main-content {
+    flex: 1;
+    min-width: 0; /* flex 레이아웃 깨짐 방지 */
+}

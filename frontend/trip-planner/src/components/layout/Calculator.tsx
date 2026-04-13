@@ -1,26 +1,12 @@
 // Calculator.tsx
 import React, { useState, useEffect } from 'react';
+import { useTripStore } from '../store/useTripStore';
 import './Calculator.css';
 
 const Calculator: React.FC = () => {
   const [isCalcOpen, setIsCalcOpen] = useState(false);
-  const [cart, setCart] = useState<any[]>([]);
-  const [budget, setBudget] = useState<number>(0);
 
-  useEffect(() => {
-    const handleLoad = (e: any) => {
-      setCart(e.detail.expenses);
-      setBudget(e.detail.budget);
-    };
-    window.addEventListener('LOAD_CALCULATOR_DATA', handleLoad);
-    return () => window.removeEventListener('LOAD_CALCULATOR_DATA', handleLoad);
-  }, []);
-
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('SYNC_CALCULATOR', {
-      detail: { expenses: cart, budget }
-    }));
-  }, [cart, budget]);
+  const { budget, setBudget, expenses, addExpense, updateExpense, deleteExpense } = useTripStore();
 
   useEffect(() => {
     const handleOpen = () => setIsCalcOpen(true);
@@ -28,26 +14,12 @@ const Calculator: React.FC = () => {
     return () => window.removeEventListener('OPEN_CALCULATOR', handleOpen);
   }, []);
 
-
-  const handleAddItem = () => {
-    setCart(prev => [...prev, { id: -Date.now(), amount: 0, description: '', category: 'ETC' }]);
-  };
-
   const handleInputChange = (id: number, field: 'description' | 'amount', value: string) => {
-    setCart(prev => prev.map(item => {
-      if (item.id === id) {
-        const val = field === 'amount' ? (parseInt(value.replace(/[^0-9]/g, ''), 10) || 0) : value;
-        return { ...item, [field]: val };
-      }
-      return item;
-    }));
+    const val = field === 'amount' ? (parseInt(value.replace(/[^0-9]/g, ''), 10) || 0) : value;
+    updateExpense(id, field, val);
   };
 
-  const handleDelete = (id: number) => {
-    setCart(prev => prev.filter(item => item.id !== id));
-  };
-
-  const totalActualAmount = cart.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const totalActualAmount = expenses.reduce((sum, item) => sum + (item.amount || 0), 0);
 
   return (
     <>
@@ -59,11 +31,11 @@ const Calculator: React.FC = () => {
           </div>
           
           <div className="calc-body">
-            {cart.length === 0 ? (
+            {expenses.length === 0 ? (
               <p className="calc-empty">등록된 지출 내역이 없습니다.</p>
             ) : (
               <ul className="calc-list">
-                {cart.map((item) => (
+                {expenses.map((item) => (
                   <li key={item.id} className="calc-item">
                     <input
                       className="input-name"
@@ -80,12 +52,12 @@ const Calculator: React.FC = () => {
                       onChange={(e) => handleInputChange(item.id, 'amount', e.target.value)}
                     />
                     <span className="unit">원</span>
-                    <button className="item-delete-btn" onClick={() => handleDelete(item.id)}>✕</button>
+                    <button className="item-delete-btn" onClick={() => deleteExpense(item.id)}>✕</button>
                   </li>
                 ))}
               </ul>
             )}
-            <button className="addButton" onClick={handleAddItem}>+ 항목 추가</button>
+            <button className="addButton" onClick={addExpense}>+ 항목 추가</button>
           </div>
 
           <div className="calc-footer">

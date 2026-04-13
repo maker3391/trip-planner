@@ -5,13 +5,14 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 
 @Schema(description = "커뮤니티 게시글 등록 및 수정 요청 객체")
 @Getter
 @Setter
 public class CommunityRequest {
 
-    @Schema(description = "카테고리 (예: 맛집, 명소, 숙소)", example = "맛집")
+    @Schema(description = "카테고리 (예: 맛집게시판, 여행플랜 공유 등)", example = "맛집게시판")
     @NotBlank(message = "카테고리는 필수입니다.")
     private String category;
 
@@ -33,18 +34,19 @@ public class CommunityRequest {
     @Schema(description = "도착지 (선택 사항)", example = "부산역")
     private String arrival;
 
-
-    // 🔥 핵심 변경
-    @Schema(description = "태그 리스트", example = "[\"국밥\", \"부산여행\", \"혼밥\"]")
+    @Schema(description = "태그 (쉼표로 구분된 문자열)", example = "국밥,부산여행,혼밥")
     private String tags;
 
-    // 🔥 범위 제한
     @Schema(description = "평점 (0~5점)", example = "5", minimum = "0", maximum = "5")
     @Min(value = 0, message = "최소 평점은 0입니다.")
     @Max(value = 5, message = "최대 평점은 5입니다.")
     private Integer rating;
 
-    // 🔥 작성자 ID 추가
+    @Schema(description = "작성자 고유 ID", example = "1")
     @NotNull(message = "작성자 ID는 필수입니다.")
     private Long userId;
+
+    // 🔥 핵심: 이미지 연관 관계를 위한 ID 리스트 추가
+    @Schema(description = "업로드된 이미지 ID 리스트", example = "[1, 2, 3]")
+    private List<Long> imageIds;
 }

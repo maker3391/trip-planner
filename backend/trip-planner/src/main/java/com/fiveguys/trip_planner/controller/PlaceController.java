@@ -22,7 +22,7 @@ public class PlaceController {
 
     @Operation(
             summary = "새로운 장소 등록",
-            description = "구글 맵에서 가져온 장소 정보(이름, 주소, 좌표 등)를 우리 시스템 DB에 정식으로 저장합니다."
+            description = "구글 맵에서 가져온 장소 정보(이름, 주소, 좌표 등)를 우리 시스템 DB에 저장합니다."
     )
     @PostMapping
     public ResponseEntity<PlaceResponseDto> createPlace(@RequestBody PlaceRequestDto requestDto) {

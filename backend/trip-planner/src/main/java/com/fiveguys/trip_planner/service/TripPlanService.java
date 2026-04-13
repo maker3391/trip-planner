@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +36,7 @@ public class TripPlanService {
         tripPlan.setStartDate(requestDto.getStartDate());
         tripPlan.setEndDate(requestDto.getEndDate());
         tripPlan.setStatus("PLANNING");
+        tripPlan.setInviteCode(UUID.randomUUID().toString().substring(0, 8));
 
         if (requestDto.getSchedules() != null) {
             for (TripScheduleRequestDto scheduleRequestDto : requestDto.getSchedules()) {
@@ -217,5 +219,23 @@ public class TripPlanService {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
         tripPlanRepository.delete(tripPlan);
+    }
+
+    @Transactional
+    public TripPlanResponseDto joinTripByInviteCode(String inviteCode, User user) {
+        TripPlan tripPlan = tripPlanRepository.findByInviteCode(inviteCode)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않거나 만료 초대 코드입니다."));
+
+        if(tripMemberRepository.existsByTripPlanAndUser(tripPlan, user)) {
+            throw new IllegalStateException("이미 참여 중인 여행입니다.");
+        }
+
+        TripMember newMember = new TripMember();
+        newMember.setTripPlan(tripPlan);
+        newMember.setUser(user);
+        newMember.setRole("MEMBER");
+        tripMemberRepository.save(newMember);
+
+        return new TripPlanResponseDto(tripPlan);
     }
 }

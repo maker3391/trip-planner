@@ -9,6 +9,7 @@ export interface PlacePoint {
   photos?: string[]; // 부활시킨 사진 데이터를 위한 필드
   memo?: string;
   isMemoOpen?: boolean;
+  customTitle?: string;
 }
 
 export interface Connection {

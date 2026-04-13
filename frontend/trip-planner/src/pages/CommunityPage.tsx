@@ -152,8 +152,10 @@ export default function CommunityPage() {
   const handleSearch = () => setPage(0);
 
   return (
+  <>
+  <Header />
     <div className="community-page">
-      <Header />
+      
 
       <div className="community-container">
 
@@ -328,5 +330,6 @@ export default function CommunityPage() {
         </main>
       </div>
     </div>
+  </>
   );
 }

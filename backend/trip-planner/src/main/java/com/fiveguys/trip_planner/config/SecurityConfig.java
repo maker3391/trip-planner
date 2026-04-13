@@ -57,6 +57,11 @@ public class SecurityConfig {
                                 "/oauth2/**",
                                 "/login/**"
                         ).permitAll()
+
+                        // 🔥 여기에 커뮤니티 관련 권한 추가
+                        .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll() // 게시글 조회 허용
+                        .requestMatchers(HttpMethod.GET, "/api/community/image/**").permitAll() // 이미지 조회 허용
+
                         .requestMatchers(
                                 "/api/auth/me",
                                 "/api/auth/logout",
@@ -71,7 +76,7 @@ public class SecurityConfig {
                                 .userService(customOAuth2UserService)
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
-                        .failureHandler(oAuth2AuthenticationFailureHandler) // 추가
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
