@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { APIProvider, Map } from "@vis.gl/react-google-maps";
 import MapController from "../components/map/MapController";
-import SideListPanel from "../components/map//SideListPanel";
-import DetailPanel from "../components/map//DetailPanel";
+import SideListPanel from "../components/map/SideListPanel";
+import DetailPanel from "../components/map/DetailPanel";
 import { PlacePoint, Connection } from "../types/map";
 import { SearchPlace } from "../types/searchPlace.ts";
 

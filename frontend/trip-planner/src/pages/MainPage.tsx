@@ -35,7 +35,10 @@ export default function MainPage() {
     startDate: "",
     endDate: "",
   });
-  const [calcData, setCalcData] = useState({ expenses: [], budget: 0 });
+  const [calcData, setCalcData] = useState<{ expenses: any[]; budget: number }>({
+    expenses: [],
+    budget: 0,
+  });
 
   const [pinColor, setPinColor] = useState("#000000");
   const [selectedPinColor, setSelectedPinColor] = useState("#4285F4");
@@ -73,6 +76,10 @@ export default function MainPage() {
             placeId: s.googlePlaceId || undefined,
             customTitle: s.title,
             memo: s.memo || "",
+            dayNumber: s.dayNumber ?? 1,
+            startTime: s.startTime || "",
+            endTime: s.endTime || "",
+            estimatedStayMinutes: s.estimatedStayMinutes ?? 60,
           })) || [];
 
       setPath(recoveredPath);
@@ -91,7 +98,7 @@ export default function MainPage() {
         new CustomEvent("LOAD_CALCULATOR_DATA", {
           detail: {
             expenses: tripData.expenses || [],
-            budget: tripData.totalBudget || 0,
+            budget: Number(tripData.totalBudget) || 0,
           },
         })
       );
@@ -100,7 +107,10 @@ export default function MainPage() {
 
   useEffect(() => {
     const handleCalcSync = (e: any) => {
-      setCalcData(e.detail);
+      setCalcData({
+        expenses: e.detail?.expenses || [],
+        budget: Number(e.detail?.budget) || 0,
+      });
     };
 
     window.addEventListener("SYNC_CALCULATOR", handleCalcSync);
@@ -133,32 +143,34 @@ export default function MainPage() {
     if (!tripForm.title) return alert("제목을 입력해주세요.");
 
     const schedules = path.map((p, index) => ({
-      dayNumber: 1,
+      dayNumber: p.dayNumber ?? 1,
       title: p.customTitle || p.name,
       visitOrder: index + 1,
-      estimatedStayMinutes: 60,
+      startTime: p.startTime || null,
+      endTime: p.endTime || null,
+      estimatedStayMinutes: p.estimatedStayMinutes ?? 60,
       placeName: p.name,
       placeAddress: p.address,
       latitude: p.lat,
       longitude: p.lng,
       googlePlaceId: p.placeId,
-      memo: p.memo,
-      pinColor: pinColor,
-      selectedPinColor: selectedPinColor,
-      lineColor: lineColor,
+      memo: p.memo || "",
+      pinColor,
+      selectedPinColor,
+      lineColor,
     }));
 
     const expenses = calcData.expenses.map((item: any) => ({
-      amount: item.amount,
+      amount: Number(item.amount) || 0,
       category: item.category || "ETC",
-      description: item.description,
+      description: item.description || "",
     }));
 
     const requestData: any = {
       ...tripForm,
       schedules,
       expenses,
-      totalBudget: calcData.budget,
+      totalBudget: Number(calcData.budget) || 0,
     };
 
     const mutation = targetTripId ? updateTripMutation : createTripMutation;

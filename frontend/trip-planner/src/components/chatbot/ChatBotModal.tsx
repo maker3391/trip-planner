@@ -78,6 +78,20 @@ export default function ChatBotModal({
       data.recommendation?.places ||
       data.recommendation?.restaurants ||
       data.recommendation?.hotels;
+    
+    if (data.recommendation?.dayPlans?.length) {
+      data.recommendation.dayPlans.forEach((dayPlan) => {
+        lines.push(`📅 Day ${dayPlan.day}`);
+
+        if (dayPlan.places?.length) {
+          dayPlan.places.forEach((place, index) => {
+            lines.push(`${index + 1}. ${place}`);
+          });
+        }
+
+        lines.push("");
+      });
+    }
 
     const formattedRecommendationItems =
       formatRecommendationItems(recommendationItems);

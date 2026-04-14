@@ -2,17 +2,20 @@ export interface TripScheduleRequest {
   dayNumber: number;
   title: string;
   visitOrder: number;
-  startTime?: string;
-  endTime?: string;
+  startTime?: string | null;
+  endTime?: string | null;
   memo?: string;
   estimatedStayMinutes?: number;
 
-  // 장소
   placeName?: string;
   placeAddress?: string;
   latitude?: number;
   longitude?: number;
   googlePlaceId?: string;
+
+  pinColor?: string;
+  selectedPinColor?: string;
+  lineColor?: string;
 }
 
 export interface TripPlanRequest {
@@ -20,7 +23,7 @@ export interface TripPlanRequest {
   destination: string;
   startDate: string;
   endDate: string;
-  schedules:  TripScheduleRequest[];
+  schedules: TripScheduleRequest[];
 }
 
 export interface TripScheduleResponse {
@@ -33,12 +36,15 @@ export interface TripScheduleResponse {
   memo: string | null;
   estimatedStayMinutes: number | null;
 
-  // 장소
   placeName: string | null;
   placeAddress: string | null;
   latitude: number | null;
   longitude: number | null;
   googlePlaceId: string | null;
+
+  pinColor?: string | null;
+  selectedPinColor?: string | null;
+  lineColor?: string | null;
 }
 
 export interface TripPlanResponse {
@@ -51,4 +57,7 @@ export interface TripPlanResponse {
   status: string;
   createdAt: string;
   schedules: TripScheduleResponse[];
+
+  expenses?: any[];
+  totalBudget?: number;
 }

@@ -9,6 +9,12 @@ export interface RecommendationItem {
   category?: string;
 }
 
+export interface DayPlanResponse {
+  day: number;
+  summary?: string | null;
+  places?: string[];
+}
+
 export interface RecommendationContentResponse {
   summary?: string;
   items?: RecommendationItem[];
@@ -16,6 +22,8 @@ export interface RecommendationContentResponse {
   places?: RecommendationItem[];
   restaurants?: RecommendationItem[];
   hotels?: RecommendationItem[];
+
+  dayPlans?: DayPlanResponse[];
 }
 
 export interface CombinedRecommendationResponse {
@@ -41,6 +49,6 @@ export interface ChatResponse {
 export const sendChatMessage = async (
   request: ChatRequest
 ): Promise<ChatResponse> => {
-  const response = await client.post<ChatRequest>("/chat", request);
+  const response = await client.post<ChatResponse>("/chat", request);
   return response.data;
 };

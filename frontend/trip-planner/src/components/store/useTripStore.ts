@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface ExpenseItem {
   id: number;
@@ -8,7 +8,12 @@ interface ExpenseItem {
 }
 
 interface TripState {
-  tripForm: { title: string; destination: string; startDate: string; endDate: string };
+  tripForm: {
+    title: string;
+    destination: string;
+    startDate: string;
+    endDate: string;
+  };
   setTripForm: (form: any) => void;
 
   budget: number;
@@ -21,7 +26,7 @@ interface TripState {
   deleteExpense: (id: number) => void;
 
   loadInitialData: (form: any, budget: number, expenses: ExpenseItem[]) => void;
-  
+
   clearTripData: () => void;
 }
 
@@ -30,34 +35,47 @@ export const useTripStore = create<TripState>((set) => ({
   setTripForm: (form) => set({ tripForm: form }),
 
   budget: 0,
-  setBudget: (budget) => set({ budget }),
+  setBudget: (budget) => set({ budget: Number(budget) || 0 }),
 
   expenses: [],
   setExpenses: (expenses) => set({ expenses }),
 
-  addExpense: () => set((state) => ({
-    expenses: [...state.expenses, { id: -Date.now(), amount: 0, category: 'ETC', description: '' }]
-  })),
+  addExpense: () =>
+    set((state) => ({
+      expenses: [
+        ...state.expenses,
+        {
+          id: -Date.now(),
+          amount: 0,
+          category: "ETC",
+          description: "",
+        },
+      ],
+    })),
 
-  updateExpense: (id, field, value) => set((state) => ({
-    expenses: state.expenses.map((item) =>
-      item.id === id ? { ...item, [field]: value } : item
-    )
-  })),
+  updateExpense: (id, field, value) =>
+    set((state) => ({
+      expenses: state.expenses.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item
+      ),
+    })),
 
-  deleteExpense: (id) => set((state) => ({
-    expenses: state.expenses.filter((item) => item.id !== id)
-  })),
+  deleteExpense: (id) =>
+    set((state) => ({
+      expenses: state.expenses.filter((item) => item.id !== id),
+    })),
 
-  loadInitialData: (form, budget, expenses) => set({
-    tripForm: form,
-    budget: budget,
-    expenses: expenses
-  }),
+  loadInitialData: (form, budget, expenses) =>
+    set({
+      tripForm: form,
+      budget: Number(budget) || 0,
+      expenses,
+    }),
 
-  clearTripData: () => set({
-    tripForm: { title: "", destination: "", startDate: "", endDate: "" },
-    budget: 0,
-    expenses: []
-  })
+  clearTripData: () =>
+    set({
+      tripForm: { title: "", destination: "", startDate: "", endDate: "" },
+      budget: 0,
+      expenses: [],
+    }),
 }));
