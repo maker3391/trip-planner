@@ -197,7 +197,21 @@ public class AttractionRecommendationService {
         }
         bases.add(destination);
 
+        List<String> expandedBases = new ArrayList<>();
         for (String base : bases) {
+            if (!StringUtils.hasText(base)) {
+                continue;
+            }
+
+            expandedBases.add(base);
+
+            String provinceExpanded = expandProvinceName(base);
+            if (StringUtils.hasText(provinceExpanded) && !provinceExpanded.equals(base)) {
+                expandedBases.add(provinceExpanded);
+            }
+        }
+
+        for (String base : expandedBases) {
             result.add(base + " 명소");
             result.add(base + " 관광지");
             result.add(base + " 대표 관광지");
@@ -257,7 +271,7 @@ public class AttractionRecommendationService {
                 continue;
             }
 
-            int score = score(doc, detailArea, neighborhood, district);
+            int score = score(doc, destination, detailArea, neighborhood, district);
             scoredPlaces.add(new ScoredPlace(name, address, placeUrl, category, score));
         }
 
@@ -332,6 +346,7 @@ public class AttractionRecommendationService {
     }
 
     private int score(JsonNode doc,
+                      String destination,
                       String detailArea,
                       String neighborhood,
                       String district) {
@@ -344,6 +359,11 @@ public class AttractionRecommendationService {
 
         if ("AT4".equals(categoryGroupCode)) {
             score += 20;
+        }
+
+        if (StringUtils.hasText(destination)) {
+            if (containsLooseRegion(mergedAddress, destination)) score += 12;
+            if (containsLooseRegion(name, destination)) score += 4;
         }
 
         if (StringUtils.hasText(detailArea)) {
@@ -504,9 +524,131 @@ public class AttractionRecommendationService {
         }
 
         String strippedKeyword = stripRegionSuffixForLooseMatch(normalizedKeyword);
-        return StringUtils.hasText(strippedKeyword)
+        if (StringUtils.hasText(strippedKeyword)
                 && strippedKeyword.length() >= 2
-                && normalizedValue.contains(strippedKeyword);
+                && normalizedValue.contains(strippedKeyword)) {
+            return true;
+        }
+
+        for (String alias : expandRegionAliases(normalizedKeyword)) {
+            if (normalizedValue.equals(alias) || normalizedValue.contains(alias)) {
+                return true;
+            }
+
+            String strippedAlias = stripRegionSuffixForLooseMatch(alias);
+            if (StringUtils.hasText(strippedAlias)
+                    && strippedAlias.length() >= 2
+                    && normalizedValue.contains(strippedAlias)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private List<String> expandRegionAliases(String keyword) {
+        List<String> aliases = new ArrayList<>();
+        aliases.add(keyword);
+
+        String compact = keyword.replaceAll("\\s+", "");
+
+        switch (compact) {
+            case "경상북":
+            case "경상북도":
+            case "경북":
+                aliases.add("경상북");
+                aliases.add("경상북도");
+                aliases.add("경북");
+                break;
+            case "경상남":
+            case "경상남도":
+            case "경남":
+                aliases.add("경상남");
+                aliases.add("경상남도");
+                aliases.add("경남");
+                break;
+            case "전라북":
+            case "전라북도":
+            case "전북":
+                aliases.add("전라북");
+                aliases.add("전라북도");
+                aliases.add("전북");
+                break;
+            case "전라남":
+            case "전라남도":
+            case "전남":
+                aliases.add("전라남");
+                aliases.add("전라남도");
+                aliases.add("전남");
+                break;
+            case "충청북":
+            case "충청북도":
+            case "충북":
+                aliases.add("충청북");
+                aliases.add("충청북도");
+                aliases.add("충북");
+                break;
+            case "충청남":
+            case "충청남도":
+            case "충남":
+                aliases.add("충청남");
+                aliases.add("충청남도");
+                aliases.add("충남");
+                break;
+            case "제주":
+            case "제주도":
+            case "제주특별자치도":
+                aliases.add("제주");
+                aliases.add("제주도");
+                aliases.add("제주특별자치도");
+                break;
+            case "강원":
+            case "강원도":
+            case "강원특별자치도":
+                aliases.add("강원");
+                aliases.add("강원도");
+                aliases.add("강원특별자치도");
+                break;
+            default:
+                break;
+        }
+
+        return aliases.stream().distinct().toList();
+    }
+
+    private String expandProvinceName(String value) {
+        if (!StringUtils.hasText(value)) {
+            return value;
+        }
+
+        String compact = value.replaceAll("\\s+", "");
+
+        if ("경상북".equals(compact) || "경북".equals(compact)) {
+            return "경상북도";
+        }
+        if ("경상남".equals(compact) || "경남".equals(compact)) {
+            return "경상남도";
+        }
+        if ("전라북".equals(compact) || "전북".equals(compact)) {
+            return "전라북도";
+        }
+        if ("전라남".equals(compact) || "전남".equals(compact)) {
+            return "전라남도";
+        }
+        if ("충청북".equals(compact) || "충북".equals(compact)) {
+            return "충청북도";
+        }
+        if ("충청남".equals(compact) || "충남".equals(compact)) {
+            return "충청남도";
+        }
+        if ("제주".equals(compact) || "제주도".equals(compact)) {
+            return "제주특별자치도";
+        }
+        if ("강원".equals(compact) || "강원도".equals(compact)) {
+            return "강원특별자치도";
+        }
+
+        return value;
     }
 
     private String stripRegionSuffixForLooseMatch(String value) {

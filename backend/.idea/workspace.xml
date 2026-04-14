@@ -5,14 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a2df37b3-aa01-4868-8497-a6f003698507" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/CombinedRecommendationResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/AttractionRecommendationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CombinedRecommendationOrchestratorService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/ChatResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/ChatResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/ChatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/ChatService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/RecommendationCacheKeyGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/RecommendationCacheKeyGenerator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/RecommendationIntentResolverService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/RecommendationIntentResolverService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -109,7 +102,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+        <option value="bundled-jdk-30f59d01ecdd-26cb7f24e5b0-intellij.indexing.shared.core-IU-253.29346.138" />
       </set>
     </attachedChunks>
   </component>
