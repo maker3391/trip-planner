@@ -31,8 +31,10 @@ public class Community {
     @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String content;
 
-    @Column(nullable = false)
-    private String authorNickname;
+    // 🔥 LAZY 유지 (중요)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
 
     private String departure;
     private String arrival;
@@ -53,19 +55,19 @@ public class Community {
     @Column(nullable = false)
     private Long shareCount = 0L;
 
-    // 🔥 추가 (핵심)
     @Builder.Default
     @Column(nullable = false)
     private Long likeCount = 0L;
 
-    // 🔥 이미지 관계
+    // 🔥 리스트는 항상 초기화 (NPE 방지)
     @Builder.Default
     @OneToMany(mappedBy = "community", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommunityImage> images = new ArrayList<>();
 
-    // 좋아요 관련
+    // 🔥 여기가 중요 (초기화 + cascade 정리)
+    @Builder.Default
     @OneToMany(mappedBy = "community", cascade = CascadeType.REMOVE)
-    private List<CommunityLike> likes;
+    private List<CommunityLike> likes = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
@@ -75,7 +77,7 @@ public class Community {
 
         if (this.viewCount == null) this.viewCount = 0L;
         if (this.shareCount == null) this.shareCount = 0L;
-        if (this.likeCount == null) this.likeCount = 0L; // 🔥 추가
+        if (this.likeCount == null) this.likeCount = 0L;
     }
 
     @PreUpdate
@@ -99,19 +101,17 @@ public class Community {
         this.rating = rating;
     }
 
-    // 조회수 증가
     public void incrementViewCount() {
-        this.viewCount++;
+        if (this.viewCount == null) {
+            this.viewCount = 1L;
+        } else {
+            this.viewCount++;
+        }
     }
 
-    // 공유 증가
     public void incrementShareCount() {
         this.shareCount++;
     }
-
-    // =========================
-    // 🔥 좋아요 로직 (추가)
-    // =========================
 
     public void incrementLikeCount() {
         this.likeCount++;
@@ -121,9 +121,6 @@ public class Community {
         if (this.likeCount > 0) this.likeCount--;
     }
 
-    /**
-     * 🔥 연관 관계 편의 메서드
-     */
     public void addImage(CommunityImage image) {
         this.images.add(image);
         if (image.getCommunity() != this) {

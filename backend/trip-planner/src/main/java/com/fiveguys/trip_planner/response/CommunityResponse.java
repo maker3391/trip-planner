@@ -53,13 +53,13 @@ public class CommunityResponse {
 
     private Long shareCount;
 
-    // 🔥 좋아요 개수
     private Long likeCount;
 
-    // 🔥 내가 눌렀는지 (핵심)
+    // 🔥 내가 눌렀는지
     private boolean likedByMe;
 
-    // 🔥 작성자 닉네임
+    // 🔥 작성자 정보 (수정 핵심)
+    private Long authorId;
     private String authorNickname;
 
     // 🔥 이미지 ID 리스트
@@ -67,8 +67,7 @@ public class CommunityResponse {
     private List<Long> imageIds;
 
     /**
-     * 🔥 Entity → DTO 변환 (기본)
-     * → 목록 조회용
+     * 🔥 Entity → DTO 변환 (목록용)
      */
     public static CommunityResponse from(Community community) {
 
@@ -90,18 +89,29 @@ public class CommunityResponse {
                 .viewCount(community.getViewCount())
                 .shareCount(community.getShareCount())
                 .likeCount(community.getLikeCount())
-                .likedByMe(false) // 목록에서는 기본 false
+                .likedByMe(false)
                 .rating(community.getRating() != null ? community.getRating() : 0)
                 .createdAt(community.getCreatedAt())
                 .updatedAt(community.getUpdatedAt())
-                .authorNickname(community.getAuthorNickname())
+
+                // 🔥 작성자 정보
+                .authorId(
+                        community.getAuthor() != null
+                                ? community.getAuthor().getId()
+                                : null
+                )
+                .authorNickname(
+                        community.getAuthor() != null
+                                ? community.getAuthor().getNickname()
+                                : "알 수 없음"
+                )
+
                 .imageIds(ids)
                 .build();
     }
 
     /**
      * 🔥 Entity → DTO 변환 (상세용)
-     * → 로그인 유저 기준 likedByMe 포함
      */
     public static CommunityResponse from(Community community, boolean likedByMe) {
 
@@ -123,11 +133,23 @@ public class CommunityResponse {
                 .viewCount(community.getViewCount())
                 .shareCount(community.getShareCount())
                 .likeCount(community.getLikeCount())
-                .likedByMe(likedByMe) // 🔥 핵심
+                .likedByMe(likedByMe)
                 .rating(community.getRating() != null ? community.getRating() : 0)
                 .createdAt(community.getCreatedAt())
                 .updatedAt(community.getUpdatedAt())
-                .authorNickname(community.getAuthorNickname())
+
+                // 🔥 작성자 정보
+                .authorId(
+                        community.getAuthor() != null
+                                ? community.getAuthor().getId()
+                                : null
+                )
+                .authorNickname(
+                        community.getAuthor() != null
+                                ? community.getAuthor().getNickname()
+                                : "알 수 없음"
+                )
+
                 .imageIds(ids)
                 .build();
     }

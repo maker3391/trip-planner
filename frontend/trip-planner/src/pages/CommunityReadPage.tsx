@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/layout/Header.tsx";
 import client from "../components/api/client.ts";
 import { CommunityResponse, CommunityPageResponse } from "../types/community.ts";
 
-// 아이콘 추가
+// 아이콘
 import ShareIcon from '@mui/icons-material/Share';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
@@ -15,11 +15,22 @@ import StarIcon from '@mui/icons-material/Star';
 import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";
 
+// =========================
+// API
+// =========================
 export const getPost = async (id: number) => {
     const res = await client.get(`/community/posts/${id}`);
     return res.data;
 };
 
+export const getMe = async () => {
+    const res = await client.get("/auth/me");
+    return res.data;
+};
+
+// =========================
+// 카테고리 설정
+// =========================
 const RATING_ENABLED_CATEGORIES = ["맛집게시판", "사진게시판", "후기게시판"];
 const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유", "당일치기 친구 찾기"];
 
@@ -27,22 +38,55 @@ export default function CommunityReadPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    // --- 1. 상태 관리 ---
+    // =========================
+    // 상태
+    // =========================
     const [post, setPost] = useState<CommunityResponse | null>(null);
     const [posts, setPosts] = useState<CommunityResponse[]>([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [liked, setLiked] = useState(false);
+    const [me, setMe] = useState<{ id: number } | null>(null);
 
-    // 필터 상태
     const [selectedCategory, setSelectedCategory] = useState("전체보기");
     const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
 
-    const categories = ["전체보기", "여행플랜 공유", "자유게시판", "질문게시판", "맛집게시판", "후기게시판", "공지게시판"];
+    const categories = [
+        "전체보기",
+        "여행플랜 공유",
+        "자유게시판",
+        "질문게시판",
+        "맛집게시판",
+        "후기게시판",
+        "공지게시판"
+    ];
+
     const regions = ["서울", "경기", "인천", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
 
-    // --- 2. 하단 리스트 로드 함수 (위치 이동) ---
-    // 리스트를 먼저 정의해야 fetchPostDetail에서 이 상태를 참조하거나 수정하기 용이해.
+    // =========================
+    // 로그인 유저 가져오기
+    // =========================
+    useEffect(() => {
+        const fetchMe = async () => {
+            try {
+                const data = await getMe();
+                setMe(data);
+            } catch (err) {
+                console.error("유저 정보 불러오기 실패", err);
+            }
+        };
+
+        fetchMe();
+    }, []);
+
+    // =========================
+    // 작성자 여부
+    // =========================
+    const isAuthor = post?.authorId === me?.id;
+
+    // =========================
+    // 게시글 리스트
+    // =========================
     const fetchPosts = async (pageNumber: number = 0) => {
         try {
             const data: CommunityPageResponse | undefined = await getCommunityPosts(
@@ -50,6 +94,7 @@ export default function CommunityReadPage() {
                 selectedCategory,
                 selectedRegion
             );
+
             setPosts(data?.content || []);
             setTotalPages(data?.totalPages || 0);
         } catch (error) {
@@ -57,80 +102,106 @@ export default function CommunityReadPage() {
         }
     };
 
-    // 필터나 페이지 변경 시 리스트 호출
     useEffect(() => {
         fetchPosts(page);
     }, [page, selectedCategory, selectedRegion]);
 
-
-    // --- 3. 상세 글 로드 및 "상태 동기화" 조회수 증가 ---
+    // =========================
+    // 상세 게시글 로드
+    // =========================
     useEffect(() => {
         const fetchPostDetail = async () => {
             if (!id) return;
 
             try {
-                // 1. 상세 데이터 가져오기
+                await client.patch(`/community/posts/${id}/view`);
+
                 const data = await getPost(Number(id));
+
                 setPost(data);
                 setLiked(data.likedByMe);
 
-                // 2. 서버 조회수 증가 API 호출
-                await client.patch(`/community/posts/${id}/view`);
-                
-                // 3. [핵심] 상세 페이지 상태 업데이트 (+1)
-                setPost(prev => prev ? { ...prev, viewCount: prev.viewCount + 1 } : null);
-
-                // 4. [핵심] 하단 리스트(posts) 상태에서도 해당 글 조회수 업데이트 (+1)
-                setPosts(prevPosts => 
-                    prevPosts.map(p => 
-                        p.id === Number(id) 
-                        ? { ...p, viewCount: p.viewCount + 1 } 
-                        : p
+                setPosts(prev =>
+                    prev.map(p =>
+                        p.id === Number(id)
+                            ? { ...p, viewCount: data.viewCount }
+                            : p
                     )
                 );
-
             } catch (error) {
                 console.error("데이터 로드 실패:", error);
-                alert("존재하지 않는 게시글입니다.");
-                navigate("/community");
             }
         };
 
         fetchPostDetail();
-    }, [id]); // id가 바뀔 때마다 실행
+    }, [id]);
 
+    // =========================
+    // 수정 / 삭제
+    // =========================
+    const handleUpdate = () => {
+        navigate(`/community/write/${id}`);
+    };
 
-    // --- 4. 핸들러 함수들 ---
+    const handleDelete = async () => {
+        if (!id) return;
+        if (!window.confirm("정말 삭제하시겠습니까?")) return;
+
+        try {
+            await client.delete(`/community/posts/${id}`);
+            alert("삭제되었습니다.");
+            navigate("/community");
+        } catch (err) {
+            alert("삭제 실패");
+        }
+    };
+
+    // =========================
+    // 좋아요
+    // =========================
     const handleLike = async () => {
         if (!post || !id) return;
+
         try {
             const res = await client.post(`/community/posts/${id}/like`);
             const { liked: isLiked, likeCount } = res.data;
-            
+
             setLiked(isLiked);
-            // 상세 뷰 좋아요 수 동기화
-            setPost(prev => prev ? { ...prev, likeCount } : null);
-            // 하단 리스트 좋아요 수 동기화
-            setPosts(prevPosts => 
-                prevPosts.map(p => p.id === Number(id) ? { ...p, likeCount } : p)
+
+            setPost(prev =>
+                prev ? { ...prev, likeCount } : null
+            );
+
+            setPosts(prev =>
+                prev.map(p =>
+                    p.id === Number(id)
+                        ? { ...p, likeCount }
+                        : p
+                )
             );
         } catch (err) {
             console.error("좋아요 실패:", err);
         }
     };
 
+    // =========================
+    // 공유
+    // =========================
     const handleShare = async () => {
         if (!post) return;
+
         try {
             await navigator.clipboard.writeText(window.location.href);
             await client.patch(`/community/posts/${post.id}/share`);
             alert("링크가 복사되었습니다!");
-            // 공유수도 실시간 반영하고 싶다면 동일한 로직 추가 가능
         } catch (error) {
             alert("공유 실패");
         }
     };
 
+    // =========================
+    // 필터 초기화
+    // =========================
     const handleReset = () => {
         setSelectedCategory("전체보기");
         setSelectedRegion(null);
@@ -143,15 +214,14 @@ export default function CommunityReadPage() {
         document.getElementById("list-section")?.scrollIntoView({ behavior: "smooth" });
     };
 
-    const pageNumbers = useMemo(() => {
-        const range = 5;
-        const start = Math.max(0, page - range);
-        const end = Math.min(totalPages - 1, page + range);
-        const pages = [];
-        for (let i = start; i <= end; i++) pages.push(i);
-        return pages;
-    }, [page, totalPages]);
+    const pageNumbers = Array.from(
+        { length: Math.min(11, totalPages) },
+        (_, i) => i
+    );
 
+    // =========================
+    // UI
+    // =========================
     return (
         <>
             <Header />
@@ -236,6 +306,7 @@ export default function CommunityReadPage() {
                                         <button onClick={handleLike} className="icon-btn">
                                             <ThumbUpOffAltIcon style={{ color: liked ? "#1976d2" : "#aaa" }} />
                                         </button>
+                                        {post?.likeCount}
                                     </div>
                                     <div className="footer-item">
                                         <button onClick={handleShare} className="icon-btn"><ShareIcon /></button> 공유
@@ -244,6 +315,32 @@ export default function CommunityReadPage() {
                             </div>
                         </article>
 
+                        <div className="community-footer">
+                                {/* 왼쪽 영역 */}
+                                <div className="footer-left">
+                                    <button className="to-list-button" onClick={() => navigate("/community")}>
+                                        목록으로
+                                    </button>
+                                </div>
+
+                                {/* 오른쪽 영역 */}
+                                <div className="footer-right">
+                                    {/* ✅ 작성자만 보이게 */}
+                                    {isAuthor && (
+                                        <>
+                                            <button className="edit-button" onClick={handleUpdate}>
+                                                수정하기
+                                            </button>
+                                            <button className="delete-button" onClick={handleDelete}>
+                                                삭제하기
+                                            </button>
+                                        </>
+                                    )}
+                                    <button className="write-button" onClick={() => navigate("/community/write")}>
+                                        글쓰기
+                                    </button>
+                                </div>
+                            </div>
                         <hr />
 
                         {/* 하단 리스트 */}

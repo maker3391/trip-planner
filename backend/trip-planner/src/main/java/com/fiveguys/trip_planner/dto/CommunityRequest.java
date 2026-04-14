@@ -22,6 +22,7 @@ public class CommunityRequest {
 
     @Schema(description = "게시글 제목", example = "해운대 시장 국밥 투어 후기")
     @NotBlank(message = "제목은 필수입니다.")
+    @Size(max = 200, message = "제목은 200자 이내로 작성해주세요.")
     private String title;
 
     @Schema(description = "게시글 상세 내용", example = "여기는 국물이 끝내줍니다...")
@@ -35,6 +36,7 @@ public class CommunityRequest {
     private String arrival;
 
     @Schema(description = "태그 (쉼표로 구분된 문자열)", example = "국밥,부산여행,혼밥")
+    @Size(max = 300, message = "태그는 300자 이내로 입력해주세요.")
     private String tags;
 
     @Schema(description = "평점 (0~5점)", example = "5", minimum = "0", maximum = "5")
@@ -42,11 +44,8 @@ public class CommunityRequest {
     @Max(value = 5, message = "최대 평점은 5입니다.")
     private Integer rating;
 
-    @Schema(description = "작성자 고유 ID", example = "1")
-    @NotNull(message = "작성자 ID는 필수입니다.")
-    private Long userId;
+    // 🔥 userId는 절대 받지 않음 (서버에서 처리)
 
-    // 🔥 핵심: 이미지 연관 관계를 위한 ID 리스트 추가
     @Schema(description = "업로드된 이미지 ID 리스트", example = "[1, 2, 3]")
     private List<Long> imageIds;
 }

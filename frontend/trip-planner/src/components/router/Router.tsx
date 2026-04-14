@@ -38,6 +38,7 @@ export default function Router() {
         />
         <Route path="/community" element={<CommunityPage />} />
         <Route path="/community/write" element={<CommunityWritePage />} />
+        <Route path="/community/write/:id" element={<CommunityWritePage />} />
         <Route path="/community/:id" element={<CommunityReadPage />} />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         <Route

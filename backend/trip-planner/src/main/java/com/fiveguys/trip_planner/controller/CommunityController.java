@@ -2,7 +2,6 @@ package com.fiveguys.trip_planner.controller;
 
 import com.fiveguys.trip_planner.dto.CommunityRequest;
 import com.fiveguys.trip_planner.entity.CommunityImage;
-import com.fiveguys.trip_planner.entity.User;
 import com.fiveguys.trip_planner.response.CommunityResponse;
 import com.fiveguys.trip_planner.service.CommunityService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,12 +28,10 @@ public class CommunityController {
     // =========================
     @PostMapping("/posts")
     public ResponseEntity<?> createPost(
-            @RequestBody CommunityRequest request,
-            @AuthenticationPrincipal User user
+            @RequestBody CommunityRequest request
     ) {
         try {
-            request.setUserId(user.getId());
-
+            // 🔥 authorId, authorNickname은 Service에서 처리 (인증 기반)
             Long postId = communityService.createPost(request);
 
             return ResponseEntity.status(201).body(
@@ -70,7 +66,7 @@ public class CommunityController {
     }
 
     // =========================
-    // 🔹 게시글 단건 조회 (likedByMe 포함)
+    // 🔹 게시글 단건 조회
     // =========================
     @GetMapping("/posts/{postId}")
     public ResponseEntity<CommunityResponse> getPost(
@@ -98,7 +94,7 @@ public class CommunityController {
     }
 
     // =========================
-    // 🔥 좋아요 토글 (수정됨 핵심)
+    // 🔥 좋아요 토글
     // =========================
     @PostMapping("/posts/{postId}/like")
     public ResponseEntity<?> toggleLike(
@@ -156,5 +152,53 @@ public class CommunityController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=\"" + image.getOriginalName() + "\"")
                 .body(image.getData());
+    }
+
+    // =========================
+    // 🔹 게시글 수정을 위한 데이터 조회
+    // =========================
+    @GetMapping("/posts/{postId}/edit")
+    public ResponseEntity<CommunityResponse> getPostForEdit(
+            @PathVariable Long postId
+    ) {
+        // 🔥 조회수 증가 없는 조회용 메서드 쓰는 게 베스트
+        CommunityResponse response = communityService.getPost(postId);
+        return ResponseEntity.ok(response);
+    }
+
+    // =========================
+    // 🔹 게시글 수정 실행
+    // =========================
+    @PutMapping("/posts/{postId}")
+    public ResponseEntity<?> updatePost(
+            @PathVariable Long postId,
+            @RequestBody CommunityRequest request
+    ) {
+        try {
+            communityService.updatePost(postId, request);
+            return ResponseEntity.ok(
+                    Map.of("success", true, "message", "게시글이 수정되었습니다.")
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "message", "서버 오류"));
+        }
+    }
+
+    // =========================
+    // 🔹 게시글 삭제
+    // =========================
+    @DeleteMapping("/posts/{postId}")
+    public ResponseEntity<?> deletePost(@PathVariable Long postId) {
+        try {
+            communityService.deletePost(postId);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "message", "삭제 실패"));
+        }
     }
 }

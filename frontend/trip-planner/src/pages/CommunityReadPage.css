@@ -309,22 +309,15 @@
 .col-stats { width: 80px; text-align: center; }
 .col-share { width: 80px; text-align: center; }
 .col-route {
-    /* 1. 고정 크기 설정 */
-    width: 85px;          /* 박스의 너비를 적절하게 고정 (내용에 맞춰 조절하세요) */
-    flex-shrink: 0;       /* 부모 요소가 좁아져도 박스 크기가 줄어들지 않게 고정 */
-    
-    /* 2. 텍스트 중앙 정렬 */
+    width: 85px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    
-    /* 3. 내용이 넘칠 경우 처리 (선택 사항) */
-    white-space: nowrap;  /* 텍스트가 줄바꿈되지 않게 함 */
-    overflow: hidden;     /* 넘치는 텍스트 숨김 */
-    text-overflow: ellipsis; /* 너무 길면 ... 표시 */
-
-    /* 기존 스타일 유지 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 11px;
     font-weight: 600;
     color: #b8860b;
@@ -388,37 +381,78 @@
 }
 
 /* =========================
-   하단 버튼
+   ✨ 개편된 하단 버튼 영역 ✨
 ========================= */
 .community-footer {
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 20px;
+    justify-content: space-between; /* 양끝 정렬 */
+    align-items: center;
+    margin-top: 30px;
 }
 
-.write-button {
-    padding: 10px 25px;
-    background-color: #ffc107;
-    border: none;
+.footer-left,
+.footer-right {
+    display: flex;
+    gap: 10px;
+}
+
+/* 공통 버튼 스타일 */
+.community-footer button {
+    padding: 10px 22px;
     border-radius: 6px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: 0.2s;
+    transition: all 0.2s ease-in-out;
 }
 
-.write-button:hover {
-    background-color: #e6af06;
-}
-
+/* 목록으로 (서브 느낌) */
 .to-list-button {
-    padding: 10px 25px;
     background-color: #fff4cc;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
+    color: #8a6500;
+    border: 1px solid #ffe08a;
 }
 
 .to-list-button:hover {
     background-color: #ffe08a;
+    color: #5c4300;
+}
+
+/* 수정하기 (중립적인 회색톤) */
+.edit-button {
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+
+.edit-button:hover {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+/* 삭제하기 (경고용 붉은톤) */
+.delete-button {
+    background-color: #fff0f0;
+    color: #e03131;
+    border: 1px solid #ffc9c9;
+}
+
+.delete-button:hover {
+    background-color: #ffe3e3;
+    border-color: #fa5252;
+    color: #c92a2a;
+}
+
+/* 글쓰기 (메인 강조 색상) */
+.write-button {
+    background-color: #ffc107;
+    color: #222;
+    border: none;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+}
+
+.write-button:hover {
+    background-color: #e6af06;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
 }
