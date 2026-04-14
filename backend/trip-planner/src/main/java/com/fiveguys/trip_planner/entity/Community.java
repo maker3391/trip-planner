@@ -31,8 +31,10 @@ public class Community {
     @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String content;
 
-    @Column(nullable = false)
-    private String authorNickname;
+    // 🔥 LAZY 유지 (중요)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
 
     private String departure;
     private String arrival;
@@ -51,20 +53,31 @@ public class Community {
 
     @Builder.Default
     @Column(nullable = false)
-    private Long recommendCount = 0L; // 좋아요(공유수)
+    private Long shareCount = 0L;
 
-    // 🔥 이미지와의 연관 관계 설정
+    @Builder.Default
+    @Column(nullable = false)
+    private Long likeCount = 0L;
+
+    // 🔥 리스트는 항상 초기화 (NPE 방지)
     @Builder.Default
     @OneToMany(mappedBy = "community", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommunityImage> images = new ArrayList<>();
+
+    // 🔥 여기가 중요 (초기화 + cascade 정리)
+    @Builder.Default
+    @OneToMany(mappedBy = "community", cascade = CascadeType.REMOVE)
+    private List<CommunityLike> likes = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
-        if(this.viewCount == null) this.viewCount = 0L;
-        if(this.recommendCount == null) this.recommendCount = 0L;
+
+        if (this.viewCount == null) this.viewCount = 0L;
+        if (this.shareCount == null) this.shareCount = 0L;
+        if (this.likeCount == null) this.likeCount = 0L;
     }
 
     @PreUpdate
@@ -72,9 +85,10 @@ public class Community {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // 🔥 비즈니스 로직 메서드들
+    // =========================
+    // 비즈니스 로직
+    // =========================
 
-    // 게시글 수정용
     public void update(String category, String region, String title, String content,
                        String departure, String arrival, String tags, Integer rating) {
         this.category = category;
@@ -87,25 +101,26 @@ public class Community {
         this.rating = rating;
     }
 
-    // 조회수 증가
     public void incrementViewCount() {
-        this.viewCount++;
+        if (this.viewCount == null) {
+            this.viewCount = 1L;
+        } else {
+            this.viewCount++;
+        }
     }
 
-    // 추천(공유)수 증가
-    public void incrementRecommend() {
-        this.recommendCount++;
+    public void incrementShareCount() {
+        this.shareCount++;
     }
 
-    // 추천(공유)수 감소
-    public void decrementRecommend() {
-        if(this.recommendCount > 0) this.recommendCount--;
+    public void incrementLikeCount() {
+        this.likeCount++;
     }
 
-    /**
-     * 🔥 연관 관계 편의 메서드
-     * 이미지를 게시글에 안전하게 추가하기 위해 사용합니다.
-     */
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) this.likeCount--;
+    }
+
     public void addImage(CommunityImage image) {
         this.images.add(image);
         if (image.getCommunity() != this) {
