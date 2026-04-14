@@ -49,19 +49,56 @@ export default function CommunityReadPage() {
     const [me, setMe] = useState<{ id: number } | null>(null);
 
     const [selectedCategory, setSelectedCategory] = useState("전체보기");
-    const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+    const [selectedRegion, setSelectedRegion] = useState<string | null>("전체");
 
     const categories = [
         "전체보기",
-        "여행플랜 공유",
         "자유게시판",
         "질문게시판",
+        "여행플랜 공유",
         "맛집게시판",
         "후기게시판",
+        "사진게시판",
         "공지게시판"
     ];
 
-    const regions = ["서울", "경기", "인천", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
+    const regions = [
+        "전체","서울","경기","인천","강원","충북",
+        "충남","전북","전남","경북","경남","제주"
+    ];
+
+    const renderRouteOrRating = (post: CommunityResponse) => {
+        // 1. 별점 렌더링 (맛집, 후기 등) 부분 수정
+        if (post.category && RATING_ENABLED_CATEGORIES.includes(post.category)) {
+          const rating = post.rating || 0;
+          return (
+            <div className="rating-stars" style={{ color: "#FFBB00", fontSize: "16px" }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i}>
+                  {i < rating ? "★" : "☆"}
+                </span>
+              ))}
+            </div>
+          );
+        }
+
+        // 2. 경로 렌더링 (여행플랜 등)
+        if (post.category && PLAN_SHARE_ENABLED_CATEGORIES.includes(post.category)) {
+        // 출발/도착이 모두 없으면 하이픈 반환
+        if (!post.departure && !post.arrival) return " - ";
+        
+        return (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+            <span>{post.departure || "미정"}</span>
+            <ArrowRightAltIcon fontSize="small" />
+            <span>{post.arrival || "미정"}</span>
+            </div>
+        );
+        }
+
+        // 3. 둘 다 해당 안 될 경우
+        return " - ";
+    };
 
     // =========================
     // 로그인 유저 가져오기
@@ -192,8 +229,21 @@ export default function CommunityReadPage() {
 
         try {
             await navigator.clipboard.writeText(window.location.href);
-            await client.patch(`/community/posts/${post.id}/share`);
+            const res = await client.patch(`/community/posts/${post.id}/share`);
+            const newShareCount = res.data.shareCount ?? (post.shareCount || 0) + 1
+
             alert("링크가 복사되었습니다!");
+
+            setPost(prev => prev ? { ...prev, shareCount: newShareCount } : null);
+
+            // 4. 하단 리스트(posts)에서 해당 게시글의 공유수 연동 업데이트
+            setPosts(prev =>
+                prev.map(p =>
+                    p.id === post.id
+                        ? { ...p, shareCount: newShareCount }
+                        : p
+                )
+            );
         } catch (error) {
             alert("공유 실패");
         }
@@ -204,7 +254,7 @@ export default function CommunityReadPage() {
     // =========================
     const handleReset = () => {
         setSelectedCategory("전체보기");
-        setSelectedRegion(null);
+        setSelectedRegion("전체");
         setPage(0);
     };
 
@@ -361,7 +411,7 @@ export default function CommunityReadPage() {
                                          className={`board-item-row ${id === String(item.id) ? "active-row" : ""}`}
                                          onClick={() => navigate(`/community/${item.id}`)}>
                                         <div className="col-id">{item.id}</div>
-                                        <div className="col-route">{item.departure || ""} - {item.arrival || ""}</div>
+                                        <div className="col-route">{renderRouteOrRating(item)}</div>
                                         <div className="col-title">{item.title}</div>
                                         <div className="col-author">{item.authorNickname || "익명"}</div>
                                         <div className="col-views">{item.viewCount}</div>

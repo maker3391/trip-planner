@@ -11,7 +11,7 @@ import Header from "../components/layout/Header.tsx";
 // 카테고리 조건
 // =========================
 const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판", "사진게시판"];
-const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유", "당일치기 친구 찾기"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
 
 // =========================
 // Quill 설정 (폰트 사이즈)
@@ -57,9 +57,9 @@ export default function CommunityWritePage() {
     });
 
     const categories = [
-        "여행플랜 공유",
         "자유게시판",
         "질문게시판",
+        "여행플랜 공유",
         "맛집게시판",
         "후기게시판",
         "사진게시판",
