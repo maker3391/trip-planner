@@ -44,11 +44,14 @@ public class CommunityResponse {
     @Schema(description = "평점 (0~5)", example = "5")
     private Integer rating;
 
-    @Schema(description = "게시글 작성 일시")
+    @Schema(description = "게시글 작성 일시", example = "2026-04-07T15:11:30")
     private LocalDateTime createdAt;
 
+
+    @Schema(description = "게시글 수정 일시")
     private LocalDateTime updatedAt;
 
+    @Schema(description = "조회수")
     private Long viewCount;
 
     private Long shareCount;

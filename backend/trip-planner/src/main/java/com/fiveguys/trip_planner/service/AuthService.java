@@ -19,6 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -71,6 +73,10 @@ public class AuthService {
 
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new InvalidLoginException("이메일 또는 비밀번호가 틀렸습니다."));
+
+        if("DELETED".equals(user.getStatus())) {
+            throw new InvalidLoginException("탈퇴한 회원입니다.");
+        }
 
         if (user.getPassword() == null) {
             throw new InvalidLoginException("소셜 로그인으로 가입한 계정입니다.");
@@ -246,5 +252,24 @@ public class AuthService {
         if (a == null && b == null) return true;
         if (a == null || b == null) return false;
         return a.equals(b);
+    }
+
+    @Transactional
+    public MessageResponse withdraw(User user) {
+        validateAuthenticatedUser(user);
+
+        String uuid = UUID.randomUUID().toString().substring(0,8);
+
+        user.setEmail("deleted_" + uuid + "@" + user.getId());
+        user.setNickname("탈퇴한 유저_" + uuid);
+        user.setPhone("deleted_" + uuid);
+        user.setPassword(null);
+        user.setStatus("DELETED");
+
+        userRepository.save(user);
+
+        refreshTokenRepository.deleteById(String.valueOf(user.getId()));
+
+        return new MessageResponse("회원탈퇴가 정상적으로 처리되었습니다.");
     }
 }

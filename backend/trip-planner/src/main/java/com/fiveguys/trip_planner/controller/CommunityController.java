@@ -5,6 +5,7 @@ import com.fiveguys.trip_planner.entity.CommunityImage;
 import com.fiveguys.trip_planner.response.CommunityResponse;
 import com.fiveguys.trip_planner.service.CommunityService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -68,6 +69,10 @@ public class CommunityController {
     // =========================
     // 🔹 게시글 단건 조회
     // =========================
+    // =========================
+    // 🔹 게시글 단건 조회
+    // =========================
+    @Operation(summary = "게시글 상세 조회", description = "특정 ID의 게시글 상세 정보를 가져옵니다.")
     @GetMapping("/posts/{postId}")
     public ResponseEntity<CommunityResponse> getPost(
             @PathVariable Long postId
@@ -133,6 +138,10 @@ public class CommunityController {
     // =========================
     // 🔹 이미지 업로드
     // =========================
+    // =========================
+    // 🔹 이미지 업로드
+    // =========================
+    @Operation(summary = "이미지 업로드", description = "게시글 작성을 위한 이미지를 서버에 업로드합니다.")
     @PostMapping("/image")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
         Long imageId = communityService.uploadImage(file);
@@ -142,6 +151,11 @@ public class CommunityController {
     // =========================
     // 🔹 이미지 조회
     // =========================
+    // =========================
+    // 🔹 이미지 조회
+    // =========================
+    // 🔥 이미지 조회
+    @Operation(summary = "이미지 조회", description = "ID를 통해 업로드된 이미지 파일을 실제 데이터로 조회합니다.")
     @GetMapping("/image/{id}")
     public ResponseEntity<byte[]> getImage(@PathVariable Long id) {
 
