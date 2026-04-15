@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Schema(description = "커뮤니티 게시글 상세 응답 객체")
+@Schema(description = "커뮤니티 게시글 응답 객체 (상세 및 목록용)")
 @Getter
 @Builder
 @AllArgsConstructor
@@ -48,25 +48,34 @@ public class CommunityResponse {
     private LocalDateTime createdAt;
 
 
-    @Schema(description = "게시글 수정 일시")
+    @Schema(description = "게시글 마지막 수정 일시", example = "2026-04-15T15:30:00")
     private LocalDateTime updatedAt;
 
-    @Schema(description = "조회수")
+    @Schema(description = "조회수", example = "125")
     private Long viewCount;
 
+    @Schema(description = "공유 횟수", example = "12")
     private Long shareCount;
 
+    @Schema(description = "좋아요 총 개수", example = "42")
     private Long likeCount;
 
     // 🔥 내가 눌렀는지
+    @Schema(description = "현재 로그인한 사용자의 좋아요 여부", example = "true")
     private boolean likedByMe;
 
     // 🔥 작성자 정보 (수정 핵심)
+    @Schema(description = "작성자 고유 ID", example = "1")
     private Long authorId;
+
+    @Schema(description = "작성자 닉네임", example = "여행왕수원")
     private String authorNickname;
 
+    @Schema(description = "이 게시글에 연결된 여행 계획 ID", example = "5")
+    private Long tripPlanId;
+
     // 🔥 이미지 ID 리스트
-    @Schema(description = "연결된 이미지 ID 목록")
+    @Schema(description = "연결된 이미지 ID 목록 (이미지 조회 API에서 사용)", example = "[1, 2, 5]")
     private List<Long> imageIds;
 
     /**
@@ -108,7 +117,11 @@ public class CommunityResponse {
                                 ? community.getAuthor().getNickname()
                                 : "알 수 없음"
                 )
-
+                .tripPlanId(
+                        community.getTripPlan() != null
+                                ? community.getTripPlan().getId()
+                                : null
+                )
                 .imageIds(ids)
                 .build();
     }
@@ -152,7 +165,11 @@ public class CommunityResponse {
                                 ? community.getAuthor().getNickname()
                                 : "알 수 없음"
                 )
-
+                .tripPlanId(
+                        community.getTripPlan() != null
+                                ? community.getTripPlan().getId()
+                                : null
+                )
                 .imageIds(ids)
                 .build();
     }

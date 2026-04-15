@@ -36,6 +36,10 @@ public class Community {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trip_plan_id")
+    private TripPlan tripPlan;
+
     private String departure;
     private String arrival;
     private String tags;
@@ -90,7 +94,7 @@ public class Community {
     // =========================
 
     public void update(String category, String region, String title, String content,
-                       String departure, String arrival, String tags, Integer rating) {
+                       String departure, String arrival, String tags, Integer rating, TripPlan tripPlan) {
         this.category = category;
         this.region = region;
         this.title = title;
@@ -99,6 +103,7 @@ public class Community {
         this.arrival = arrival;
         this.tags = tags;
         this.rating = rating;
+        this.tripPlan = tripPlan;
     }
 
     public void incrementViewCount() {
