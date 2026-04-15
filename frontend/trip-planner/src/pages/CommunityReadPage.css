@@ -396,3 +396,48 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 14px rgba(255, 193, 7, 0.3);
 }
+
+.attached-trip-box {
+    margin: 16px 0 20px;
+    padding: 16px;
+    border: 1px solid #f1df9a;
+    border-radius: 14px;
+    background: #fffdf6;
+    line-height: 1.8;
+}
+
+.attached-trip-box h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.attached-trip-schedule-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.attached-trip-schedule-item {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fff8dc;
+    border: 1px solid #f3e1a3;
+}
+
+.schedule-time {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.load-trip-button {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    background: #ffcf33;
+    font-weight: 700;
+    cursor: pointer;
+}

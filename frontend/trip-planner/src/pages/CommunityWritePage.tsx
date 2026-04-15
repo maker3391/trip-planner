@@ -124,7 +124,7 @@ export default function CommunityWritePage() {
                     arrival: data.arrival || "",
                     tags: data.tags || "",
                     rating: data.rating || 0,
-                    tripPlanId: data.tripPlanId ? String(data.tripPlanId) : ""
+                    tripPlanId: data.tripPlan?.id ? String(data.tripPlan.id) : ""
                 });
                 setUploadedImageIds(data.imageIds || []);
             } catch (err) {

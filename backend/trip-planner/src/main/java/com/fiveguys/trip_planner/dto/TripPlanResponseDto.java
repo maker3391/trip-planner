@@ -2,6 +2,7 @@ package com.fiveguys.trip_planner.dto;
 
 import com.fiveguys.trip_planner.entity.TripPlan;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 @Schema(description = "여행 계획 응답 객체")
 @Getter
 @Builder
+@AllArgsConstructor
 public class TripPlanResponseDto {
 
     @Schema(description = "여행 계획 ID", example = "101")
