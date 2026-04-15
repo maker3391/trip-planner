@@ -2,7 +2,7 @@
    전체 레이아웃
 ========================= */
 .community-page {
-    background: #fffdf5;
+    background: #ffffff; /* 기존 미색(#fffdf5) 제거, 순백색 통일 */
     min-height: 100vh;
 }
 
@@ -12,95 +12,6 @@
     margin: 0 auto;
     gap: 20px;
     padding: 20px;
-}
-
-/* =========================
-   사이드바
-========================= */
-.community-sidebar {
-    width: 220px;
-    background: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    height: fit-content;
-    border: 1px solid #ffe8a3;
-}
-
-.sidebar-section {
-    margin-bottom: 25px;
-}
-
-.sidebar-section h3 {
-    font-size: 14px;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.sidebar-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.sidebar-section li {
-    padding: 8px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: 0.2s;
-}
-
-.sidebar-section li:hover {
-    background: #fff4cc;
-}
-
-.sidebar-section li.active {
-    background: #ffc107;
-    font-weight: 700;
-    color: #222;
-    box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3);
-}
-
-/* 지역 */
-.region-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.region-grid span {
-    padding: 6px 10px;
-    border-radius: 6px;
-    background: #fff7db;
-    font-size: 13px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.region-grid span:hover {
-    background: #ffe8a3;
-}
-
-.region-grid span.active {
-    background: #ffc107;
-    font-weight: 700;
-    color: #222;
-}
-
-/* 필터 초기화 */
-.filter-reset-btn {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    background: #fff4cc;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: 0.2s;
-}
-
-.filter-reset-btn:hover {
-    background: #ffe08a;
 }
 
 /* =========================
@@ -115,10 +26,10 @@
 ========================= */
 .community-post-form {
     background: #fff;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 25px;
-    border: 1px solid #ffe8a3;
-    box-shadow: 0 4px 10px rgba(255, 193, 7, 0.08);
+    border: 1px solid #eee; /* 노란 테두리 제거 */
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
 }
 
 /* 상단 정보 */
@@ -137,7 +48,7 @@
 
 .form-group label {
     font-size: 12px;
-    color: #999;
+    color: #888;
 }
 
 /* =========================
@@ -145,10 +56,10 @@
 ========================= */
 .post-extra-info {
     margin-bottom: 15px;
-    padding: 12px;
+    padding: 15px;
     border-radius: 8px;
-    background: #fff9e6;
-    border: 1px solid #ffc107;
+    background: #f8f9fa; /* 연한 회색 배경 */
+    border: 1px solid #eee; /* 깔끔한 회색 테두리 */
 }
 
 .route-display {
@@ -168,13 +79,14 @@
 .rating-display .stars {
     display: flex;
     gap: 4px;
+    color: #ffc107;
 }
 
 /* =========================
    글 메인
 ========================= */
 .form-main-area {
-    border: 1px solid #f3e5ab;
+    border: 1px solid #ddd; /* 노란 테두리 -> 연한 회색 */
     border-radius: 10px;
     overflow: hidden;
     background: #fff;
@@ -183,7 +95,7 @@
 /* 헤더 */
 .PostHeader {
     padding: 20px;
-    border-bottom: 1px solid #f5e6a3;
+    border-bottom: 1px solid #eee;
 }
 
 .PostTitle {
@@ -191,6 +103,7 @@
     font-weight: 700;
     margin-bottom: 8px;
     position: relative;
+    color: #222;
 }
 
 .PostTitle::after {
@@ -198,26 +111,27 @@
     display: block;
     width: 40px;
     height: 3px;
-    background: #ffc107;
-    margin-top: 8px;
+    background: #ffc107; /* 포인트 컬러 유지 */
+    margin-top: 10px;
     border-radius: 2px;
 }
 
 .PostMeta {
     font-size: 13px;
-    color: #888;
+    color: #999;
     display: flex;
     gap: 10px;
+    margin-top: 15px;
 }
 
 /* 본문 */
 .PostContent {
-    padding: 20px;
+    padding: 30px 20px;
 }
 
 .ql-editor {
     font-size: 15px;
-    line-height: 1.7;
+    line-height: 1.8;
     color: #333;
 }
 
@@ -230,11 +144,12 @@
 }
 
 .tag {
-    background: #fff4cc;
-    color: #b88600;
-    padding: 5px 10px;
+    background: #f8f9fa; /* 미색 제거 */
+    border: 1px solid #eee;
+    color: #ffb300; /* 텍스트에만 포인트 컬러 적용 */
+    padding: 6px 12px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
 }
 
@@ -245,8 +160,9 @@
     display: flex;
     gap: 20px;
     padding: 15px 20px;
-    border-top: 1px solid #f5e6a3;
+    border-top: 1px solid #eee; /* 노란 테두리 제거 */
     align-items: center;
+    background: #fbfbfb; /* 하단 액션바를 살짝 구분지어줌 */
 }
 
 .footer-item {
@@ -270,6 +186,7 @@
     display: flex;
     align-items: center;
     padding: 4px;
+    color: inherit;
 }
 
 .icon-btn:hover {
@@ -280,34 +197,24 @@
     color: #ffc107 !important;
 }
 
-/* =========================
-   리스트 영역
-========================= */
-.community-board-container {
-    margin-top: 30px;
-    background: #fff;
-    border-radius: 10px;
-    border: 1px solid #ffe8a3;
+/* ========================= */
+/* 🔥 컬럼 디테일 */
+/* ========================= */
+.col-title {
+    text-align: left;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     overflow: hidden;
 }
 
-/* 헤더 */
-.board-header-row {
-    display: flex;
-    background: #fff9e6;
-    padding: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    border-bottom: 1px solid #ffe08a;
+.col-title span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* 컬럼 */
-.col-id { width: 60px; text-align: center; }
-.col-title { flex: 1; }
-.col-author { width: 120px; text-align: center; }
-.col-views { width: 80px; text-align: center; }
-.col-stats { width: 80px; text-align: center; }
-.col-share { width: 80px; text-align: center; }
 .col-route {
     width: 85px;
     flex-shrink: 0;
@@ -318,37 +225,66 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+
     font-size: 11px;
     font-weight: 600;
     color: #b8860b;
-    background: #fff3cd;
+    background: #fff9e6; /* 라우트 박스는 시인성을 위해 매우 연한 노란색 유지 */
     padding: 3px 6px;
     border-radius: 4px;
 }
 
-/* 리스트 */
-.board-body {
+.col-author {
+    font-size: 13px;
+    color: #444;
+}
+
+.col-date,
+.col-views,
+.col-stats,
+.col-share {
+    font-size: 13px;
+    color: #999;
+}
+
+.col-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #ffb300;
+    font-weight: 500;
+}
+
+/* =========================
+   📭 게시글 없음 (Empty State)
+========================= */
+.no-posts {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    /* 화면이 너무 텅 비어보이지 않도록 최소 높이와 여백 부여 */
+    min-height: 250px; 
+    padding: 60px 20px;
+    
+    background-color: #ffffff; /* 게시판 배경과 동일하게 화이트 */
+    color: #888; /* 차분한 회색 텍스트 */
+    font-size: 15px;
+    font-weight: 500;
+    text-align: center;
+    
+    border-bottom: 1px solid #eee; /* 리스트 디자인과 통일감 */
 }
 
-.board-item-row {
-    display: flex;
-    padding: 12px;
-    border-bottom: 1px solid #fff2cc;
-    font-size: 14px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.board-item-row:hover {
-    background: #fffdf5;
-}
-
-/* 현재 글 */
-.active-row {
-    background: #fff4cc;
-    border-left: 4px solid #ffc107;
+/* (선택) 텍스트 위에 둥근 아이콘 같은 시각적 요소를 살짝 더해주고 싶다면 */
+.no-posts::before {
+    content: "📁"; /* 문서나 빈 폴더 느낌의 이모지 (원치 않으면 삭제) */
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5; /* 색을 연하게 빼서 너무 튀지 않게 */
+    filter: grayscale(100%); /* 흑백 처리로 깔끔하게 */
 }
 
 /* =========================
@@ -358,26 +294,30 @@
     display: flex;
     justify-content: center;
     gap: 6px;
-    padding: 15px;
+    padding: 20px 15px;
 }
 
 .pagination button {
-    border: 1px solid #ffe08a;
+    border: 1px solid #ddd;
     background: #fff;
-    padding: 6px 10px;
+    padding: 6px 12px;
     cursor: pointer;
     border-radius: 4px;
     font-size: 13px;
+    color: #666;
+    transition: 0.2s;
 }
 
 .pagination button:hover {
-    background: #fff4cc;
+    background: #f8f9fa;
+    border-color: #ccc;
 }
 
 .active-page {
     background: #ffc107 !important;
+    border-color: #ffc107 !important;
     font-weight: 700;
-    color: #222;
+    color: #fff !important; /* 가독성을 위해 흰색 */
 }
 
 /* =========================
@@ -385,7 +325,7 @@
 ========================= */
 .community-footer {
     display: flex;
-    justify-content: space-between; /* 양끝 정렬 */
+    justify-content: space-between;
     align-items: center;
     margin-top: 30px;
 }
@@ -406,16 +346,16 @@
     transition: all 0.2s ease-in-out;
 }
 
-/* 목록으로 (서브 느낌) */
+/* 목록으로 */
 .to-list-button {
-    background-color: #fff4cc;
-    color: #8a6500;
-    border: 1px solid #ffe08a;
+    background-color: #f8f9fa; /* 노란 배경 제거 */
+    color: #555;
+    border: 1px solid #ddd;
 }
 
 .to-list-button:hover {
-    background-color: #ffe08a;
-    color: #5c4300;
+    background-color: #eeeeee;
+    color: #333;
 }
 
 /* 수정하기 (중립적인 회색톤) */
@@ -446,13 +386,13 @@
 /* 글쓰기 (메인 강조 색상) */
 .write-button {
     background-color: #ffc107;
-    color: #222;
+    color: #fff; /* 흰색 텍스트로 가독성 및 세련미 향상 */
     border: none;
-    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+    box-shadow: 0 4px 10px rgba(255, 193, 7, 0.2);
 }
 
 .write-button:hover {
     background-color: #e6af06;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 6px 14px rgba(255, 193, 7, 0.3);
 }

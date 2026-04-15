@@ -36,29 +36,20 @@ public class CommunityController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping("/posts")
-    public ResponseEntity<?> createPost(
-            @RequestBody CommunityRequest request
-    ) {
-        try {
-            // 🔥 authorId, authorNickname은 Service에서 처리 (인증 기반)
-            Long postId = communityService.createPost(request);
+    public ResponseEntity<?> createPost(@RequestBody CommunityRequest request) {
 
-            return ResponseEntity.status(201).body(
-                    Map.of("success", true, "postId", postId)
-            );
+        Long postId = communityService.createPost(request);
 
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", e.getMessage()));
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "message", "서버 오류"));
-        }
+        return ResponseEntity.status(201).body(
+                Map.of(
+                        "success", true,
+                        "postId", postId
+                )
+        );
     }
 
     // =========================
-    // 🔹 게시글 목록 조회
+    // 🔹 게시글 목록 + 검색 + 필터 (통합 API)
     // =========================
     @Operation(summary = "게시글 목록 조회", description = "페이징 및 필터링(카테고리, 지역, 검색어)을 적용하여 게시글 목록을 조회합니다.")
     @GetMapping("/posts")
@@ -70,8 +61,16 @@ public class CommunityController {
             @RequestParam(required = false) String searchType,
             @RequestParam(required = false) String keyword
     ) {
+
         return ResponseEntity.ok(
-                communityService.getPosts(page, size, category, region, searchType, keyword)
+                communityService.getPosts(
+                        page,
+                        size,
+                        category,
+                        region,
+                        searchType,
+                        keyword
+                )
         );
     }
 
@@ -83,10 +82,43 @@ public class CommunityController {
     // =========================
     @Operation(summary = "게시글 상세 조회", description = "특정 ID의 게시글 상세 정보를 가져옵니다. 호출 시 조회수가 증가합니다.")
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<CommunityResponse> getPost(
-            @PathVariable Long postId
+    public ResponseEntity<CommunityResponse> getPost(@PathVariable Long postId) {
+
+        return ResponseEntity.ok(
+                communityService.getPost(postId)
+        );
+    }
+
+    // =========================
+    // 🔹 게시글 수정
+    // =========================
+    @PutMapping("/posts/{postId}")
+    public ResponseEntity<?> updatePost(
+            @PathVariable Long postId,
+            @RequestBody CommunityRequest request
     ) {
-        return ResponseEntity.ok(communityService.getPost(postId));
+
+        communityService.updatePost(postId, request);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "success", true,
+                        "message", "게시글이 수정되었습니다."
+                )
+        );
+    }
+
+    // =========================
+    // 🔹 게시글 삭제
+    // =========================
+    @DeleteMapping("/posts/{postId}")
+    public ResponseEntity<?> deletePost(@PathVariable Long postId) {
+
+        communityService.deletePost(postId);
+
+        return ResponseEntity.ok(
+                Map.of("success", true)
+        );
     }
 
     // =========================
@@ -95,8 +127,12 @@ public class CommunityController {
     @Operation(summary = "조회수 증가", description = "게시글 상세 페이지 진입 외에 수동으로 조회수를 1 증가시킬 때 사용합니다.")
     @PatchMapping("/posts/{postId}/view")
     public ResponseEntity<?> viewPost(@PathVariable Long postId) {
+
         communityService.viewPost(postId);
-        return ResponseEntity.ok(Map.of("success", true));
+
+        return ResponseEntity.ok(
+                Map.of("success", true)
+        );
     }
 
     // =========================
@@ -105,8 +141,12 @@ public class CommunityController {
     @Operation(summary = "공유 횟수 증가", description = "공유 버튼 클릭 시 공유 카운트를 1 증가시킵니다.")
     @PatchMapping("/posts/{postId}/share")
     public ResponseEntity<?> sharePost(@PathVariable Long postId) {
+
         communityService.incrementShare(postId);
-        return ResponseEntity.ok(Map.of("success", true));
+
+        return ResponseEntity.ok(
+                Map.of("success", true)
+        );
     }
 
     // =========================
@@ -114,9 +154,7 @@ public class CommunityController {
     // =========================
     @Operation(summary = "좋아요 토글", description = "게시글에 좋아요를 등록하거나 취소합니다.")
     @PostMapping("/posts/{postId}/like")
-    public ResponseEntity<?> toggleLike(
-            @PathVariable Long postId
-    ) {
+    public ResponseEntity<?> toggleLike(@PathVariable Long postId) {
 
         boolean liked = communityService.toggleLike(postId);
         Long likeCount = communityService.getLikeCount(postId);
@@ -134,9 +172,8 @@ public class CommunityController {
     // =========================
     @Operation(summary = "좋아요 상태 조회", description = "로그인한 유저가 현재 게시글에 좋아요를 눌렀는지 여부와 전체 좋아요 수를 확인합니다.")
     @GetMapping("/posts/{postId}/like-status")
-    public ResponseEntity<?> getLikeStatus(
-            @PathVariable Long postId
-    ) {
+    public ResponseEntity<?> getLikeStatus(@PathVariable Long postId) {
+
         boolean liked = communityService.isLiked(postId);
         Long likeCount = communityService.getLikeCount(postId);
 
@@ -154,8 +191,12 @@ public class CommunityController {
     @Operation(summary = "이미지 업로드", description = "게시글에 포함될 이미지를 업로드하고 고유 ID를 반환받습니다.")
     @PostMapping("/image")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
+
         Long imageId = communityService.uploadImage(file);
-        return ResponseEntity.ok(Map.of("imageId", imageId));
+
+        return ResponseEntity.ok(
+                Map.of("imageId", imageId)
+        );
     }
 
     // =========================
@@ -169,10 +210,13 @@ public class CommunityController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(image.getContentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + image.getOriginalName() + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + image.getOriginalName() + "\""
+                )
                 .body(image.getData());
     }
+<<<<<<< Updated upstream
 
     // =========================
     // 🔹 게시글 수정을 위한 데이터 조회
@@ -224,4 +268,6 @@ public class CommunityController {
                     .body(Map.of("success", false, "message", "삭제 실패"));
         }
     }
+=======
+>>>>>>> Stashed changes
 }
