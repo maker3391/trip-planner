@@ -1,8 +1,9 @@
 package com.fiveguys.trip_planner.config;
 
 import com.fiveguys.trip_planner.service.CustomOAuth2UserService;
-import com.fiveguys.trip_planner.service.OAuth2AuthenticationFailureHandler; // 추가
+import com.fiveguys.trip_planner.service.OAuth2AuthenticationFailureHandler;
 import com.fiveguys.trip_planner.service.OAuth2AuthenticationSuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +27,7 @@ public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler; // 추가
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
@@ -42,6 +43,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
@@ -53,13 +59,15 @@ public class SecurityConfig {
                                 "/api/auth/signup",
                                 "/api/auth/login",
                                 "/api/auth/refresh",
+                                "/api/auth/logout",
                                 "/api/chat",
                                 "/oauth2/**",
                                 "/login/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/community/image/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/me",
-                                "/api/auth/logout",
                                 "/api/auth/me/password",
                                 "/api/auth/me/nickname",
                                 "/api/auth/me/phone"
@@ -71,7 +79,16 @@ public class SecurityConfig {
                                 .userService(customOAuth2UserService)
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
-                        .failureHandler(oAuth2AuthenticationFailureHandler) // 추가
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(HttpServletResponse.SC_OK);
+                        })
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

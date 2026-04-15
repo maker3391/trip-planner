@@ -1,18 +1,33 @@
-.chatbot-fab {
+.chatbot-fab-wrap {
   position: fixed;
   right: 24px;
   bottom: 24px;
-  width: 64px;
-  height: 64px;
+  z-index: 1200;
+}
+
+.chatbot-fab {
+  position: relative;
+  width: 72px;
+  height: 72px;
   border: none;
   border-radius: 50%;
-  background-color: #111111;
-  color: #ffffff;
-  font-size: 26px;
+  background-color: #ffffff;
+  padding: 0;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-  z-index: 1200;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.chatbot-fab img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140%;
+  height: 140%;
+  object-fit: contain;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .chatbot-fab:hover {
@@ -20,17 +35,54 @@
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22);
 }
 
+.chatbot-tooltip {
+  position: absolute;
+  right: 84px;
+  bottom: 50%;
+  transform: translateY(50%);
+  background: #111111;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 0.3s ease;
+}
+
+.chatbot-tooltip::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent transparent #111111;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(60%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(50%);
+  }
+}
+
 .chatbot-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.18);
   z-index: 1300;
+  pointer-events: none;
 }
 
 .chatbot-modal {
   position: fixed;
   right: 24px;
-  bottom: 100px;
+  bottom: 110px;
   width: 380px;
   height: 560px;
   background-color: #ffffff;
@@ -39,6 +91,7 @@
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
+  pointer-events: auto;
 }
 
 .chatbot-header {
@@ -171,8 +224,14 @@
     height: 70vh;
   }
 
-  .chatbot-fab {
+  .chatbot-fab-wrap {
     right: 16px;
     bottom: 16px;
+  }
+
+  .chatbot-tooltip {
+    right: 80px;
+    font-size: 12px;
+    padding: 9px 12px;
   }
 }

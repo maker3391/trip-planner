@@ -1,293 +1,443 @@
-/* 전체 컨테이너 */
-.community-post-form {
-    background: #fff;
-    padding-top: 30px;
+/* =========================
+   전체 레이아웃
+========================= */
+.community-page {
+    background: #ffffff; /* 기존 미색(#fffdf5) 제거, 순백색 통일 */
+    min-height: 100vh;
 }
 
-/* 상단 정보 (분류, 지역 등) */
+.community-container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 20px;
+    padding: 20px;
+}
+
+/* =========================
+   메인 영역
+========================= */
+.community-main-content {
+    flex: 1;
+}
+
+/* =========================
+   게시글 상세
+========================= */
+.community-post-form {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    border: 1px solid #eee; /* 노란 테두리 제거 */
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+
+/* 상단 정보 */
 .form-row {
     display: flex;
     gap: 20px;
-    margin-bottom: 20px;
-    align-items: flex-end;
+    margin-bottom: 15px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     flex: 1;
 }
 
 .form-group label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #886b00; /* 노란색 톤과 어울리는 짙은 갈색 */
-}
-
-/* 읽기전용 데이터 표시 필드 */
-.form-group > div {
-    padding: 10px 12px;
-    background-color: #fffdf7;
-    border: 1px solid #f9e8b3;
-    border-radius: 6px;
-    font-size: 15px;
-    color: #333;
-    font-weight: 500;
-}
-
-/* ✈️ 여행 경로 (당일치기/여행플랜 전용) */
-.route-inputs {
-    background: #fff9e6;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #ffe08a;
-}
-
-.route-arrow {
-    padding-bottom: 10px;
-    color: #ffc107;
-    font-weight: bold;
-    font-size: 18px;
-}
-
-/* ⭐ 평점 영역 */
-.rating-section {
-    margin-bottom: 15px;
-    padding: 12px 15px;
-    background: #fff9e6;
-    border: 1px solid #ffe08a;
-    border-radius: 8px;
-}
-
-/* 📝 메인 콘텐츠 영역 (본문 카드) */
-.form-main-area {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #eee;
-    border-top: 3px solid #ffc107; /* 상단 노란색 포인트 라인 */
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 10px;
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.05);
-}
-
-/* 🔥 새로운 헤더 구조 (제목 + 작성자 정보) */
-.PostHeader {
-    padding: 24px 28px;
-    background-color: #fffdf7;
-    border-bottom: 1px solid #f2f2f2;
-}
-
-.PostTitle {
-    font-size: 26px;
-    font-weight: 800;
-    color: #222;
-    margin-bottom: 12px;
-    line-height: 1.3;
-}
-
-.PostMeta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    color: #777;
-}
-
-.PostAuthor strong {
-    color: #886b00;
-    font-weight: 600;
-}
-
-.PostDate {
-    color: #bbb;
-}
-
-/* 본문 내용 영역 */
-.PostContent {
-    display: flex;
-    flex-direction: column;
-    padding: 30px 28px;
-    min-height: 300px;
-}
-
-/* 본문 내 이미지 및 멀티미디어 제어 */
-.mainContent {
-    flex: 1;
-    line-height: 1.8;
-    font-size: 16px;
-    color: #333;
-    margin-bottom: 30px;
-    word-break: break-word; /* 긴 텍스트가 영역을 벗어나지 않게 */
-}
-
-/* 🔥 핵심: Quill 에디터에서 넘어온 이미지 스타일링 */
-.mainContent img {
-    display: block; /* 이미지 주변에 불필요한 공백 제거 */
-    max-width: 100%; /* 부모 너비를 절대 넘지 않음 */
-    height: auto;    /* 비율 유지 */
-    margin: 20px auto; /* 이미지 상하 간격 및 중앙 정렬 */
-    border-radius: 8px; /* 노란 테마와 어울리는 부드러운 모서리 */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* 가벼운 그림자 */
-}
-
-/* 만약 에디터에서 가로 정렬(왼쪽/중앙/오른쪽)을 사용했다면 대응 */
-.mainContent .ql-align-center {
-    text-align: center;
-}
-
-.mainContent .ql-align-right {
-    text-align: right;
-}
-
-/* 동영상(Youtube 등)이 포함된 경우 대응 */
-.mainContent iframe {
-    max-width: 100%;
-    border-radius: 8px;
-    aspect-ratio: 16 / 9;
-}
-
-/* 해시태그 스타일 */
-.tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px dashed #ffe08a;
-}
-
-.tag {
-    background-color: #fff9e6;
-    color: #d19a00;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border: 1px solid #ffe08a;
-}
-
-/* 하단 푸터 (조회수, 좋아요 전용) */
-/* 하단 푸터 (조회수, 좋아요 버튼 영역) */
-.PostFooter {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start; 
-    gap: 25px;
-    padding: 16px 28px;
-    background-color: #fffdf7; /* 연한 노란빛 */
-    border-top: 1px solid #f2f2f2;
-    font-size: 14px;
-    color: #666;
-}
-
-/* 개별 아이템 (조회수, 좋아요 묶음) */
-.PostFooter > div {
-    display: flex;
-    align-items: center;
-    gap: 8px; /* 아이콘과 텍스트 사이 간격 */
-}
-
-/* 아이콘 기본 스타일 (Material UI Icon 대응) */
-.PostFooter svg {
-    font-size: 18px;
+    font-size: 12px;
     color: #888;
 }
 
-/* 좋아요 버튼 스타일 */
-.PostFooter button {
+/* =========================
+   추가 정보 (경로 / 평점)
+========================= */
+.post-extra-info {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f8f9fa; /* 연한 회색 배경 */
+    border: 1px solid #eee; /* 깔끔한 회색 테두리 */
+}
+
+.route-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #b88600;
+    font-weight: 600;
+}
+
+.rating-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rating-display .stars {
+    display: flex;
+    gap: 4px;
+    color: #ffc107;
+}
+
+/* =========================
+   글 메인
+========================= */
+.form-main-area {
+    border: 1px solid #ddd; /* 노란 테두리 -> 연한 회색 */
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+}
+
+/* 헤더 */
+.PostHeader {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.PostTitle {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    position: relative;
+    color: #222;
+}
+
+.PostTitle::after {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 3px;
+    background: #ffc107; /* 포인트 컬러 유지 */
+    margin-top: 10px;
+    border-radius: 2px;
+}
+
+.PostMeta {
+    font-size: 13px;
+    color: #999;
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* 본문 */
+.PostContent {
+    padding: 30px 20px;
+}
+
+.ql-editor {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #333;
+}
+
+/* 태그 */
+.tags {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    background: #f8f9fa; /* 미색 제거 */
+    border: 1px solid #eee;
+    color: #ffb300; /* 텍스트에만 포인트 컬러 적용 */
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* =========================
+   하단 액션
+========================= */
+.PostFooter {
+    display: flex;
+    gap: 20px;
+    padding: 15px 20px;
+    border-top: 1px solid #eee; /* 노란 테두리 제거 */
+    align-items: center;
+    background: #fbfbfb; /* 하단 액션바를 살짝 구분지어줌 */
+}
+
+.footer-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.footer-item:hover {
+    color: #ffc107;
+}
+
+/* 아이콘 버튼 */
+.icon-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    color: inherit;
+}
+
+.icon-btn:hover {
+    transform: scale(1.15);
+}
+
+.icon-btn.active svg {
+    color: #ffc107 !important;
+}
+
+/* ========================= */
+/* 🔥 컬럼 디테일 */
+/* ========================= */
+.col-title {
+    text-align: left;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.col-title span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.col-route {
+    width: 85px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
-    border: 1px solid #ffc107; /* 노란색 테두리 */
-    border-radius: 50%; /* 동그란 버튼 */
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 0;
-}
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
-/* 좋아요 아이콘 색상 */
-.PostFooter button svg {
-    color: #ffc107;
-    font-size: 20px;
-}
-
-/* 좋아요 버튼 호버 시 */
-.PostFooter button:hover {
-    background-color: #ffc107;
-    transform: scale(1.1);
-}
-
-.PostFooter button:hover svg {
-    color: #fff; /* 호버 시 아이콘은 흰색으로 */
-}
-
-/* 좋아요 숫자 강조 */
-.PostFooter div:last-child {
+    font-size: 11px;
     font-weight: 600;
-    color: #222;
+    color: #b8860b;
+    background: #fff9e6; /* 라우트 박스는 시인성을 위해 매우 연한 노란색 유지 */
+    padding: 3px 6px;
+    border-radius: 4px;
 }
 
-/* 조회수 아이콘 색상 살짝 조정 */
-.PostFooter div:first-child svg {
-    color: #bbb;
+.col-author {
+    font-size: 13px;
+    color: #444;
 }
 
-/* 하단 네비게이션 버튼 */
+.col-date,
+.col-views,
+.col-stats,
+.col-share {
+    font-size: 13px;
+    color: #999;
+}
+
+.col-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #ffb300;
+    font-weight: 500;
+}
+
+/* =========================
+   📭 게시글 없음 (Empty State)
+========================= */
+.no-posts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    /* 화면이 너무 텅 비어보이지 않도록 최소 높이와 여백 부여 */
+    min-height: 250px; 
+    padding: 60px 20px;
+    
+    background-color: #ffffff; /* 게시판 배경과 동일하게 화이트 */
+    color: #888; /* 차분한 회색 텍스트 */
+    font-size: 15px;
+    font-weight: 500;
+    text-align: center;
+    
+    border-bottom: 1px solid #eee; /* 리스트 디자인과 통일감 */
+}
+
+/* (선택) 텍스트 위에 둥근 아이콘 같은 시각적 요소를 살짝 더해주고 싶다면 */
+.no-posts::before {
+    content: "📁"; /* 문서나 빈 폴더 느낌의 이모지 (원치 않으면 삭제) */
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5; /* 색을 연하게 빼서 너무 튀지 않게 */
+    filter: grayscale(100%); /* 흑백 처리로 깔끔하게 */
+}
+
+/* =========================
+   페이지네이션
+========================= */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 20px 15px;
+}
+
+.pagination button {
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #666;
+    transition: 0.2s;
+}
+
+.pagination button:hover {
+    background: #f8f9fa;
+    border-color: #ccc;
+}
+
+.active-page {
+    background: #ffc107 !important;
+    border-color: #ffc107 !important;
+    font-weight: 700;
+    color: #fff !important; /* 가독성을 위해 흰색 */
+}
+
+/* =========================
+   ✨ 개편된 하단 버튼 영역 ✨
+========================= */
 .community-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     margin-top: 30px;
 }
 
-.cancel-button {
-    padding: 12px 35px;
-    background-color: #ffc107;
-    color: #222;
-    border: none;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+.footer-left,
+.footer-right {
+    display: flex;
+    gap: 10px;
 }
 
-.cancel-button:hover {
+/* 공통 버튼 스타일 */
+.community-footer button {
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+/* 목록으로 */
+.to-list-button {
+    background-color: #f8f9fa; /* 노란 배경 제거 */
+    color: #555;
+    border: 1px solid #ddd;
+}
+
+.to-list-button:hover {
+    background-color: #eeeeee;
+    color: #333;
+}
+
+/* 수정하기 (중립적인 회색톤) */
+.edit-button {
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+
+.edit-button:hover {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+/* 삭제하기 (경고용 붉은톤) */
+.delete-button {
+    background-color: #fff0f0;
+    color: #e03131;
+    border: 1px solid #ffc9c9;
+}
+
+.delete-button:hover {
+    background-color: #ffe3e3;
+    border-color: #fa5252;
+    color: #c92a2a;
+}
+
+/* 글쓰기 (메인 강조 색상) */
+.write-button {
+    background-color: #ffc107;
+    color: #fff; /* 흰색 텍스트로 가독성 및 세련미 향상 */
+    border: none;
+    box-shadow: 0 4px 10px rgba(255, 193, 7, 0.2);
+}
+
+.write-button:hover {
     background-color: #e6af06;
     transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(255, 193, 7, 0.3);
 }
 
-.board-item-row {
-    border-bottom: 1px solid #f2f2f2;
-    font-size: 15px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+.attached-trip-box {
+    margin: 16px 0 20px;
+    padding: 16px;
+    border: 1px solid #f1df9a;
+    border-radius: 14px;
+    background: #fffdf6;
+    line-height: 1.8;
 }
 
-/* hover 효과 */
-.board-item-row:hover {
-    background-color: #fffdf5;
-    cursor: pointer;
-}   
-
-/* 🔥 hover + active 겹칠 때 살짝 강조 */
-.board-item-row.active-row:hover {
-    background-color: #fff7d6;
+.attached-trip-box h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    font-weight: 800;
 }
 
-.board-item-row.active-row {
-    background-color: #fffdf5;
-    font-weight: 600;
-    border-left: 4px solid #ffc107; /* 🔥 포인트 라인 */
-    padding-left: calc(0px - 4px); /* 레이아웃 밀림 방지 */
+.attached-trip-schedule-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.board-item-row.active-row .post-title-text {
-    color: #d19a00;
+.attached-trip-schedule-item {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fff8dc;
+    border: 1px solid #f3e1a3;
+}
+
+.schedule-time {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.load-trip-button {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    background: #ffcf33;
     font-weight: 700;
+    cursor: pointer;
 }

@@ -19,6 +19,18 @@ export default function TutorialModal({
 }: TutorialModalProps) {
   const navigate = useNavigate();
 
+  const handleLoginStepClick = () => {
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (accessToken && accessToken !== "undefined") {
+      alert("이미 로그인된 상태입니다.");
+      return;
+    }
+
+    onClose();
+    navigate("/login");
+  };
+
   return (
     <Dialog
       open={open}
@@ -31,7 +43,7 @@ export default function TutorialModal({
     >
       <DialogTitle className="tutorial-title-wrap">
         <span className="tutorial-badge">GUIDE</span>
-        <h2 className="tutorial-title">지도 기반 여행 플래너 사용 가이드</h2>
+        <h2 className="tutorial-title">TPlanner 사용 가이드</h2>
         <p className="tutorial-subtitle">
           장소를 검색하거나 지도에서 직접 선택하고, 핀으로 위치를 확인한 뒤
           일정에 추가해 여행 계획을 완성해보세요.
@@ -42,10 +54,7 @@ export default function TutorialModal({
         <div className="tutorial-content">
           <div
             className="tutorial-step tutorial-step-clickable"
-            onClick={() => {
-              onClose();
-              navigate("/login");
-            }}
+            onClick={handleLoginStepClick}
           >
             <span className="tutorial-step-number">1</span>
             <div className="tutorial-step-text">

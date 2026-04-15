@@ -69,12 +69,12 @@ public class User {
         return user;
     }
 
-    public static User createOAuthUser(String email, String name, String provider, String providerId) {
+    public static User createOAuthUser(String email, String name, String nickname, String provider, String providerId) {
         User user = new User();
         user.setEmail(email);
         user.setPassword(null);
         user.setName(name);
-        user.setNickname(name);
+        user.setNickname(nickname);
         user.setPhone(null);
         user.setRole("USER");
         user.setStatus("ACTIVE");

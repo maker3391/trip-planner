@@ -5,12 +5,14 @@ import com.fiveguys.trip_planner.dto.LoginRequest;
 import com.fiveguys.trip_planner.dto.SignupRequest;
 import com.fiveguys.trip_planner.entity.RefreshToken;
 import com.fiveguys.trip_planner.entity.User;
+import com.fiveguys.trip_planner.entity.WithdrawnUser;
 import com.fiveguys.trip_planner.exception.DuplicateEmailException;
 import com.fiveguys.trip_planner.exception.DuplicateNicknameException;
 import com.fiveguys.trip_planner.exception.DuplicatePhoneException;
 import com.fiveguys.trip_planner.exception.InvalidLoginException;
 import com.fiveguys.trip_planner.repository.RefreshTokenRepository;
 import com.fiveguys.trip_planner.repository.UserRepository;
+import com.fiveguys.trip_planner.repository.WithdrawnUserRepository;
 import com.fiveguys.trip_planner.response.MessageResponse;
 import com.fiveguys.trip_planner.response.SignupResponse;
 import com.fiveguys.trip_planner.response.TokenResponse;
@@ -18,6 +20,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,11 +32,23 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final WithdrawnUserRepository withdrawnUserRepository;
 
     public SignupResponse signup(SignupRequest request) {
 
         String normalizedNickname = normalizeNickname(request.nickname());
         String normalizedPhone = normalizePhone(request.phone());
+
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        if(withdrawnUserRepository.existsByEmailAndWithdrawnAtAfter(request.email(), thirtyDaysAgo)) {
+            throw new IllegalArgumentException("탈퇴 후 30일이 지나지 않아 해당 이메일로 가입할 수 없습니다.");
+        }
+        if(withdrawnUserRepository.existsByNicknameAndWithdrawnAtAfter(normalizedNickname, thirtyDaysAgo)) {
+            throw new IllegalArgumentException("해당 닉네임을 사용할 수 없습니다.");
+        }
+        if(normalizedPhone != null && withdrawnUserRepository.existsByPhoneAndWithdrawnAtAfter(normalizedPhone, thirtyDaysAgo)) {
+            throw new IllegalArgumentException("탈퇴 후 30일이 지나지 않아 해당 전화번호를 사용할 수 없습니다.");
+        }
 
         if (userRepository.existsByEmail(request.email())) {
             throw new DuplicateEmailException("이미 사용중인 이메일입니다.");
@@ -71,6 +88,10 @@ public class AuthService {
 
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new InvalidLoginException("이메일 또는 비밀번호가 틀렸습니다."));
+
+        if("DELETED".equals(user.getStatus())) {
+            throw new InvalidLoginException("탈퇴한 회원입니다.");
+        }
 
         if (user.getPassword() == null) {
             throw new InvalidLoginException("소셜 로그인으로 가입한 계정입니다.");
@@ -246,5 +267,28 @@ public class AuthService {
         if (a == null && b == null) return true;
         if (a == null || b == null) return false;
         return a.equals(b);
+    }
+
+    @Transactional
+    public MessageResponse withdraw(User user) {
+        validateAuthenticatedUser(user);
+
+        WithdrawnUser withdrawnUser = new WithdrawnUser(user.getEmail(), user.getNickname(), user.getPhone());
+        withdrawnUserRepository.save(withdrawnUser);
+
+        String uuid = UUID.randomUUID().toString().substring(0,8);
+
+        user.setEmail("deleted_" + uuid + "@" + user.getId());
+        user.setNickname("탈퇴자_" + uuid);
+        user.setPhone(user.getPhone() != null ? "deleted_" + uuid : null);
+        user.setName("deleted_user");
+        user.setPassword(null);
+        user.setStatus("DELETED");
+
+        userRepository.save(user);
+
+        refreshTokenRepository.deleteById(String.valueOf(user.getId()));
+
+        return new MessageResponse("회원탈퇴가 완료되었습니다. 30일 동안 동일한 정보로 재가입할 수 없습니다.");
     }
 }

@@ -2,6 +2,8 @@ package com.fiveguys.trip_planner.dto;
 
 import com.fiveguys.trip_planner.entity.TripSchedule;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 
@@ -10,6 +12,8 @@ import java.time.LocalTime;
 
 @Schema(description = "여행 일정 응답 객체")
 @Getter
+@Builder
+@AllArgsConstructor
 public class TripScheduleResponseDto {
 
     @Schema(description = "일정 ID", example = "3001")
@@ -35,6 +39,9 @@ public class TripScheduleResponseDto {
 
     @Schema(description = "예상 체류 시간(분 단위)", example = "90")
     private final Integer estimatedStayMinutes;
+
+    @Schema(description = "장소 고유 ID", example = "10")
+    private Long placeId;
 
     @Schema(description = "장소 이름", example = "성산일출봉")
     private String placeName;
@@ -80,5 +87,25 @@ public class TripScheduleResponseDto {
             this.longitude = schedule.getPlace().getLongitude();
             this.googlePlaceId = schedule.getPlace().getExternalPlaceId();
         }
+    }
+
+    public static TripScheduleResponseDto from(TripSchedule schedule) {
+        return TripScheduleResponseDto.builder()
+                .id(schedule.getId())
+                .dayNumber(schedule.getDayNumber())
+                .title(schedule.getTitle())
+                .visitOrder(schedule.getVisitOrder())
+                .pinColor(schedule.getPinColor())
+                .selectedPinColor(schedule.getSelectedPinColor())
+                .lineColor(schedule.getLineColor())
+                .startTime(schedule.getStartTime())
+                .endTime(schedule.getEndTime())
+                .memo(schedule.getMemo())
+                .estimatedStayMinutes(schedule.getEstimatedStayMinutes())
+
+                .placeId(schedule.getPlace() != null ? schedule.getPlace().getId() : null)
+                .placeName(schedule.getPlace() != null ? schedule.getPlace().getName() : null)
+                .placeAddress(schedule.getPlace() != null ? schedule.getPlace().getAddress() : null)
+                .build();
     }
 }

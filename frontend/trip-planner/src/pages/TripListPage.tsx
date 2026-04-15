@@ -8,10 +8,13 @@ import {
   useDeleteTrip,
 } from "../components/hooks/useTrip.ts";
 import { TripPlanResponse } from "../types/trip.ts";
+import { useTripStore } from "../components/store/useTripStore.ts";
 
 export default function TripListPage() {
   const { data: tripList, isLoading, isError } = useTrips();
   const navigate = useNavigate();
+
+  const {clearTripData} = useTripStore();
 
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   const deleteTripMutation = useDeleteTrip();
@@ -28,6 +31,7 @@ export default function TripListPage() {
   };
 
   const handleCreateTrip = () => {
+    clearTripData();
     navigate("/");
   };
 

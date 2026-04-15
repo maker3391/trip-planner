@@ -1,39 +1,59 @@
-import React, { useState, useRef, useMemo } from "react";
-import Header from "../components/layout/Header.tsx";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../components/api/client.ts";
-import community from "../types/community.ts"
-// npm install react-quill 해야합니다.
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./CommunityWritePage.css";
 import { getMe } from "../components/api/auth.ts";
+import Header from "../components/layout/Header.tsx";
 
-// 💡 1. 폰트 크기를 숫자로 조절하기 위한 Quill 설정
+type TripPlanItem = {
+    id: number;
+    title: string;
+    destination: string;
+    startDate: string;
+    endDate: string;
+    schedules?: unknown[];
+};
+
+// =========================
+// 카테고리 조건
+// =========================
+const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판", "사진게시판"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
+
+// =========================
+// Quill 설정 (폰트 사이즈)
+// =========================
 const Size = Quill.import("attributors/style/size");
-// 사용자가 선택할 수 있는 표준 폰트 사이즈 정의
-Size.whitelist = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px", "36px"]; 
+Size.whitelist = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px", "36px"];
 Quill.register(Size, true);
 
-const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판"]; 
-const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유", "당일치기 친구 찾기"];
-
-interface UserInfo {
-  id: number;
-  email: string;
-  name?: string;
-  nickname?: string;
-  phone?: string;
-  address?: string;
-  profileImage?: string;
-  role?: string;
-  status?: string;
-}
-
 export default function CommunityWritePage() {
+    const [tripPlans, setTripPlans] = useState<TripPlanItem[]>([]);
+    const [tripLoading, setTripLoading] = useState(false);
     const navigate = useNavigate();
+    
+    // 1. URL의 마지막 단어를 가져와서 ID인지 확인합니다.
+    const pathSegments = window.location.pathname.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+
+    // 마지막 단어가 숫자로 변환 가능하고 'write'가 아니면 ID로 인식
+    const parsedId = parseInt(lastSegment);
+    const isEditMode = !isNaN(parsedId) && lastSegment !== "write";
+    const currentPostId = isEditMode ? lastSegment : null;
+
+    // =========================
+    // refs
+    // =========================
     const quillRef = useRef<ReactQuill>(null);
-    const [ user, setUser ] = useState<UserInfo | null>(null);
+
+    // =========================
+    // 상태
+    // =========================
+    const [uploadedImageIds, setUploadedImageIds] = useState<number[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(isEditMode);
+    const [me, setMe] = useState<{ id: number } | null>(null);
 
     const [formData, setFormData] = useState({
         category: "자유게시판",
@@ -43,238 +63,352 @@ export default function CommunityWritePage() {
         departure: "",
         arrival: "",
         tags: "",
-        rating: 0 
+        rating: 0,
+        tripPlanId: ""
     });
 
     const categories = [
-        "여행플랜 공유",
         "자유게시판",
         "질문게시판",
+        "여행플랜 공유",
         "맛집게시판",
         "후기게시판",
-        "공지게시판",
+        "사진게시판",
+        "공지게시판"
     ];
-    const regions = ["서울", "경기", "인천", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const regions = [
+        "서울", "경기", "인천", "강원",
+        "충북", "충남", "전북", "전남",
+        "경북", "경남", "제주"
+    ];
+
+    // =========================
+    // 로그인 유저 가져오기
+    // =========================
+    useEffect(() => {
+        const fetchMe = async () => {
+            try {
+                const data = await getMe();
+                setMe(data);
+            } catch (err) {
+                console.error("유저 정보 불러오기 실패", err);
+            }
+        };
+
+        fetchMe();
+    }, []);
+
+    // =========================
+    // 수정 모드 - 기존 게시글 로딩
+    // =========================
+    useEffect(() => {
+        if (!isEditMode || !currentPostId) {
+            setIsLoading(false);
+            return;
+        }
+
+        const fetchPost = async () => {
+            try {
+                setIsLoading(true);
+                // currentPostId를 사용하여 호출
+                const res = await client.get(`/community/posts/${currentPostId}`);
+                const data = res.data;
+
+                setFormData({
+                    category: data.category || "자유게시판",
+                    region: data.region || "서울",
+                    title: data.title || "",
+                    content: data.content || "",
+                    departure: data.departure || "",
+                    arrival: data.arrival || "",
+                    tags: data.tags || "",
+                    rating: data.rating || 0,
+                    tripPlanId: data.tripPlan?.id ? String(data.tripPlan.id) : ""
+                });
+                setUploadedImageIds(data.imageIds || []);
+            } catch (err) {
+                console.error(err);
+                alert("게시글 정보를 불러오지 못했습니다.");
+                navigate("/community");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchPost();
+    }, [currentPostId, isEditMode, navigate]);
+
+    useEffect(() => {
+        const fetchTrips = async () => {
+            try {
+                setTripLoading(true);
+                const res = await client.get("/trips");
+                setTripPlans(res.data || []);
+            } catch (err) {
+                console.error("여행 계획 목록 불러오기 실패", err);
+                setTripPlans([]);
+            } finally {
+                setTripLoading(false);
+            }
+        };
+
+        fetchTrips();
+    }, []);
+
+    const selectedTrip = tripPlans.find(
+        (trip) => String(trip.id) === String(formData.tripPlanId)
+    );
+
+    // =========================
+    // input 변경
+    // =========================
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    // =========================
+    // Quill content 변경
+    // =========================
     const handleContentChange = (content: string) => {
         setFormData(prev => ({ ...prev, content }));
     };
 
+    // =========================
+    // rating 변경
+    // =========================
     const handleRating = (rate: number) => {
         setFormData(prev => ({ ...prev, rating: rate }));
     };
 
-    // const imageHandler = () => {
-    //     const input = document.createElement("input");
-    //     input.setAttribute("type", "file");
-    //     input.setAttribute("accept", "image/*");
-    //     input.click();
+    // =========================
+    // 이미지 업로드 (Quill toolbar)
+    // =========================
+    const handleImage = () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.click();
 
-    //     input.onchange = async () => {
-    //         const file = input.files ? input.files[0] : null;
-    //         if (file) {
-    //             const reader = new FileReader();
-    //             reader.readAsDataURL(file);
-    //             reader.onload = () => {
-    //                 const editor = quillRef.current?.getEditor();
-    //                 const range = editor?.getSelection();
-    //                 if (editor && range) {
-    //                     editor.insertEmbed(range.index, "image", reader.result);
-    //                     editor.setSelection(range.index + 1, 0);
-    //                 }
-    //             };
-    //         }
-    //     };
-    // };
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
 
+            try {
+                const form = new FormData();
+                form.append("file", file);
+
+                const res = await client.post("/community/image", form);
+                const imageId = res.data.imageId;
+
+                setUploadedImageIds(prev => [...prev, imageId]);
+
+                const imageUrl = `${client.defaults.baseURL}/community/image/${imageId}`;
+                const editor = quillRef.current?.getEditor();
+
+                if (!editor) return;
+
+                const range = editor.getSelection(true) || {
+                    index: editor.getLength()
+                };
+
+                editor.insertEmbed(range.index, "image", imageUrl);
+            } catch {
+                alert("이미지 업로드 실패");
+            }
+        };
+    };
+
+    // =========================
+    // Quill module 설정
+    // =========================
     const modules = useMemo(() => ({
         toolbar: {
-            container: "#toolbar", 
+            container: "#toolbar",
             handlers: {
-                // image: imageHandler,
+                image: handleImage
             }
         }
     }), []);
 
+    // =========================
+    // submit (수정/등록 분기 처리)
+    // =========================
     const handleSubmit = async (e: React.FormEvent) => {
-            e.preventDefault();
+        e.preventDefault();
 
-            if (!localStorage.getItem("isLoggedIn")) {
-                alert("로그인이 필요한 서비스 입니다.");
-                navigate("/api/auth/login");
-                return;
+        try {
+            const user = await getMe();
+            const payload = {
+                ...formData,
+                tripPlanId: formData.tripPlanId ? Number(formData.tripPlanId) : null,
+                imageIds: uploadedImageIds
+            };
+
+            // isEditMode와 currentPostId가 확실할 때만 PUT 호출
+            if (isEditMode && currentPostId) {
+                await client.put(`/community/posts/${currentPostId}`, payload);
+                alert("게시글이 수정되었습니다.");
+            } else {
+                await client.post("/community/posts", payload);
+                alert("새 게시글이 등록되었습니다.");
             }
 
-            try {
-                // 🔹 userId 가져오기 (로컬스토리지에서)
-                const userData = await getMe();
-                setUser(userData);
+            navigate("/community");
+        } catch (err) {
+            console.error(err);
+            alert("저장에 실패했습니다.");
+        }
+    };
 
-                if (!userData.id) {
-                    alert("유저 정보가 없습니다. 다시 로그인 해주세요.");
-                    navigate("/login");
-                    return;
-                }
-                const userId = userData.id;
-
-                // 🔹 content가 비어 있는지 추가 체크
-                if (!formData.content || formData.content.trim() === "<p><br></p>") {
-                    alert("내용을 입력해주세요.");
-                    return;
-                }
-
-                // 🔹 기존 formData에 userId 추가
-                const payload: community.CommunityRequest = { ...formData, userId };
-
-                const response = await client.post("/community/posts", payload);
-
-                if (response.status === 201) {
-                    alert('게시글이 성공적으로 등록되었습니다!');
-                    window.location.href = "/community"; 
-                } else {
-                    alert("게시글 등록에 실패했습니다.");
-                    console.error("등록 실패:", response);
-                }
-
-            } catch (error: any) {
-                // 서버 에러 처리
-                alert("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-                console.error("등록 실패:", error);
-            }
-        };
-
-    return (
-        <div className="community-page">
-            <Header />
-            <div className="community-container">
-                <main className="community-main-content">
-                    <form className="community-post-form" onSubmit={handleSubmit}>
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>분류</label>
-                                <select name="category" value={formData.category} onChange={handleChange}>
-                                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                </select>
-                            </div>
-
-                            <div className="form-group">
-                                <label>지역</label>
-                                <select name="region" value={formData.region} onChange={handleChange}>
-                                    {regions.map(reg => <option key={reg} value={reg}>{reg}</option>)}
-                                </select>
-                            </div>
-                        </div>
-
-                        { PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && (
-                            <div className="form-row route-inputs">
-                                <div className="form-group">
-                                    <label>출발지</label>
-                                    <input type="text" name="departure" placeholder="예: 서울" value={formData.departure} onChange={handleChange} />
-                                </div>
-                                <div className="route-arrow">➔</div>
-                                <div className="form-group">
-                                    <label>도착지</label>
-                                    <input type="text" name="arrival" placeholder="예: 부산" value={formData.arrival} onChange={handleChange} />
-                                </div>
-                            </div>
-                        )}
-
-                        {RATING_ENABLED_CATEGORIES.includes(formData.category) && (
-                            <div className="toolbar-item rating-section" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "10px", borderLeft: "1px solid #eee", paddingLeft: "15px" }}>
-                                <span style={{ fontSize: "13px", fontWeight: "600", color: "#666" }}>⭐ 평점</span>
-                                <div className="stars" style={{ display: "flex" }}>
-                                    {[1, 2, 3, 4, 5].map(num => (
-                                        <span 
-                                            key={num} 
-                                            onClick={() => handleRating(num)}
-                                            style={{ cursor: "pointer", fontSize: "20px", color: num <= formData.rating ? "#FFBB00" : "#e0e0e0" }}
-                                        >
-                                            {num <= formData.rating ? '★' : '☆'}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div className="form-main-area">
-                            <input 
-                                className="post-input-title" 
-                                name="title"
-                                type="text" 
-                                placeholder="제목을 입력하세요" 
-                                value={formData.title}
-                                onChange={handleChange}
-                                required
-                            />
-
-                            {/* 🛠 강화된 표준 툴바 디자인 */}
-                            <div id="toolbar" className="post-toolbar" style={{ 
-                                display: "flex", 
-                                alignItems: "center", 
-                                flexWrap: "wrap",
-                                gap: "8px", 
-                                padding: "10px 15px",
-                                border: "1px solid #ddd",
-                                borderBottom: "none",
-                                backgroundColor: "#fff",
-                                borderRadius: "8px 8px 0 0"
-                            }}>
-                                {/* 폰트 크기 선택 셀렉트 박스 */}
-                                <select className="ql-size" defaultValue="16px" style={{ width: "100px", padding: "2px", border: "1px solid #ddd", borderRadius: "4px" }}>
-                                    {Size.whitelist.map((size: string) => (
-                                        <option key={size} value={size}>{size}</option>
-                                    ))}
-                                </select>
-
-                                <div style={{ width: "1px", height: "20px", backgroundColor: "#eee", margin: "0 5px" }} />
-
-                                {/* 텍스트 스타일 버튼 */}
-                                <button className="ql-bold" title="굵게" />
-                                <button className="ql-italic" title="기울임" />
-                                <button className="ql-underline" title="밑줄" /> {/* 밑줄 추가 */}
-                                <button className="ql-strike" title="취소선" />  {/* 취소선 추가 */}
-
-                                <div style={{ width: "1px", height: "20px", backgroundColor: "#eee", margin: "0 5px" }} />
-
-                                {/* 유틸리티: 이미지 및 별점 */}
-                                {/* <button className="ql-image" type="button" style={{ border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
-                                    <span style={{ fontSize: "18px" }}>📷</span>
-                                    <span style={{ fontSize: "13px", fontWeight: "600", color: "#666" }}>사진 추가</span>
-                                </button> */}
-                            </div>
-
-                            <ReactQuill 
-                                ref={quillRef}
-                                theme="snow"
-                                value={formData.content}
-                                onChange={handleContentChange}
-                                modules={modules}
-                                placeholder="글을 작성해보세요..."
-                                style={{ height: "500px", marginBottom: "60px" }}
-                            />
-                            
-                            <input 
-                                className="post-input-tags" 
-                                name="tags"
-                                type="text" 
-                                placeholder="#태그 입력" 
-                                value={formData.tags}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div className="community-footer">
-                            <button type="button" className="cancel-button" onClick={() => navigate("/community")}>취소</button>
-                            <button type="submit" className="write-button">게시하기</button>
-                        </div>
-                    </form>
-                </main>
+    // =========================
+    // loading 처리
+    // =========================
+    if (isLoading) {
+        return (
+            <div style={{ padding: "50px", textAlign: "center" }}>
+                불러오는 중...
             </div>
-        </div>
+        );
+    }
+    return (
+        <>
+            <Header />
+            <div className="community-page">
+                <div className="community-container">
+                    <main className="community-main-content">
+                        <form className="community-post-form" onSubmit={handleSubmit}>
+                            
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>분류</label>
+                                    <select name="category" value={formData.category} onChange={handleChange} disabled={isEditMode}>
+                                        {categories.map(cat => <option key={cat}>{cat}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label>지역</label>
+                                    <select name="region" value={formData.region} onChange={handleChange}>
+                                        {regions.map(r => <option key={r}>{r}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && (
+                                <div className="route-inputs form-row">
+                                    <input name="departure" placeholder="출발지" value={formData.departure} onChange={handleChange} />
+                                    <div className="route-arrow">→</div>
+                                    <input name="arrival" placeholder="도착지" value={formData.arrival} onChange={handleChange} />
+                                </div>
+                            )}
+
+                            {PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && (
+                                <div className="trip-plan-select-section">
+                                    <label>여행 계획 첨부 (선택)</label>
+                                    <select
+                                        name="tripPlanId"
+                                        value={formData.tripPlanId}
+                                        onChange={handleChange}
+                                    >
+                                        <option value="">첨부 안 함</option>
+                                        {tripPlans.map((trip) => (
+                                            <option key={trip.id} value={trip.id}>
+                                                {trip.title} / {trip.destination}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {tripLoading && <div className="trip-plan-help">여행 계획 불러오는 중...</div>}
+
+                                    {selectedTrip && (
+                                        <div className="selected-trip-preview">
+                                            <div><strong>선택한 여행:</strong> {selectedTrip.title}</div>
+                                            <div><strong>여행지:</strong> {selectedTrip.destination}</div>
+                                            <div>
+                                                <strong>기간:</strong> {selectedTrip.startDate} ~ {selectedTrip.endDate}
+                                            </div>
+                                            <div>
+                                                <strong>일정 개수:</strong> {selectedTrip.schedules?.length ?? 0}개
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {RATING_ENABLED_CATEGORIES.includes(formData.category) && (
+                                <div className="rating-form-row">
+                                    <div className="rating-input-container">
+                                        <div className="stars">
+                                            {[1,2,3,4,5].map(n => (
+                                                <span key={n} onClick={() => handleRating(n)} style={{ cursor: "pointer" }}>
+                                                    {n <= formData.rating ? "★" : "☆"}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <div className="rating-text">{formData.rating}점</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="form-main-area">
+                                <input
+                                    className="post-input-title"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    placeholder="제목을 입력하세요"
+                                />
+
+                                <div id="toolbar" className="post-toolbar">
+                                    <select className="ql-size" defaultValue="16px">
+                                        {Size.whitelist.map(size => <option key={size} value={size}>{size}</option>)}
+                                    </select>
+                                    <div className="toolbar-divider" />
+                                    <button className="ql-bold" />
+                                    <button className="ql-italic" />
+                                    <button className="ql-underline" />
+                                    <div className="toolbar-divider" />
+                                    <button className="ql-align" value="" />
+                                    <button className="ql-align" value="center" />
+                                    <button className="ql-align" value="right" />
+                                    <div className="toolbar-divider" />
+                                    <button className="ql-image" />
+                                </div>
+
+                                <ReactQuill
+                                    ref={quillRef}
+                                    value={formData.content}
+                                    onChange={handleContentChange}
+                                    modules={modules}
+                                    placeholder="내용을 작성해주세요."
+                                />
+
+                                <input
+                                    className="post-input-tags"
+                                    name="tags"
+                                    value={formData.tags}
+                                    onChange={handleChange}
+                                    placeholder="#태그를 입력하세요 (예: #서울 #맛집)"
+                                />
+                            </div>
+
+                            <div className="community-footer">
+                                <button type="button" className="cancel-button" onClick={() => navigate(-1)}>
+                                    취소
+                                </button>
+                                <button type="submit" className="write-button">
+                                    {isEditMode ? "수정 완료" : "게시하기"}
+                                </button>
+                            </div>
+
+                        </form>
+                    </main>
+                </div>
+            </div>
+        </>
     );
 }

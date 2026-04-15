@@ -4,303 +4,466 @@ import Header from "../components/layout/Header.tsx";
 import client from "../components/api/client.ts";
 import { CommunityResponse, CommunityPageResponse } from "../types/community.ts";
 
+// 아이콘
 import ShareIcon from '@mui/icons-material/Share';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
+import StarIcon from '@mui/icons-material/Star';
 
 import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";
+import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
 
-// 단일 게시글 가져오기 API
+// =========================
+// API
+// =========================
 export const getPost = async (id: number) => {
     const res = await client.get(`/community/posts/${id}`);
     return res.data;
 };
 
-// 평점 표시 카테고리
+export const getMe = async () => {
+    const res = await client.get("/auth/me");
+    return res.data;
+};
+
+// =========================
+// 카테고리 설정
+// =========================
 const RATING_ENABLED_CATEGORIES = ["맛집게시판", "사진게시판", "후기게시판"];
-// 출발/도착지 표시 카테고리
 const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유", "당일치기 친구 찾기"];
 
 export default function CommunityReadPage() {
-    const { id } = useParams();           // URL 파라미터에서 글 id 추출
-    const navigate = useNavigate();       // 페이지 이동용
-
-    // 🔹 단일 글 상태
-    const [post, setPost] = useState<CommunityResponse>();
-    // 🔹 리스트 상태 + 페이지 관리
-    const [posts, setPosts] = useState<CommunityResponse[]>([]);
-    const [page, setPage] = useState(0);          // 현재 페이지 (0부터)
-    const [totalPages, setTotalPages] = useState(0); // 총 페이지 수
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
 
     // =========================
-    // 🔹 단일 글 가져오기
+    // 상태
+    // =========================
+    const [post, setPost] = useState<CommunityResponse | null>(null);
+    const [posts, setPosts] = useState<CommunityResponse[]>([]);
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [liked, setLiked] = useState(false);
+    const [me, setMe] = useState<{ id: number } | null>(null);
+
+    const [selectedCategory, setSelectedCategory] = useState("전체보기");
+    const [selectedRegion, setSelectedRegion] = useState<string | null>("전체");
+
+    const categories = [
+        "전체보기",
+        "자유게시판",
+        "질문게시판",
+        "여행플랜 공유",
+        "맛집게시판",
+        "후기게시판",
+        "사진게시판",
+        "공지게시판"
+    ];
+
+    const regions = [
+        "전체","서울","경기","인천","강원","충북",
+        "충남","전북","전남","경북","경남","제주"
+    ];
+
+    const renderRouteOrRating = (post: CommunityResponse) => {
+        // 1. 별점 렌더링 (맛집, 후기 등) 부분 수정
+        if (post.category && RATING_ENABLED_CATEGORIES.includes(post.category)) {
+          const rating = post.rating || 0;
+          return (
+            <div className="rating-stars" style={{ color: "#FFBB00", fontSize: "16px" }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i}>
+                  {i < rating ? "★" : "☆"}
+                </span>
+              ))}
+            </div>
+          );
+        }
+
+        // 2. 경로 렌더링 (여행플랜 등)
+        if (post.category && PLAN_SHARE_ENABLED_CATEGORIES.includes(post.category)) {
+        // 출발/도착이 모두 없으면 하이픈 반환
+        if (!post.departure && !post.arrival) return " - ";
+        
+        return (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+            <span>{post.departure || "미정"}</span>
+            <ArrowRightAltIcon fontSize="small" />
+            <span>{post.arrival || "미정"}</span>
+            </div>
+        );
+        }
+
+        // 3. 둘 다 해당 안 될 경우
+        return " - ";
+    };
+
+    // =========================
+    // 로그인 유저 가져오기
     // =========================
     useEffect(() => {
-        const fetchPost = async () => {
-            if (!id) return;
+        const fetchMe = async () => {
             try {
-                const data = await getPost(Number(id));
-                setPost(data);
-            } catch (error) {
-                console.error("게시글을 불러오는데 실패했습니다.", error);
-                alert("존재하지 않거나 삭제된 게시글입니다.");
-                navigate(-1); // 에러 시 이전 페이지
+                const data = await getMe();
+                setMe(data);
+            } catch (err) {
+                console.error("유저 정보 불러오기 실패", err);
             }
         };
-        fetchPost();
-    }, [id, navigate]);
+
+        fetchMe();
+    }, []);
 
     // =========================
-    // 🔹 게시글 리스트 가져오기 + 페이지 관리
+    // 작성자 여부
+    // =========================
+    const isAuthor = post?.authorId === me?.id;
+
+    // =========================
+    // 게시글 리스트
     // =========================
     const fetchPosts = async (pageNumber: number = 0) => {
         try {
-            const data: CommunityPageResponse | undefined = await getCommunityPosts(pageNumber);
-            const postsWithAuthor = (data?.content || []).map(post => ({
-                ...post,
-                authorNickname: post.authorNickname || "익명"
-            }));
-            setPosts(postsWithAuthor);
+            const data: CommunityPageResponse | undefined = await getCommunityPosts(
+                pageNumber,
+                selectedCategory,
+                selectedRegion
+            );
+
+            setPosts(data?.content || []);
             setTotalPages(data?.totalPages || 0);
         } catch (error) {
-            console.error("게시글 리스트 불러오기 실패:", error);
-            setPosts([]);
+            console.error("리스트 로드 실패:", error);
         }
     };
 
-    const handleView = async (postId: number) => {
-        const url = window.location.origin + `/community/${postId}`;
+    useEffect(() => {
+        fetchPosts(page);
+    }, [page, selectedCategory, selectedRegion]);
 
-        // 🔹 1. URL 복사 (실패해도 무시)
+    // =========================
+    // 상세 게시글 로드
+    // =========================
+    useEffect(() => {
+        const fetchPostDetail = async () => {
+            if (!id) return;
+
+            try {
+                await client.patch(`/community/posts/${id}/view`);
+
+                const data = await getPost(Number(id));
+
+                setPost(data);
+                setLiked(data.likedByMe);
+
+                setPosts(prev =>
+                    prev.map(p =>
+                        p.id === Number(id)
+                            ? { ...p, viewCount: data.viewCount }
+                            : p
+                    )
+                );
+            } catch (error) {
+                console.error("데이터 로드 실패:", error);
+            }
+        };
+
+        fetchPostDetail();
+    }, [id]);
+
+    // =========================
+    // 수정 / 삭제
+    // =========================
+    const handleUpdate = () => {
+        navigate(`/community/write/${id}`);
+    };
+
+    const handleDelete = async () => {
+        if (!id) return;
+        if (!window.confirm("정말 삭제하시겠습니까?")) return;
+
         try {
-        await navigator.clipboard.writeText(url);
-        } catch (e) {
-        console.warn("클립보드 복사 실패 (무시됨)");
+            await client.delete(`/community/posts/${id}`);
+            alert("삭제되었습니다.");
+            navigate("/community");
+        } catch (err) {
+            alert("삭제 실패");
         }
+    };
+
+    // =========================
+    // 좋아요
+    // =========================
+    const handleLike = async () => {
+        if (!post || !id) return;
 
         try {
-        // 🔹 2. 조회수 증가 API 호출
-        await client.patch(`/community/posts/${postId}/view`);
+            const res = await client.post(`/community/posts/${id}/like`);
+            const { liked: isLiked, likeCount } = res.data;
 
-        // 🔹 3. UI 즉시 반영 (UX 향상)
-        setPosts(prev =>
-            prev.map(p =>
-            Number(p.id) === postId
-                ? { ...p, viewCount: p.viewCount + 1 }
-                : p
-            )
-        );
+            setLiked(isLiked);
 
-        } catch (error) {
-        console.error("조회수 증가 실패:", error);
+            setPost(prev =>
+                prev ? { ...prev, likeCount } : null
+            );
+
+            setPosts(prev =>
+                prev.map(p =>
+                    p.id === Number(id)
+                        ? { ...p, likeCount }
+                        : p
+                )
+            );
+        } catch (err) {
+            console.error("좋아요 실패:", err);
         }
     };
 
-    // 페이지 변경 함수
-    const goToPage = (p: number) => {
-        if (p < 0 || p >= totalPages) return;
-        setPage(p);
-        fetchPosts(p); // 페이지가 바뀌면 해당 페이지 데이터 호출
-    };
-
-    // 페이지 번호 계산 함수 (현 페이지 기준 +-5 범위)
-    const getPageNumbers = () => {
-        const range = 5;
-        const start = Math.max(0, page - range);
-        const end = Math.min(totalPages - 1, page + range);
-        const pages = [];
-        for (let i = start; i <= end; i++) pages.push(i);
-        return pages;
-    };
-
-    // 🔹 공유 버튼 핸들러
-    // 🔥 공유 버튼 핸들러 (좋아요 API 재사용)
+    // =========================
+    // 공유
+    // =========================
     const handleShare = async () => {
         if (!post) return;
 
-        const url = window.location.href;
-
         try {
-            // 🔹 1. URL 복사
-            await navigator.clipboard.writeText(url);
+            await navigator.clipboard.writeText(window.location.href);
+            const res = await client.patch(`/community/posts/${post.id}/share`);
+            const newShareCount = res.data.shareCount ?? (post.shareCount || 0) + 1
 
-            // 🔹 2. 공유 수 증가 (좋아요 API 재사용)
-            await client.patch(`/community/posts/${post.id}/recommend`);
+            alert("링크가 복사되었습니다!");
 
-            // 🔹 3. UI 즉시 반영 (UX 중요)
-            setPost(prev => prev ? {
-                ...prev,
-                recommendCount: prev.recommendCount + 1
-            } : prev);
+            setPost(prev => prev ? { ...prev, shareCount: newShareCount } : null);
 
-            alert("링크 복사 완료!");
+            // 4. 하단 리스트(posts)에서 해당 게시글의 공유수 연동 업데이트
+            setPosts(prev =>
+                prev.map(p =>
+                    p.id === post.id
+                        ? { ...p, shareCount: newShareCount }
+                        : p
+                )
+            );
         } catch (error) {
-            console.error("공유 실패:", error);
             alert("공유 실패");
         }
     };
 
-    // 컴포넌트 첫 렌더 시 0페이지 게시글 가져오기
-    useEffect(() => {
-        fetchPosts(0);
-    }, []);
+    // =========================
+    // 필터 초기화
+    // =========================
+    const handleReset = () => {
+        setSelectedCategory("전체보기");
+        setSelectedRegion("전체");
+        setPage(0);
+    };
 
+    const goToPage = (p: number) => {
+        if (p < 0 || p >= totalPages) return;
+        setPage(p);
+        document.getElementById("list-section")?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    const pageNumbers = Array.from(
+        { length: Math.min(11, totalPages) },
+        (_, i) => i
+    );
+
+    // =========================
+    // UI
+    // =========================
     return (
-        <div className="community-page">
+        <>
             <Header />
-            <div className="community-container">
-                <main className="community-main-content">
+            <div className="community-page">
+                <div className="community-container">
+                    {/* 사이드바 */}
+                    <CommunitySidebar
+                        selectedCategory={selectedCategory}
+                        selectedRegion={selectedRegion}
+                        onCategoryChange={(cat) => {
+                          setSelectedCategory(cat);
+                            setPage(0);
+                        }}
+                        onRegionChange={(reg) => {
+                            setSelectedRegion(reg);
+                            setPage(0);
+                        }}
+                        onReset={handleReset}
+                    />
 
-                    {/* ========================= */}
-                    {/* 🔹 읽는 글 영역 */}
-                    {/* ========================= */}
-                    <article className="community-post-form">
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>분류</label>
-                                <div>{post?.category}</div>
+                    <main className="community-main-content">
+                        {/* 상세 글 */}
+                        <article className="community-post-form">
+                            <div className="form-row">
+                                <div className="form-group"><label>분류</label><div>{post?.category}</div></div>
+                                <div className="form-group"><label>지역</label><div>{post?.region}</div></div>
                             </div>
-                            <div className="form-group">
-                                <label>지역</label>
-                                <div>{post?.region}</div>
-                            </div>
-                        </div>
 
-                        {PLAN_SHARE_ENABLED_CATEGORIES.includes(String(post?.category)) && (
-                            <div className="form-row route-inputs">
-                                <div className="form-group">
-                                    <label>출발지</label>
-                                    <div>{post?.departure}</div>
-                                </div>
-                                <div className="route-arrow">➔</div>
-                                <div className="form-group">
-                                    <label>도착지</label>
-                                    <div>{post?.arrival}</div>
-                                </div>
-                            </div>
-                        )}
-
-                        {RATING_ENABLED_CATEGORIES.includes(String(post?.category)) && (
-                            <div className="toolbar-item rating-section" style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "10px", borderLeft: "1px solid #eee", paddingLeft: "15px" }}>
-                                <span style={{ fontSize: "13px", fontWeight: "600", color: "#666" }}>⭐ 평점</span>
-                                <div className="stars" style={{ display: "flex" }}>
-                                    {[1,2,3,4,5].map(num => (
-                                        <span key={num} style={{ fontSize: "20px", color: num <= Number(post?.rating) ? "#FFBB00" : "#e0e0e0" }}>
-                                            {num <= Number(post?.rating) ? '★' : '☆'}
+                            <div className="post-extra-info">
+                                {post?.category && PLAN_SHARE_ENABLED_CATEGORIES.includes(post.category) && (
+                                    <div className="route-display">
+                                        <strong>경로:</strong> {post.departure} <ArrowRightAltIcon /> {post.arrival}
+                                    </div>
+                                )}
+                                {post?.category && RATING_ENABLED_CATEGORIES.includes(post.category) && (
+                                    <div className="rating-display">
+                                        <strong>평점:</strong>
+                                        <span className="stars">
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <StarIcon key={i} style={{ color: i < (post.rating || 0) ? "#FFBB00" : "#e0e0e0" }} />
+                                            ))}
                                         </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="form-main-area">
-                            <div className="PostHeader">
-                                <h1 className="PostTitle">{post?.title}</h1>
-                                <div className="PostMeta">
-                                    <span className="PostAuthor">작성자: <strong>{post?.authorNickname}</strong></span>
-                                    <span className="PostDate">| {post?.createdAt?.slice(0,10)}</span>
-                                </div>
-                            </div>
-
-                            <div className="PostContent">
-                                <div className="mainContent ql-editor" dangerouslySetInnerHTML={{ __html: post?.content || "" }} />
-                                {post?.tags && (
-                                    <div className="tags">
-                                        {post.tags.split(",").map((tag, idx) => (
-                                            <span key={idx} className="tag">{tag.trim().startsWith('#') ? tag.trim() : `#${tag.trim()}`}</span>
-                                        ))}
                                     </div>
                                 )}
                             </div>
 
-                            <div className="PostFooter">
-                                <div><RemoveRedEyeIcon /> 조회수: {post?.viewCount}</div>
-                                <div><button onClick={handleShare}><ShareIcon /></button> 공유하기: {post?.recommendCount}</div>
+                            <div className="form-main-area">
+                                <div className="PostHeader">
+                                    <h1 className="PostTitle">{post?.title}</h1>
+                                    <div className="PostMeta">
+                                        <span>작성자: <strong>{post?.authorNickname}</strong></span>
+                                        <span>| {post?.createdAt?.slice(0, 10)}</span>
+                                    </div>
+                                </div>
+
+                                {post?.tripPlan && (
+                                    <div className="attached-trip-box">
+                                        <h3>첨부된 여행 계획</h3>
+
+                                        <div><strong>여행 제목:</strong> {post.tripPlan.title}</div>
+                                        <div><strong>여행지:</strong> {post.tripPlan.destination}</div>
+                                        <div>
+                                            <strong>기간:</strong> {post.tripPlan.startDate} ~ {post.tripPlan.endDate}
+                                        </div>
+                                        <div>
+                                            <strong>일정 개수:</strong> {post.tripPlan.schedules?.length ?? 0}개
+                                        </div>
+
+                                        {post.tripPlan.schedules && post.tripPlan.schedules.length > 0 && (
+                                            <div className="attached-trip-schedule-list">
+                                                {post.tripPlan.schedules.slice(0, 5).map((schedule) => (
+                                                    <div key={schedule.id} className="attached-trip-schedule-item">
+                                                        <div>
+                                                            <strong>{schedule.dayNumber}일차</strong> · {schedule.title}
+                                                        </div>
+                                                        {(schedule.startTime || schedule.endTime) && (
+                                                            <div className="schedule-time">
+                                                                {schedule.startTime || "--:--"} ~ {schedule.endTime || "--:--"}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <button
+                                            type="button"
+                                            className="load-trip-button"
+                                            onClick={() => navigate("/", { state: { tripId: post.tripPlan?.id } })}
+                                        >
+                                            이 여행 계획 불러오기
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                <div className="PostContent">
+                                    <div className="ql-editor" dangerouslySetInnerHTML={{ __html: post?.content || "" }} />
+                                    {post?.tags && (
+                                        <div className="tags">
+                                            {post.tags.split(",").map((tag, idx) => (
+                                                <span key={idx} className="tag">#{tag.trim().replace('#', '')}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="PostFooter">
+                                    <div className="footer-item"><RemoveRedEyeIcon /> {post?.viewCount}</div>
+                                    <div className="footer-item">
+                                        <button onClick={handleLike} className="icon-btn">
+                                            <ThumbUpOffAltIcon style={{ color: liked ? "#1976d2" : "#aaa" }} />
+                                        </button>
+                                        {post?.likeCount}
+                                    </div>
+                                    <div className="footer-item">
+                                        <button onClick={handleShare} className="icon-btn"><ShareIcon /></button> 공유
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <div className="community-footer">
+                                {/* 왼쪽 영역 */}
+                                <div className="footer-left">
+                                    <button className="to-list-button" onClick={() => navigate("/community")}>
+                                        목록으로
+                                    </button>
+                                </div>
+
+                                {/* 오른쪽 영역 */}
+                                <div className="footer-right">
+                                    {/* ✅ 작성자만 보이게 */}
+                                    {isAuthor && (
+                                        <>
+                                            <button className="edit-button" onClick={handleUpdate}>
+                                                수정하기
+                                            </button>
+                                            <button className="delete-button" onClick={handleDelete}>
+                                                삭제하기
+                                            </button>
+                                        </>
+                                    )}
+                                    <button className="write-button" onClick={() => navigate("/community/write")}>
+                                        글쓰기
+                                    </button>
+                                </div>
+                            </div>
+                        <hr />
+
+                        {/* 하단 리스트 */}
+                        <div id="list-section" className="community-board-container">
+                            <div className="board-header-row">
+                                <div className="col-id">번호</div>
+                                <div className="col-route">기타</div>
+                                <div className="col-title">제목</div>
+                                <div className="col-author">작성자</div>
+                                <div className="col-views">조회</div>
+                                <div className="col-stats">좋아요</div>
+                                <div className="col-share">공유</div>
+                            </div>
+
+                            <div className="board-body">
+                                {posts.map(item => (
+                                    <div key={item.id} 
+                                         className={`board-item-row ${id === String(item.id) ? "active-row" : ""}`}
+                                         onClick={() => navigate(`/community/${item.id}`)}>
+                                        <div className="col-id">{item.id}</div>
+                                        <div className="col-route">{renderRouteOrRating(item)}</div>
+                                        <div className="col-title">{item.title}</div>
+                                        <div className="col-author">{item.authorNickname || "익명"}</div>
+                                        <div className="col-views">{item.viewCount}</div>
+                                        <div className="col-stats">{item.likeCount}</div>
+                                        <div className="col-share">{item.shareCount || 0}</div>
+                                    </div>
+                                ))}
+                            </div>
+                                
+                            <div className="pagination">
+                                <button onClick={() => goToPage(0)} disabled={page === 0}>{"<<"}</button>
+                                <button onClick={() => goToPage(page - 1)} disabled={page === 0}>{"<"}</button>
+                                {pageNumbers.map(p => (
+                                    <button key={p} onClick={() => goToPage(p)} className={page === p ? "active-page" : ""}>
+                                        {p + 1}
+                                    </button>
+                                ))}
+                                <button onClick={() => goToPage(page + 1)} disabled={page === totalPages - 1}>{">"}</button>
+                                <button onClick={() => goToPage(totalPages - 1)} disabled={page === totalPages - 1}>{">>"}</button>
                             </div>
                         </div>
-                    </article>
-
-                    <br />
-
-                    {/* ========================= */}
-                    {/* 🔹 게시글 리스트 영역 (읽는 글 아래) */}
-                    {/* ========================= */}
-                    <div className="community-board-container">
-                        {/* 리스트 헤더 */}
-                        <div className="board-header-row">
-                            <div className="col-id">번호</div>
-                            <div className="col-route">기타</div>
-                            <div className="col-title">제목</div>
-                            <div className="col-author">작성자</div>
-                            <div className="col-date">날짜</div>
-                            <div className="col-views">조회</div>
-                            <div className="col-stats">추천</div>
-                        </div>
-
-                        {/* 게시글 행 */}
-                        <div className="board-body">
-                            {posts.length === 0 ? (
-                                <div className="no-posts">게시판에 글이 없습니다!</div>
-                            ) : (
-                                posts.map(item => (
-                                    <div
-                                        key={item.id}
-                                        className={`board-item-row ${id === item.id ? "active-row" : ""}`}
-                                        // 🔥 클릭 시 조회수 증가 + 페이지 이동
-                                        onClick={async () => {
-                                        await handleView(Number(item.id)); // ✅ 조회수 증가 완료 후
-                                        navigate(`/community/${item.id}`); // ✅ 상세 이동
-                                        }}
-                                    >
-                                        <div className="col-id">{item.id}</div>
-                                        <div className="col-route">{item.departure ? item.departure : ""} - {item.arrival ? `> ${item.arrival}` : ""}</div>
-                                        <div className="col-title">{item.title}</div>
-                                        <div className="col-author">{item.authorNickname}</div>
-                                        <div className="col-date">{item.createdAt?.split("T")[0]}</div>
-                                        <div className="col-views">{item.viewCount}</div>
-                                        <div className="col-stats">
-                                            <ShareIcon fontSize="inherit" />{" "}
-                                            {post?.recommendCount}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-
-                        {/* ========================= */}
-                        {/* 🔹 페이지네이션 */}
-                        {/* ========================= */}
-                        <div className="pagination">
-                            {/* 맨 처음 페이지 */}
-                            <button onClick={() => goToPage(0)} disabled={page === 0}>{"<<"}</button>
-                            {/* 이전 페이지 */}
-                            <button onClick={() => goToPage(page - 1)} disabled={page === 0}>{"<"}</button>
-
-                            {/* 페이지 번호 리스트 */}
-                            {getPageNumbers().map(p => (
-                                <button
-                                    key={p}
-                                    onClick={() => goToPage(p)}
-                                    className={page === p ? "active-page" : ""}
-                                >
-                                    {p + 1}
-                                </button>
-                            ))}
-
-                            {/* 다음 페이지 */}
-                            <button onClick={() => goToPage(page + 1)} disabled={page === totalPages - 1}>{">"}</button>
-                            {/* 마지막 페이지 */}
-                            <button onClick={() => goToPage(totalPages - 1)} disabled={page === totalPages - 1}>{">>"}</button>
-                        </div>
-                    </div>
-
-                    {/* 글쓰기 버튼 */}
-                    <div className="community-footer">
-                        <button className="write-button" onClick={() => navigate("/community/write")}>글쓰기</button>
-                    </div>
-
-                </main>
+                    </main>
+                </div>
             </div>
-        </div>
+        </>
     );
 }

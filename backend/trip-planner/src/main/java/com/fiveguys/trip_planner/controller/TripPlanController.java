@@ -53,4 +53,13 @@ public class TripPlanController {
         tripPlanService.deleteTripPlan(id, user);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "초대 코드로 여행 합류", description = "공유받은 8자리 초대 코드를 입력하여 여행의 MEMBER로 합류합니다.")
+    @PostMapping("/join/{inviteCode}")
+    public ResponseEntity<TripPlanResponseDto> joinTrip(
+            @PathVariable String inviteCode,
+            @AuthenticationPrincipal User user) {
+        TripPlanResponseDto responseDto = tripPlanService.joinTripByInviteCode(inviteCode, user);
+        return ResponseEntity.ok(responseDto);
+    }
 }

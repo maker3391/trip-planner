@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -29,14 +31,17 @@ public class Community {
     @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String content;
 
-    @Column(nullable = false)
-    private String authorNickname;
+    // 🔥 LAZY 유지 (중요)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
 
-    @Column
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trip_plan_id")
+    private TripPlan tripPlan;
+
     private String departure;
     private String arrival;
-
-    @Column
     private String tags;
     private Integer rating;
 
@@ -46,19 +51,37 @@ public class Community {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @Column(nullable = false)
     private Long viewCount = 0L;
 
+    @Builder.Default
     @Column(nullable = false)
-    private Long recommendCount = 0L; // 좋아요 개수
+    private Long shareCount = 0L;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Long likeCount = 0L;
+
+    // 🔥 리스트는 항상 초기화 (NPE 방지)
+    @Builder.Default
+    @OneToMany(mappedBy = "community", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommunityImage> images = new ArrayList<>();
+
+    // 🔥 여기가 중요 (초기화 + cascade 정리)
+    @Builder.Default
+    @OneToMany(mappedBy = "community", cascade = CascadeType.REMOVE)
+    private List<CommunityLike> likes = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
-        if(this.viewCount == null) this.viewCount = 0L;
-        if(this.recommendCount == null) this.recommendCount = 0L;
+
+        if (this.viewCount == null) this.viewCount = 0L;
+        if (this.shareCount == null) this.shareCount = 0L;
+        if (this.likeCount == null) this.likeCount = 0L;
     }
 
     @PreUpdate
@@ -66,19 +89,12 @@ public class Community {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void update(
-            String category,
-            String region,
-            String title,
-            String content,
-            String departure,
-            String arrival,
-            String tags,
-            Integer rating,
-            String authorNickname,
-            Long viewCount,
-            Long recommendCount
-    ) {
+    // =========================
+    // 비즈니스 로직
+    // =========================
+
+    public void update(String category, String region, String title, String content,
+                       String departure, String arrival, String tags, Integer rating, TripPlan tripPlan) {
         this.category = category;
         this.region = region;
         this.title = title;
@@ -87,23 +103,33 @@ public class Community {
         this.arrival = arrival;
         this.tags = tags;
         this.rating = rating;
-        this.authorNickname = authorNickname;
-        this.viewCount = viewCount;
-        this.recommendCount = recommendCount;
+        this.tripPlan = tripPlan;
     }
 
-    // 🔥 좋아요 증가 메서드
-    public void incrementRecommend() {
-        this.recommendCount++;
-    }
-
-    // 🔥 좋아요 감소 메서드 (선택)
-    public void decrementRecommend() {
-        if(this.recommendCount > 0) this.recommendCount--;
-    }
-
-    // 조회수 증가 메서드
     public void incrementViewCount() {
-        this.viewCount++;
+        if (this.viewCount == null) {
+            this.viewCount = 1L;
+        } else {
+            this.viewCount++;
+        }
+    }
+
+    public void incrementShareCount() {
+        this.shareCount++;
+    }
+
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) this.likeCount--;
+    }
+
+    public void addImage(CommunityImage image) {
+        this.images.add(image);
+        if (image.getCommunity() != this) {
+            image.setCommunity(this);
+        }
     }
 }

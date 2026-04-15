@@ -64,7 +64,7 @@ public class ItineraryRequestResolverService {
         }
 
         if (days == null || days < 1) {
-            throw new LlmCallException("여행 일수를 해석하지 못했습니다.");
+            throw new LlmCallException("여행 일수를 해석하지 못했습니다. 예) 부산 2박 3일 여행 일정 추천, 강릉 3박4일 일정 짜줘");
         }
 
         return new ItineraryRequestContext(destination, detailArea, days);

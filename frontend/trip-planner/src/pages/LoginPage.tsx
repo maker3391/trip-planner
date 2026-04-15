@@ -6,9 +6,9 @@ import GoogleIcon from "../assets/icons/google.png";
 import LogoIcon from "../assets/icons/logo.png";
 import "./LoginPage.css";
 import { useNavigate } from "react-router-dom";
+import { loginApi } from "../components/api/auth.ts";
 
 export default function LoginPage() {
-  // 1. 입력 데이터를 관리할 State 생성
   const [formData, setFormData] = useState<LoginRequest>({
     email: "",
     password: "",
@@ -16,7 +16,6 @@ export default function LoginPage() {
 
   const navigate = useNavigate();
 
-  // 2. 입력값이 변경될 때 호출되는 핸들러
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -25,38 +24,7 @@ export default function LoginPage() {
     }));
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // 1. 토큰 저장 (가장 먼저!)
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("isLoggedIn", "true");
-
-        // 2. ⚡️ 가장 확실한 방법: 새로고침 이동
-        // navigate("/") 대신 아래를 쓰면 Header가 처음부터 다시 시작하며 500 에러를 안 냅니다.
-        window.location.href = "/"; 
-    } else {
-        console.error("로그인 실패");
-        // 3. 로그인 실패 시 사용자에게 알림 (선택 사항)
-        handleLoginFailure(response.status);
-      }
-    } catch (error) {
-      console.error("네트워크 오류:", error);
-    }
-  };
-
-  const handleLoginFailure = (status: number) => {
+  const handleLoginFailure = (status?: number) => {
     let message = "로그인에 실패했습니다. 다시 시도해주세요.";
 
     switch (status) {
@@ -70,13 +38,28 @@ export default function LoginPage() {
         message = "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
         break;
       default:
-        message = `로그인에 실패했습니다. (상태 코드: ${status})`;
+        message = "로그인에 실패했습니다. 다시 시도해주세요.";
     }
+
     alert(message);
   };
 
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  // 🔥 핵심: 구글 로그인 이동 함수
+    try {
+      const data = await loginApi(formData);
+
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+
+      navigate("/");
+    } catch (error: any) {
+      console.error("로그인 실패:", error);
+      handleLoginFailure(error?.response?.status);
+    }
+  };
+
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
@@ -130,18 +113,27 @@ export default function LoginPage() {
 
           <div className="login-divider">또는</div>
 
-          <button type="button" className="social-button" onClick={handleKakaoLogin}>
+          <button
+            type="button"
+            className="social-button"
+            onClick={handleKakaoLogin}
+          >
             <img src={KakaoIcon} alt="카카오 아이콘" className="social-icon" />
             <span className="social-button-text">Kakao 계정으로 진행하기</span>
           </button>
 
-          <button type="button" className="social-button" onClick={handleGoogleLogin}>
+          <button
+            type="button"
+            className="social-button"
+            onClick={handleGoogleLogin}
+          >
             <img src={GoogleIcon} alt="구글 아이콘" className="social-icon" />
             <span className="social-button-text">Google 계정으로 진행하기</span>
           </button>
 
           <p className="login-signup">
-            계정이 없으신가요? <span onClick={() => navigate("/signup")}>지금 가입하세요</span>
+            계정이 없으신가요?{" "}
+            <span onClick={() => navigate("/signup")}>지금 가입하세요</span>
           </p>
         </div>
       </div>

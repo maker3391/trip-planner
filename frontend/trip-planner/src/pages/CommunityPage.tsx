@@ -1,14 +1,18 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; // 🔥 다시 추가
 import Header from "../components/layout/Header.tsx";
+import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
 import SearchIcon from "@mui/icons-material/Search";
-import ShareIcon from "@mui/icons-material/Share"; // 🔥 공유 아이콘
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ShareIcon from "@mui/icons-material/Share";
+import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
 import "./CommunityPage.css";
-import { useNavigate } from "react-router-dom";
 import client from "../components/api/client.ts";
 import { CommunityResponse, CommunityPageResponse } from "../types/community.ts";
 
-// 🔹 게시글 목록 API 호출 함수
+const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판", "사진게시판"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
+
+// 🔥 API 요청 함수
 export const getCommunityPosts = async (
   page = 0,
   category: string | null = null,
@@ -18,63 +22,66 @@ export const getCommunityPosts = async (
 ) => {
   const params: any = { page };
 
-  // 🔹 카테고리 필터
   if (category && category !== "전체보기") params.category = category;
+  if (region && region !== "전체") params.region = region;
 
-  // 🔹 지역 필터
-  if (region) params.region = region;
-
-  // 🔹 검색 필터
   if (searchType && keyword) {
-    if (searchType === "title") params.title = keyword;
-    if (searchType === "author") params.author = keyword;
+    params.searchType = searchType;
+    params.keyword = keyword;
   }
 
-  // 🔹 GET 요청
   const response = await client.get("/community/posts", { params });
   return response.data;
 };
 
 export default function CommunityPage() {
-  // 🔹 상태 관리
-  const [page, setPage] = useState(0); // 현재 페이지
-  const [totalPages, setTotalPages] = useState(0); // 전체 페이지 수
-  const [posts, setPosts] = useState<CommunityResponse[]>([]); // 게시글 목록
-
-  const [selectedCategory, setSelectedCategory] = useState("전체보기"); // 선택된 카테고리
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null); // 선택된 지역
-
-  const [searchType, setSearchType] = useState<"title" | "author">("title"); // 검색 타입
-  const [keyword, setKeyword] = useState(""); // 검색 키워드
-
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // 🔹 카테고리 목록
-  const categories = [
-    "전체보기","여행플랜 공유","자유게시판","질문게시판",
-    "맛집게시판","후기게시판","공지게시판",
-  ];
+  // 🔥 이동 시 전달된 state
+  const navState = location.state as { category?: string; region?: string };
 
-  // 🔹 지역 목록
-  const regions = [
-    "서울","경기","인천","강원","충북","충남",
-    "전북","전남","경북","경남","제주"
-  ];
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [posts, setPosts] = useState<CommunityResponse[]>([]);
+
+  // 🔥 초기값 적용 (핵심)
+  const [selectedCategory, setSelectedCategory] = useState(
+    navState?.category || "전체보기"
+  );
+
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(
+    navState?.region || "전체"
+  );
+
+  const [searchType, setSearchType] = useState<"title" | "author">("title");
+  const [keyword, setKeyword] = useState("");
+  const [activeKeyword, setActiveKeyword] = useState("");
+
+  // 🔥 이동 후 state 반영 (뒤로가기 대응)
+  useEffect(() => {
+    if (navState) {
+      setSelectedCategory(navState.category || "전체보기");
+      setSelectedRegion(navState.region || "전체");
+      setPage(0);
+
+      // 🔥 중복 적용 방지
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.key]);
 
   // 🔥 게시글 데이터 로딩
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data: CommunityPageResponse | undefined =
-          await getCommunityPosts(
-            page,
-            selectedCategory,
-            selectedRegion,
-            searchType,
-            keyword || null
-          );
+        const data: CommunityPageResponse | undefined = await getCommunityPosts(
+          page,
+          selectedCategory,
+          selectedRegion,
+          searchType,
+          activeKeyword || null
+        );
 
-        // 🔹 작성자 null 방지 처리
         const postsWithAuthor = (data?.content || []).map((post) => ({
           ...post,
           authorNickname: post.authorNickname || "익명",
@@ -89,244 +96,180 @@ export default function CommunityPage() {
     };
 
     fetchPosts();
-  }, [page, selectedCategory, selectedRegion, searchType, keyword]);
+  }, [page, selectedCategory, selectedRegion, searchType, activeKeyword]);
 
-  // 🔥 조회수 증가 + URL 복사
-  const handleView = async (postId: number) => {
-    const url = window.location.origin + `/community/${postId}`;
-
-    // 🔹 1. URL 복사 (실패해도 무시)
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch (e) {
-      console.warn("클립보드 복사 실패 (무시됨)");
-    }
-
-    try {
-      // 🔹 2. 조회수 증가 API 호출
-      await client.patch(`/community/posts/${postId}/view`);
-
-      // 🔹 3. UI 즉시 반영 (UX 향상)
-      setPosts(prev =>
-        prev.map(p =>
-          Number(p.id) === postId
-            ? { ...p, viewCount: p.viewCount + 1 }
-            : p
-        )
-      );
-
-    } catch (error) {
-      console.error("조회수 증가 실패:", error);
-    }
+  const handleReset = () => {
+    setSelectedCategory("전체보기");
+    setSelectedRegion("전체");
+    setKeyword("");
+    setActiveKeyword("");
+    setPage(0);
   };
 
-  // 🔹 페이지 번호 계산
-  const getPageNumbers = () => {
-    const range = 5;
-    const start = Math.max(0, page - range);
-    const end = Math.min(totalPages - 1, page + range);
-
-    const pages = [];
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
+  const handleSearch = () => {
+    setActiveKeyword(keyword.trim());
+    setPage(0);
   };
 
-  const pageNumbers = useMemo(() => getPageNumbers(), [page, totalPages]);
-
-  // 🔹 페이지 이동
   const goToPage = (p: number) => {
     if (p < 0 || p >= totalPages) return;
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // 🔹 필터 초기화
-  const handleReset = () => {
-    setSelectedCategory("전체보기");
-    setSelectedRegion(null);
-    setKeyword("");
-    setPage(0);
+  const pageNumbers = useMemo(() => {
+    const range = 5;
+    const start = Math.max(0, page - range);
+    const end = Math.min(totalPages - 1, page + range);
+    const pages = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }, [page, totalPages]);
+
+  const renderRouteOrRating = (post: CommunityResponse) => {
+    if (post.category && RATING_ENABLED_CATEGORIES.includes(post.category)) {
+      const rating = post.rating || 0;
+      return (
+        <div className="rating-stars" style={{ color: "#FFBB00", fontSize: "16px" }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span key={i}>{i < rating ? "★" : "☆"}</span>
+          ))}
+        </div>
+      );
+    }
+
+    if (post.category && PLAN_SHARE_ENABLED_CATEGORIES.includes(post.category)) {
+      if (!post.departure && !post.arrival) return " - ";
+      return (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+          <span>{post.departure || "미정"}</span>
+          <ArrowRightAltIcon fontSize="small" />
+          <span>{post.arrival || "미정"}</span>
+        </div>
+      );
+    }
+
+    return " - ";
   };
 
-  // 🔹 검색 실행
-  const handleSearch = () => setPage(0);
-
   return (
-    <div className="community-page">
+    <>
       <Header />
+      <div className="community-page">
+        <div className="community-container">
 
-      <div className="community-container">
+          <CommunitySidebar
+            selectedCategory={selectedCategory}
+            selectedRegion={selectedRegion}
+            onCategoryChange={(cat) => {
+              setSelectedCategory(cat);
+              setPage(0);
+            }}
+            onRegionChange={(reg) => {
+              setSelectedRegion(reg);
+              setPage(0);
+            }}
+            onReset={handleReset}
+          />
 
-        {/* 🔹 사이드바 */}
-        <aside className="community-sidebar">
+          <main className="community-main-content">
+            <header className="community-content-header">
+              <div className="title-area">
+                <h1>게시판</h1>
+                <p>여행 계획을 공유하고 소통하세요!</p>
+              </div>
 
-          {/* 🔹 카테고리 */}
-          <div className="sidebar-section">
-            <h3>카테고리</h3>
-            <ul>
-              {categories.map((cat) => (
-                <li
-                  key={cat}
-                  className={selectedCategory === cat ? "active" : ""}
-                  onClick={() => {
-                    setSelectedCategory(cat);
+              <div className="community-search-bar">
+                <select
+                  value={searchType}
+                  onChange={(e) => {
+                    setSearchType(e.target.value as "title" | "author");
                     setPage(0);
                   }}
                 >
-                  {cat}
-                </li>
-              ))}
-            </ul>
-          </div>
+                  <option value="title">제목</option>
+                  <option value="author">작성자</option>
+                </select>
 
-          {/* 🔹 지역 */}
-          <div className="sidebar-section">
-            <h3>지역별</h3>
-            <div className="region-grid">
-              {regions.map((reg) => (
-                <span
-                  key={reg}
-                  className={selectedRegion === reg ? "active" : ""}
-                  onClick={() => {
-                    setSelectedRegion(reg);
-                    setPage(0);
-                  }}
-                >
-                  {reg}
-                </span>
-              ))}
-            </div>
-          </div>
+                <div className="search-input-box">
+                  <input
+                    type="text"
+                    placeholder="검색어 입력"
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSearch();
+                    }}
+                  />
+                  <button onClick={handleSearch}>
+                    <SearchIcon fontSize="small" />
+                  </button>
+                </div>
+              </div>
+            </header>
 
-          {/* 🔹 필터 초기화 */}
-          <div className="filter-reset-area">
-            <button className="filter-reset-btn" onClick={handleReset}>
-              <RestartAltIcon fontSize="inherit" /> 필터 초기화
-            </button>
-          </div>
-        </aside>
+            <div className="community-board-container">
+              <div className="board-header-row">
+                <div className="col-id">번호</div>
+                <div className="col-route">기타</div>
+                <div className="col-title">제목</div>
+                <div className="col-author">작성자</div>
+                <div className="col-date">날짜</div>
+                <div className="col-views">조회</div>
+                <div className="col-stats">좋아요</div>
+                <div className="col-share">공유</div>
+              </div>
 
-        {/* 🔹 메인 */}
-        <main className="community-main-content">
+              <div className="board-body">
+                {posts.length === 0 ? (
+                  <div className="no-posts">게시글이 없습니다</div>
+                ) : (
+                  posts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="board-item-row"
+                      onClick={() => navigate(`/community/${post.id}`)}
+                    >
+                      <div className="col-id">{post.id}</div>
+                      <div className="col-route">{renderRouteOrRating(post)}</div>
+                      <div className="col-title">{post.title}</div>
+                      <div className="col-author">{post.authorNickname}</div>
+                      <div className="col-date">{post.createdAt?.split("T")[0]}</div>
+                      <div className="col-views">{post.viewCount}</div>
+                      <div className="col-stats">{post.likeCount}</div>
+                      <div className="col-share">
+                        <ShareIcon fontSize="inherit" /> {post.shareCount}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
 
-          {/* 🔹 상단 */}
-          <header className="community-content-header">
-            <div className="title-area">
-              <h1>커뮤니티</h1>
-              <p>여행 계획을 공유하고 소통하세요!</p>
-            </div>
-
-            {/* 🔹 검색 */}
-            <div className="community-search-bar">
-              <select
-                value={searchType}
-                onChange={(e) =>
-                  setSearchType(e.target.value as "title" | "author")
-                }
-              >
-                <option value="title">제목</option>
-                <option value="author">작성자</option>
-              </select>
-
-              <div className="search-input-box">
-                <input
-                  type="text"
-                  placeholder="검색어 입력"
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                />
-                <button onClick={handleSearch}>
-                  <SearchIcon fontSize="small" />
-                </button>
+              <div className="pagination">
+                <button onClick={() => goToPage(0)} disabled={page === 0}>{"<<"}</button>
+                <button onClick={() => goToPage(page - 1)} disabled={page === 0}>{"<"}</button>
+                {pageNumbers.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => goToPage(p)}
+                    className={page === p ? "active-page" : ""}
+                  >
+                    {p + 1}
+                  </button>
+                ))}
+                <button onClick={() => goToPage(page + 1)} disabled={page === totalPages - 1}>{">"}</button>
+                <button onClick={() => goToPage(totalPages - 1)} disabled={page === totalPages - 1}>{">>"}</button>
               </div>
             </div>
-          </header>
 
-          {/* 🔥 게시판 */}
-          <div className="community-board-container">
-
-            {/* 🔹 헤더 */}
-            <div className="board-header-row">
-              <div className="col-id">번호</div>
-              <div className="col-route">기타</div>
-              <div className="col-title">제목</div>
-              <div className="col-author">작성자</div>
-              <div className="col-date">날짜</div>
-              <div className="col-views">조회</div>
-              <div className="col-stats">공유</div>
+            <div className="community-footer">
+              <button className="write-button" onClick={() => navigate("/community/write")}>
+                글쓰기
+              </button>
             </div>
-
-            {/* 🔹 리스트 */}
-            <div className="board-body">
-              {posts.length === 0 ? (
-                <div className="no-posts">게시글이 없습니다</div>
-              ) : (
-                posts.map((post) => (
-                  <div
-                    key={post.id}
-                    className="board-item-row"
-                    // 🔥 클릭 시 조회수 증가 + 페이지 이동
-                    onClick={async () => {
-                      await handleView(Number(post.id)); // ✅ 조회수 증가 완료 후
-                      navigate(`/community/${post.id}`); // ✅ 상세 이동
-                    }}
-                  >
-                    <div className="col-id">{post.id}</div>
-
-                    <div className="col-route">
-                      {post.departure || ""} - {post.arrival || ""}
-                    </div>
-
-                    <div className="col-title">{post.title}</div>
-
-                    <div className="col-author">{post.authorNickname}</div>
-
-                    <div className="col-date">
-                      {post.createdAt?.split("T")[0]}
-                    </div>
-
-                    <div className="col-views">{post.viewCount}</div>
-
-                    {/* 🔥 공유 수 (recommendCount 재사용) */}
-                    <div className="col-stats">
-                      <ShareIcon fontSize="inherit" />{" "}
-                      {post.recommendCount}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* 🔹 페이지네이션 */}
-            <div className="pagination">
-              <button onClick={() => goToPage(0)} disabled={page === 0}>{"<<"}</button>
-              <button onClick={() => goToPage(page - 1)} disabled={page === 0}>{"<"}</button>
-
-              {pageNumbers.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => goToPage(p)}
-                  className={page === p ? "active-page" : ""}
-                >
-                  {p + 1}
-                </button>
-              ))}
-
-              <button onClick={() => goToPage(page + 1)} disabled={page === totalPages - 1}>{">"}</button>
-              <button onClick={() => goToPage(totalPages - 1)} disabled={page === totalPages - 1}>{">>"}</button>
-            </div>
-          </div>
-
-          {/* 🔹 글쓰기 버튼 */}
-          <div className="community-footer">
-            <button className="write-button" onClick={() => navigate("/community/write")}>
-              글쓰기
-            </button>
-          </div>
-
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
