@@ -24,6 +24,7 @@ public class CommunityService {
     private final UserRepository userRepository;
     private final CommunityImageRepository communityImageRepository;
     private final CommunityLikeRepository communityLikeRepository;
+    private final TripPlanRepository tripPlanRepository;
 
     @Transactional
     public Long createPost(CommunityRequest request) {
@@ -31,6 +32,12 @@ public class CommunityService {
 
         String safeContent = Jsoup.clean(request.getContent(), Safelist.relaxed());
         User user = getCurrentUser();
+
+        TripPlan tripPlan = null;
+        if(request.getTripPlanId() != null) {
+            tripPlan = tripPlanRepository.findById(request.getTripPlanId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행 계획 입니다."));
+        }
 
         Community community = Community.builder()
                 .category(request.getCategory())
@@ -42,6 +49,7 @@ public class CommunityService {
                 .tags(request.getTags())
                 .rating(request.getRating())
                 .author(user)
+                .tripPlan(tripPlan)
                 .viewCount(0L)
                 .shareCount(0L)
                 .likeCount(0L)
@@ -139,6 +147,12 @@ public class CommunityService {
             throw new IllegalArgumentException("본인이 작성한 글만 수정할 수 있습니다.");
         }
 
+        TripPlan tripPlan = null;
+        if (request.getTripPlanId() != null) {
+            tripPlan = tripPlanRepository.findById(request.getTripPlanId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행 계획입니다."));
+        }
+
         validateRequest(request);
 
         String safeContent = Jsoup.clean(request.getContent(), Safelist.relaxed());
@@ -151,7 +165,8 @@ public class CommunityService {
                 request.getDeparture(),
                 request.getArrival(),
                 request.getTags(),
-                request.getRating()
+                request.getRating(),
+                tripPlan
         );
 
         if (request.getImageIds() != null) {
