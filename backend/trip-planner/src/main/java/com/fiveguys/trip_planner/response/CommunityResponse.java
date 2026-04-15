@@ -2,6 +2,7 @@ package com.fiveguys.trip_planner.response;
 
 import com.fiveguys.trip_planner.entity.Community;
 import com.fiveguys.trip_planner.entity.CommunityImage;
+import com.fiveguys.trip_planner.dto.TripPlanResponseDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -71,8 +72,8 @@ public class CommunityResponse {
     @Schema(description = "작성자 닉네임", example = "여행왕수원")
     private String authorNickname;
 
-    @Schema(description = "이 게시글에 연결된 여행 계획 ID", example = "5")
-    private Long tripPlanId;
+    @Schema(description = "연결된 여행 계획 상세 정보")
+    private TripPlanResponseDto tripPlan;
 
     // 🔥 이미지 ID 리스트
     @Schema(description = "연결된 이미지 ID 목록 (이미지 조회 API에서 사용)", example = "[1, 2, 5]")
@@ -117,11 +118,6 @@ public class CommunityResponse {
                                 ? community.getAuthor().getNickname()
                                 : "알 수 없음"
                 )
-                .tripPlanId(
-                        community.getTripPlan() != null
-                                ? community.getTripPlan().getId()
-                                : null
-                )
                 .imageIds(ids)
                 .build();
     }
@@ -165,11 +161,9 @@ public class CommunityResponse {
                                 ? community.getAuthor().getNickname()
                                 : "알 수 없음"
                 )
-                .tripPlanId(
-                        community.getTripPlan() != null
-                                ? community.getTripPlan().getId()
-                                : null
-                )
+                .tripPlan(community.getTripPlan() != null
+                        ? TripPlanResponseDto.from(community.getTripPlan())
+                        : null)
                 .imageIds(ids)
                 .build();
     }

@@ -14,6 +14,7 @@ import StarIcon from '@mui/icons-material/Star';
 
 import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";
+import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
 
 // =========================
 // API
@@ -278,33 +279,19 @@ export default function CommunityReadPage() {
             <div className="community-page">
                 <div className="community-container">
                     {/* 사이드바 */}
-                    <aside className="community-sidebar">
-                        <div className="sidebar-section">
-                            <h3>카테고리</h3>
-                            <ul>
-                                {categories.map((cat) => (
-                                    <li key={cat} className={selectedCategory === cat ? "active" : ""}
-                                        onClick={() => { setSelectedCategory(cat); setPage(0); }}>
-                                        {cat}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className="sidebar-section">
-                            <h3>지역별</h3>
-                            <div className="region-grid">
-                                {regions.map((reg) => (
-                                    <span key={reg} className={selectedRegion === reg ? "active" : ""}
-                                          onClick={() => { setSelectedRegion(reg); setPage(0); }}>
-                                        {reg}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                        <button className="filter-reset-btn" onClick={handleReset}>
-                            <RestartAltIcon fontSize="inherit" /> 필터 초기화
-                        </button>
-                    </aside>
+                    <CommunitySidebar
+                        selectedCategory={selectedCategory}
+                        selectedRegion={selectedRegion}
+                        onCategoryChange={(cat) => {
+                          setSelectedCategory(cat);
+                            setPage(0);
+                        }}
+                        onRegionChange={(reg) => {
+                            setSelectedRegion(reg);
+                            setPage(0);
+                        }}
+                        onReset={handleReset}
+                    />
 
                     <main className="community-main-content">
                         {/* 상세 글 */}
@@ -420,7 +407,7 @@ export default function CommunityReadPage() {
                                     </div>
                                 ))}
                             </div>
-
+                                
                             <div className="pagination">
                                 <button onClick={() => goToPage(0)} disabled={page === 0}>{"<<"}</button>
                                 <button onClick={() => goToPage(page - 1)} disabled={page === 0}>{"<"}</button>

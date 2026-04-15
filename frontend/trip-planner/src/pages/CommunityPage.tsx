@@ -1,21 +1,18 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; // 🔥 다시 추가
 import Header from "../components/layout/Header.tsx";
+import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
 import SearchIcon from "@mui/icons-material/Search";
 import ShareIcon from "@mui/icons-material/Share";
 import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import "./CommunityPage.css";
-import { useNavigate } from "react-router-dom";
 import client from "../components/api/client.ts";
 import { CommunityResponse, CommunityPageResponse } from "../types/community.ts";
 
-// =========================
-// 카테고리 조건
-// =========================
 const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판", "사진게시판"];
 const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
 
-// 🔹 게시글 목록 API 호출 함수
+// 🔥 API 요청 함수
 export const getCommunityPosts = async (
   page = 0,
   category: string | null = null,
@@ -29,8 +26,8 @@ export const getCommunityPosts = async (
   if (region && region !== "전체") params.region = region;
 
   if (searchType && keyword) {
-    if (searchType === "title") params.title = keyword;
-    if (searchType === "author") params.author = keyword;
+    params.searchType = searchType;
+    params.keyword = keyword;
   }
 
   const response = await client.get("/community/posts", { params });
@@ -38,36 +35,42 @@ export const getCommunityPosts = async (
 };
 
 export default function CommunityPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // 🔥 이동 시 전달된 state
+  const navState = location.state as { category?: string; region?: string };
+
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [posts, setPosts] = useState<CommunityResponse[]>([]);
 
-  const [selectedCategory, setSelectedCategory] = useState("전체보기");
-  const [selectedRegion, setSelectedRegion] = useState<string | null>("전체");
+  // 🔥 초기값 적용 (핵심)
+  const [selectedCategory, setSelectedCategory] = useState(
+    navState?.category || "전체보기"
+  );
+
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(
+    navState?.region || "전체"
+  );
 
   const [searchType, setSearchType] = useState<"title" | "author">("title");
-  const [keyword, setKeyword] = useState(""); // 입력용
-  const [activeKeyword, setActiveKeyword] = useState(""); // 🔹 실제 검색용
+  const [keyword, setKeyword] = useState("");
+  const [activeKeyword, setActiveKeyword] = useState("");
 
-  const navigate = useNavigate();
+  // 🔥 이동 후 state 반영 (뒤로가기 대응)
+  useEffect(() => {
+    if (navState) {
+      setSelectedCategory(navState.category || "전체보기");
+      setSelectedRegion(navState.region || "전체");
+      setPage(0);
 
-  const categories = [
-    "전체보기", // 🔹 빈 값 수정
-    "자유게시판",
-    "질문게시판",
-    "여행플랜 공유",
-    "맛집게시판",
-    "후기게시판",
-    "사진게시판",
-    "공지게시판"
-  ];
+      // 🔥 중복 적용 방지
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.key]);
 
-  const regions = [
-    "전체","서울","경기","인천","강원","충북",
-    "충남","전북","전남","경북","경남","제주"
-  ];
-
-  // 🔥 게시글 데이터 로딩 (최적화됨)
+  // 🔥 게시글 데이터 로딩
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -76,7 +79,7 @@ export default function CommunityPage() {
           selectedCategory,
           selectedRegion,
           searchType,
-          activeKeyword || null // 🔹 keyword 대신 activeKeyword 사용
+          activeKeyword || null
         );
 
         const postsWithAuthor = (data?.content || []).map((post) => ({
@@ -93,8 +96,35 @@ export default function CommunityPage() {
     };
 
     fetchPosts();
-    // 🔹 keyword는 의존성 배열에서 제외하여 타이핑 시 API 호출 방지
   }, [page, selectedCategory, selectedRegion, searchType, activeKeyword]);
+
+  const handleReset = () => {
+    setSelectedCategory("전체보기");
+    setSelectedRegion("전체");
+    setKeyword("");
+    setActiveKeyword("");
+    setPage(0);
+  };
+
+  const handleSearch = () => {
+    setActiveKeyword(keyword.trim());
+    setPage(0);
+  };
+
+  const goToPage = (p: number) => {
+    if (p < 0 || p >= totalPages) return;
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const pageNumbers = useMemo(() => {
+    const range = 5;
+    const start = Math.max(0, page - range);
+    const end = Math.min(totalPages - 1, page + range);
+    const pages = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }, [page, totalPages]);
 
   const renderRouteOrRating = (post: CommunityResponse) => {
     if (post.category && RATING_ENABLED_CATEGORIES.includes(post.category)) {
@@ -118,37 +148,8 @@ export default function CommunityPage() {
         </div>
       );
     }
+
     return " - ";
-  };
-
-  const pageNumbers = useMemo(() => {
-    const range = 5;
-    const start = Math.max(0, page - range);
-    const end = Math.min(totalPages - 1, page + range);
-    const pages = [];
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
-  }, [page, totalPages]);
-
-  const goToPage = (p: number) => {
-    if (p < 0 || p >= totalPages) return;
-    setPage(p);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleReset = () => {
-    setSelectedCategory("전체보기");
-    setSelectedRegion("전체");
-    setKeyword("");
-    setActiveKeyword(""); // 🔹 검색 키워드도 초기화
-    setPage(0);
-  };
-
-  // 🔹 검색 버튼 클릭/엔터 시 실행되는 핸들러
-  const handleSearch = () => {
-    const trimmed = keyword.trim(); // 공백 제거
-    setActiveKeyword(trimmed);  
-    setPage(0); // 첫 페이지로 이동
   };
 
   return (
@@ -156,49 +157,20 @@ export default function CommunityPage() {
       <Header />
       <div className="community-page">
         <div className="community-container">
-          <aside className="community-sidebar">
-            <div className="sidebar-section">
-              <h3>카테고리</h3>
-              <ul>
-                {categories.map((cat) => (
-                  <li
-                    key={cat}
-                    className={selectedCategory === cat ? "active" : ""}
-                    onClick={() => {
-                      setSelectedCategory(cat);
-                      setPage(0);
-                    }}
-                  >
-                    {cat}
-                  </li>
-                ))}
-              </ul>
-            </div>
 
-            <div className="sidebar-section">
-              <h3>지역별</h3>
-              <div className="region-grid">
-                {regions.map((reg) => (
-                  <span
-                    key={reg}
-                    className={selectedRegion === reg ? "active" : ""}
-                    onClick={() => {
-                      setSelectedRegion(reg);
-                      setPage(0);
-                    }}
-                  >
-                    {reg}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="filter-reset-area">
-              <button className="filter-reset-btn" onClick={handleReset}>
-                <RestartAltIcon fontSize="inherit" /> 필터 초기화
-              </button>
-            </div>
-          </aside>
+          <CommunitySidebar
+            selectedCategory={selectedCategory}
+            selectedRegion={selectedRegion}
+            onCategoryChange={(cat) => {
+              setSelectedCategory(cat);
+              setPage(0);
+            }}
+            onRegionChange={(reg) => {
+              setSelectedRegion(reg);
+              setPage(0);
+            }}
+            onReset={handleReset}
+          />
 
           <main className="community-main-content">
             <header className="community-content-header">
@@ -212,7 +184,7 @@ export default function CommunityPage() {
                   value={searchType}
                   onChange={(e) => {
                     setSearchType(e.target.value as "title" | "author");
-                    setPage(0); // 타입 변경 시 페이지 초기화
+                    setPage(0);
                   }}
                 >
                   <option value="title">제목</option>
