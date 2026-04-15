@@ -22,18 +22,18 @@ public class WithdrawnUser {
     private String email;
 
     @Column(nullable = false, length = 30)
-    private String nickName;
+    private String nickname;
 
     @Column(length = 30)
     private String phone;
 
     @Column(nullable = false)
-    private LocalDateTime withdrawAt;
+    private LocalDateTime withdrawnAt;
 
-    public WithdrawnUser(String email, String nickName, String phone) {
+    public WithdrawnUser(String email, String nickname, String phone) {
         this.email = email;
-        this.nickName = nickName;
+        this.nickname = nickname;
         this.phone = phone;
-        this.withdrawAt = LocalDateTime.now();
+        this.withdrawnAt = LocalDateTime.now();
     }
 }

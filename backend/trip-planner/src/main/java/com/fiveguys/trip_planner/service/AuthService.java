@@ -273,7 +273,7 @@ public class AuthService {
     public MessageResponse withdraw(User user) {
         validateAuthenticatedUser(user);
 
-        WithdrawnUser withdrawnUser = new WithdrawnUser(user.getEmail(), user.getNickname(), user.getEmail());
+        WithdrawnUser withdrawnUser = new WithdrawnUser(user.getEmail(), user.getNickname(), user.getPhone());
         withdrawnUserRepository.save(withdrawnUser);
 
         String uuid = UUID.randomUUID().toString().substring(0,8);

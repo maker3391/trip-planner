@@ -183,23 +183,23 @@
 }
 
 .mypage-withdraw-btn {
-  min-width: 140px;
-  height: 44px;
+  background: #d32f2f;
   border: none;
   border-radius: 10px;
-  background-color: #d32f2f;
-  color: white;
-  font-size: 14px;
+  padding: 12px 18px;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  color: #fff;
 }
 
 .mypage-withdraw-btn:hover {
-  opacity: 0.9;
+  transform: translateY(-1px);
+  opacity: 0.95;
 }
 
 .mypage-withdraw-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
