@@ -7,6 +7,15 @@ import "./CommunityWritePage.css";
 import { getMe } from "../components/api/auth.ts";
 import Header from "../components/layout/Header.tsx";
 
+type TripPlanItem = {
+    id: number;
+    title: string;
+    destination: string;
+    startDate: string;
+    endDate: string;
+    schedules?: unknown[];
+};
+
 // =========================
 // 카테고리 조건
 // =========================
@@ -21,7 +30,8 @@ Size.whitelist = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"
 Quill.register(Size, true);
 
 export default function CommunityWritePage() {
-
+    const [tripPlans, setTripPlans] = useState<TripPlanItem[]>([]);
+    const [tripLoading, setTripLoading] = useState(false);
     const navigate = useNavigate();
     
     // 1. URL의 마지막 단어를 가져와서 ID인지 확인합니다.
@@ -53,7 +63,8 @@ export default function CommunityWritePage() {
         departure: "",
         arrival: "",
         tags: "",
-        rating: 0
+        rating: 0,
+        tripPlanId: ""
     });
 
     const categories = [
@@ -112,7 +123,8 @@ export default function CommunityWritePage() {
                     departure: data.departure || "",
                     arrival: data.arrival || "",
                     tags: data.tags || "",
-                    rating: data.rating || 0
+                    rating: data.rating || 0,
+                    tripPlanId: data.tripPlanId ? String(data.tripPlanId) : ""
                 });
                 setUploadedImageIds(data.imageIds || []);
             } catch (err) {
@@ -126,6 +138,27 @@ export default function CommunityWritePage() {
 
         fetchPost();
     }, [currentPostId, isEditMode, navigate]);
+
+    useEffect(() => {
+        const fetchTrips = async () => {
+            try {
+                setTripLoading(true);
+                const res = await client.get("/trips");
+                setTripPlans(res.data || []);
+            } catch (err) {
+                console.error("여행 계획 목록 불러오기 실패", err);
+                setTripPlans([]);
+            } finally {
+                setTripLoading(false);
+            }
+        };
+
+        fetchTrips();
+    }, []);
+
+    const selectedTrip = tripPlans.find(
+        (trip) => String(trip.id) === String(formData.tripPlanId)
+    );
 
     // =========================
     // input 변경
@@ -211,7 +244,7 @@ export default function CommunityWritePage() {
             const user = await getMe();
             const payload = {
                 ...formData,
-                authorId: user.id,
+                tripPlanId: formData.tripPlanId ? Number(formData.tripPlanId) : null,
                 imageIds: uploadedImageIds
             };
 
@@ -270,6 +303,39 @@ export default function CommunityWritePage() {
                                     <input name="departure" placeholder="출발지" value={formData.departure} onChange={handleChange} />
                                     <div className="route-arrow">→</div>
                                     <input name="arrival" placeholder="도착지" value={formData.arrival} onChange={handleChange} />
+                                </div>
+                            )}
+
+                            {PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && (
+                                <div className="trip-plan-select-section">
+                                    <label>여행 계획 첨부 (선택)</label>
+                                    <select
+                                        name="tripPlanId"
+                                        value={formData.tripPlanId}
+                                        onChange={handleChange}
+                                    >
+                                        <option value="">첨부 안 함</option>
+                                        {tripPlans.map((trip) => (
+                                            <option key={trip.id} value={trip.id}>
+                                                {trip.title} / {trip.destination}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {tripLoading && <div className="trip-plan-help">여행 계획 불러오는 중...</div>}
+
+                                    {selectedTrip && (
+                                        <div className="selected-trip-preview">
+                                            <div><strong>선택한 여행:</strong> {selectedTrip.title}</div>
+                                            <div><strong>여행지:</strong> {selectedTrip.destination}</div>
+                                            <div>
+                                                <strong>기간:</strong> {selectedTrip.startDate} ~ {selectedTrip.endDate}
+                                            </div>
+                                            <div>
+                                                <strong>일정 개수:</strong> {selectedTrip.schedules?.length ?? 0}개
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
