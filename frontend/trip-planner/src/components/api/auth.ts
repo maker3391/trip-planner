@@ -47,3 +47,8 @@ export const loginApi = async (
   const response = await client.post<AuthResponse>("/auth/login", data);
   return response.data;
 };
+
+export const withdrawApi = async (): Promise<MessageResponse> => {
+  const response = await client.delete<MessageResponse>("/auth/withdraw");
+  return response.data;
+}

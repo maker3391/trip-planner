@@ -59,7 +59,7 @@ client.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const refreshToken = localStorage.getItem('refresh_token');
+                const refreshToken = localStorage.getItem('refreshToken');
                 
                 // 2. 리프레시 토큰으로 새로운 액세스 토큰 요청
                 // 주의: 이 요청은 인터셉터에 걸리지 않는 별도의 axios 인스턴스나 경로를 사용해야 합니다.
@@ -67,7 +67,7 @@ client.interceptors.response.use(
                     refreshToken: refreshToken
                 });
 
-                const { accessToken, newRefreshToken } = response.data;
+                const { accessToken, refreshToken: newRefreshToken } = response.data;
 
                 // 3. 새로운 토큰 저장
                 localStorage.setItem('accessToken', accessToken);

@@ -1,7 +1,7 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
-import { getMe, updateMe } from "../components/api/auth.ts";
+import { getMe, updateMe, withdrawApi } from "../components/api/auth.ts";
 import "./MyPage.css";
 
 interface UserInfo {
@@ -46,10 +46,12 @@ export default function MyPage() {
 
   const [isSavingBasic, setIsSavingBasic] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   const clearAuthAndMoveLogin = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("isLoggedIn");
     setUser(null);
     navigate("/login", { replace: true });
   };
@@ -206,6 +208,45 @@ export default function MyPage() {
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!user || isWithdrawing) return;
+
+    const confirmed = window.confirm(
+      "정말 회원을 탈퇴 하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsWithdrawing(true);
+
+      const response = await withdrawApi();
+
+      alert(response.message || "회원탈퇴가 완료되었습니다.");
+
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("isLoggedIn");
+      setUser(null);
+
+      navigate("/", {replace: true});
+    } catch (error: any) {
+      console.error("회원탈퇴 실패:", error);
+
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        alert("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
+        clearAuthAndMoveLogin();
+        return;
+      }
+
+      alert(
+        error?.response?.data?.message || "회원탈퇴 중 오류가 발생했습니다."
+      );
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   const displayName =
     user?.nickname?.trim() ||
     user?.name?.trim() ||
@@ -355,6 +396,24 @@ export default function MyPage() {
               disabled={isSavingPassword}
             >
               {isSavingPassword ? "변경 중..." : "비밀번호 변경"}
+            </button>
+          </div>
+        </section>
+
+        <section className="mypage-edit-card danger-zone">
+          <h2 className="mypage-section-title">회원 탈퇴</h2>
+          <p className="mypage-danger-text">
+            회원탈퇴 시 계정 정보는 복구할 수 없습니다.
+          </p>
+
+          <div className="mypage-edit-actions">
+            <button
+              type="button"
+              className="mypage-withdraw-btn"
+              onClick={handleWithdraw}
+              disabled={isWithdrawing}
+            >
+              {isWithdrawing ? "탈퇴 처리 중..." : "회원 탈퇴"}
             </button>
           </div>
         </section>
