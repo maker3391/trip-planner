@@ -10,18 +10,8 @@ export default function ChatBotButton({ onClick }: ChatBotButtonProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
-    const hidden = localStorage.getItem("chatbotTooltipHidden");
-
-    if (!hidden) {
-      setShowTooltip(true);
-    }
+    setShowTooltip(true);
   }, []);
-
-  const handleClick = () => {
-    onClick();
-    setShowTooltip(false);
-    localStorage.setItem("chatbotTooltipHidden", "true");
-  };
 
   return (
     <div className="chatbot-fab-wrap">
@@ -33,7 +23,10 @@ export default function ChatBotButton({ onClick }: ChatBotButtonProps) {
 
       <button
         className="chatbot-fab"
-        onClick={handleClick}
+        onClick={() => {
+          onClick();
+          setShowTooltip(false);
+        }}
         aria-label="AI 여행 도우미 열기"
         type="button"
       >
