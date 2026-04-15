@@ -79,9 +79,10 @@ public class AuthController {
         return ResponseEntity.ok(authService.updateMe(user, request));
     }
 
-    @Operation(summary = "회원탈퇴", description = "현재 로그인한 사용자의 정보를 비식별화 처리하고 탈퇴 상태로 변경합니다.")
+    @Operation(summary = "회원탈퇴", description = "현재 계정을 탈퇴 처리하고 비식별화하며, 30일간 재가입을 제한합니다.")
     @DeleteMapping("/withdraw")
     public ResponseEntity<MessageResponse> withdraw(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(authService.withdraw(user));
     }
+
 }
