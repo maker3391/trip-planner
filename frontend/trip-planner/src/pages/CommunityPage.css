@@ -7,6 +7,7 @@
     padding: 0 20px;
     font-family: 'Noto Sans KR', -apple-system, sans-serif;
     color: #333;
+    background-color: #fff; /* 전체 배경 화이트 통일 */
 }
 
 .community-container {
@@ -14,118 +15,6 @@
     gap: 40px;
     align-items: flex-start;
     margin-top: 20px;
-}
-
-/* ========================= */
-/* 🔥 사이드바 */
-/* ========================= */
-.community-sidebar {
-    width: 250px;
-    position: sticky;
-    top: 100px;
-    height: fit-content;
-    background: #fffef8; /* 살짝 따뜻한 배경 */
-    border-radius: 10px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    border: 1px solid #f5e6b3;
-}
-
-.sidebar-section {
-    margin-bottom: 24px;
-}
-
-.sidebar-section h3 {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #ffd54f;
-}
-
-/* 카테고리 */
-.sidebar-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.sidebar-section li {
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: #666;
-}
-
-.sidebar-section li:hover {
-    background-color: #fff8e1;
-    color: #222;
-}
-
-.sidebar-section li.active {
-    background-color: #ffc107;
-    color: #222;
-    font-weight: 700;
-}
-
-/* 지역 */
-.region-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-}
-
-.region-grid span {
-    background: #fffaf0;
-    padding: 6px;
-    font-size: 12px;
-    text-align: center;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.region-grid span:hover {
-    background: #ffe082;
-}
-
-.region-grid span.active {
-    background: #ffc107;
-    font-weight: 600;
-}
-
-/* 필터 초기화 */
-.filter-reset-area {
-    margin-top: 10px;
-    padding-top: 12px;
-    border-top: 1px dashed #eee;
-}
-
-.filter-reset-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-    padding: 8px;
-    background-color: #fffaf0;
-    color: #888;
-    border: 1px solid #f0d98c;
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.filter-reset-btn:hover {
-    background-color: #fff3cd;
-    color: #ffb300;
-    border-color: #ffc107;
 }
 
 /* ========================= */
@@ -152,7 +41,7 @@
 
 .community-content-header p {
     margin: 0;
-    color: #777;
+    color: #888;
     font-size: 14px;
 }
 
@@ -164,20 +53,21 @@
 }
 
 .community-search-bar select {
-    padding: 7px 10px;
-    border: 1px solid #e6c96b;
+    padding: 8px 10px;
+    border: 1px solid #ddd; /* 노란 테두리 제거 */
     border-radius: 6px;
     font-size: 13px;
     outline: none;
+    background: #fff;
 }
 
 .search-input-box {
     display: flex;
     align-items: center;
-    border: 1px solid #e6c96b;
+    border: 1px solid #ddd;
     border-radius: 6px;
     padding: 0 10px;
-    background: #fffef8;
+    background: #ffffff;
 }
 
 .search-input-box input {
@@ -200,9 +90,10 @@
 /* 🔥 게시판 */
 /* ========================= */
 .community-board-container {
-    border-top: 2px solid #222;
-    border-bottom: 1px solid #ddd;
-    background-color: #fffef8;
+    border-top: 2px solid #333; /* 검정톤으로 무게감 조절 */
+    border-bottom: 1px solid #eee;
+    background-color: #ffffff;
+    border-radius: 4px;
 }
 
 /* 🔥 컬럼 비율 */
@@ -224,23 +115,22 @@
 }
 
 .board-header-row {
-    background-color: #fff8e1;
+    background-color: #fbfbfb; /* 노란빛 제거 후 아주 연한 회색 */
     font-weight: 600;
-    border-bottom: 1px solid #f0e0a0;
+    border-bottom: 1px solid #eee;
     font-size: 14px;
-    color: #555;
+    color: #444;
 }
 
 .board-item-row {
-    border-bottom: 1px solid #f3e7b0;
+    border-bottom: 1px solid #f5f5f5;
     font-size: 14px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.2s ease;
 }
 
 .board-item-row:hover {
-    background-color: #fff8e1;
+    background-color: #fcfcfc;
     cursor: pointer;
-    transform: translateY(-1px);
 }
 
 /* ========================= */
@@ -261,37 +151,28 @@
     text-overflow: ellipsis;
 }
 
-/* 🔥 기존 파란 route 제거 → 노란 포인트 */
 .col-route {
-    /* 1. 고정 크기 설정 */
-    width: 85px;          /* 박스의 너비를 적절하게 고정 (내용에 맞춰 조절하세요) */
-    flex-shrink: 0;       /* 부모 요소가 좁아져도 박스 크기가 줄어들지 않게 고정 */
-    
-    /* 2. 텍스트 중앙 정렬 */
+    width: 85px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    
-    /* 3. 내용이 넘칠 경우 처리 (선택 사항) */
-    white-space: nowrap;  /* 텍스트가 줄바꿈되지 않게 함 */
-    overflow: hidden;     /* 넘치는 텍스트 숨김 */
-    text-overflow: ellipsis; /* 너무 길면 ... 표시 */
-
-    /* 기존 스타일 유지 */
-    font-size: 11px;
-    font-weight: 600;
-    color: #b8860b;
-    background: #fff3cd;
-    padding: 3px 6px;
-    border-radius: 4px;
-}
-.col-author {
-    font-size: 13px;
-    color: #444;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    font-size: 11px;
+    font-weight: 600;
+    color: #b8860b;
+    background: #fff9e6; /* 라우트 박스는 시인성을 위해 매우 연한 노란색 유지 */
+    padding: 3px 6px;
+    border-radius: 4px;
+}
+
+.col-author {
+    font-size: 13px;
+    color: #444;
 }
 
 .col-date,
@@ -299,10 +180,9 @@
 .col-stats,
 .col-share {
     font-size: 13px;
-    color: #888;
+    color: #999;
 }
 
-/* 🔥 공유 아이콘 (청록 제거 → 노란톤) */
 .col-share {
     display: flex;
     align-items: center;
@@ -312,12 +192,35 @@
     font-weight: 500;
 }
 
-/* 게시글 없음 */
-.board-body .no-posts {
+/* =========================
+   📭 게시글 없음 (Empty State)
+========================= */
+.no-posts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    /* 화면이 너무 텅 비어보이지 않도록 최소 높이와 여백 부여 */
+    min-height: 250px; 
+    padding: 60px 20px;
+    
+    background-color: #ffffff; /* 게시판 배경과 동일하게 화이트 */
+    color: #888; /* 차분한 회색 텍스트 */
+    font-size: 15px;
+    font-weight: 500;
     text-align: center;
-    color: #aaa;
-    padding: 40px 0;
-    font-size: 14px;
+    
+    border-bottom: 1px solid #eee; /* 리스트 디자인과 통일감 */
+}
+
+/* (선택) 텍스트 위에 둥근 아이콘 같은 시각적 요소를 살짝 더해주고 싶다면 */
+.no-posts::before {
+    content: "📁"; /* 문서나 빈 폴더 느낌의 이모지 (원치 않으면 삭제) */
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5; /* 색을 연하게 빼서 너무 튀지 않게 */
+    filter: grayscale(100%); /* 흑백 처리로 깔끔하게 */
 }
 
 /* ========================= */
@@ -327,98 +230,51 @@
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin: 20px 0;
-    flex-wrap: wrap;
+    margin: 30px 0;
 }
 
 .pagination button {
     min-width: 32px;
     height: 32px;
     padding: 0 8px;
-    border: 1px solid #e6c96b;
-    background: #fffef8;
+    border: 1px solid #ddd;
+    background: #fff;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 13px;
+    color: #666;
     transition: 0.2s;
 }
 
 .pagination button:hover {
-    background-color: #fff3cd;
-    border-color: #ffc107;
+    background-color: #f8f9fa;
+    border-color: #ccc;
 }
 
 .pagination button.active-page {
     background-color: #ffc107;
-    color: #222;
+    color: #fff;
     font-weight: 700;
     border-color: #ffc107;
-}
-
-.pagination button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
 }
 
 /* ========================= */
 /* 🔥 하단 버튼 */
 /* ========================= */
-.community-footer {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
-}
-
 .write-button {
-    padding: 12px 30px;
+    padding: 12px 32px;
     background-color: #ffc107;
-    color: #222;
+    color: #fff;
     border: none;
     border-radius: 6px;
     font-weight: 700;
     font-size: 15px;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    margin-left: auto;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+    transition: 0.2s;
 }
 
 .write-button:hover {
     background-color: #e6af06;
     transform: translateY(-1px);
-}
-
-/* ========================= */
-/* 🔥 반응형 */
-/* ========================= */
-@media (max-width: 900px) {
-    .community-container {
-        flex-direction: column;
-    }
-
-    .community-sidebar {
-        width: 100%;
-        position: relative;
-        top: 0;
-    }
-
-    .board-header-row,
-    .board-item-row {
-        grid-template-columns: 
-            50px 
-            1fr 
-            90px 
-            70px;
-    }
-
-    .col-route,
-    .col-date,
-    .col-stats,
-    .col-share {
-        display: none;
-    }
-
-    .search-input-box input {
-        width: 140px;
-    }
 }

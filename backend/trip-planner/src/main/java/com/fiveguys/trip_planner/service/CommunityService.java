@@ -26,8 +26,12 @@ public class CommunityService {
     private final CommunityLikeRepository communityLikeRepository;
     private final TripPlanRepository tripPlanRepository;
 
+    // =========================
+    // 🔹 게시글 생성
+    // =========================
     @Transactional
     public Long createPost(CommunityRequest request) {
+
         validateRequest(request);
 
         String safeContent = Jsoup.clean(request.getContent(), Safelist.relaxed());
@@ -57,50 +61,58 @@ public class CommunityService {
 
         Community saved = communityRepository.save(community);
 
-        if (request.getImageIds() != null && !request.getImageIds().isEmpty()) {
-            for (Long imageId : request.getImageIds()) {
-                communityImageRepository.findById(imageId)
-                        .ifPresent(img -> img.setCommunity(saved));
-            }
+        if (request.getImageIds() != null) {
+            request.getImageIds().forEach(imageId ->
+                    communityImageRepository.findById(imageId)
+                            .ifPresent(img -> img.setCommunity(saved))
+            );
         }
 
         return saved.getId();
     }
 
-    /**
-     * 🔥 게시글 목록 조회 (likedByMe 포함)
-     */
-    public Page<CommunityResponse> getPosts(int page, int size,
-                                            String category, String region,
-                                            String searchType, String keyword) {
+    // =========================
+    // 🔹 게시글 목록 + 검색 + 필터
+    // =========================
+    public Page<CommunityResponse> getPosts(
+            int page,
+            int size,
+            String category,
+            String region,
+            String searchType,
+            String keyword
+    ) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
         String filterCategory = ("전체보기".equals(category)) ? null : category;
+        String filterRegion = ("전체".equals(region)) ? null : region;
 
-        if (!"title".equals(searchType) && !"author".equals(searchType)) {
-            searchType = null;
-        }
+        String cleanKeyword = (keyword == null || keyword.trim().isEmpty())
+                ? null
+                : keyword.trim();
 
-        String cleanKeyword = (keyword != null && !keyword.trim().isEmpty())
-                ? keyword.trim()
-                : null;
+        String validSearchType =
+                ("title".equals(searchType) || "author".equals(searchType))
+                        ? searchType
+                        : null;
 
+        // keyword 없으면 searchType 무효화
         if (cleanKeyword == null) {
-            searchType = null;
+            validSearchType = null;
         }
 
-        User user = null;
+        User currentUser = null;
         try {
-            user = getCurrentUser();
+            currentUser = getCurrentUser();
         } catch (Exception ignored) {}
 
-        User finalUser = user;
+        User finalUser = currentUser;
 
         return communityRepository.findWithFilters(
                 filterCategory,
-                region,
-                searchType,
+                filterRegion,
+                validSearchType,
                 cleanKeyword,
                 pageable
         ).map(post -> {
@@ -115,10 +127,11 @@ public class CommunityService {
         });
     }
 
-    /**
-     * 🔥 게시글 상세 조회
-     */
+    // =========================
+    // 🔹 게시글 상세 조회
+    // =========================
     public CommunityResponse getPost(Long id) {
+
         Community post = communityRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
@@ -170,10 +183,10 @@ public class CommunityService {
         );
 
         if (request.getImageIds() != null) {
-            for (Long imageId : request.getImageIds()) {
-                communityImageRepository.findById(imageId)
-                        .ifPresent(img -> img.setCommunity(community));
-            }
+            request.getImageIds().forEach(imageId ->
+                    communityImageRepository.findById(imageId)
+                            .ifPresent(img -> img.setCommunity(community))
+            );
         }
     }
 
@@ -195,8 +208,12 @@ public class CommunityService {
         communityRepository.delete(community);
     }
 
+    // =========================
+    // 🔹 이미지 업로드
+    // =========================
     @Transactional
     public Long uploadImage(MultipartFile file) {
+
         try {
             CommunityImage image = CommunityImage.builder()
                     .originalName(file.getOriginalFilename())
@@ -211,26 +228,43 @@ public class CommunityService {
         }
     }
 
+    // =========================
+    // 🔹 이미지 조회
+    // =========================
     public CommunityImage getImageEntity(Long id) {
+
         return communityImageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("이미지를 찾을 수 없습니다. ID: " + id));
     }
 
+    // =========================
+    // 🔹 조회수 증가
+    // =========================
     @Transactional
     public void viewPost(Long postId) {
+
         if (!communityRepository.existsById(postId)) {
             throw new IllegalArgumentException("게시글 없음");
         }
+
         communityRepository.updateViewCount(postId);
     }
 
+    // =========================
+    // 🔹 공유 증가
+    // =========================
     @Transactional
     public void incrementShare(Long postId) {
+
         Community community = communityRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("게시글 없음"));
+
         community.incrementShareCount();
     }
 
+    // =========================
+    // 🔥 좋아요 토글
+    // =========================
     @Transactional
     public boolean toggleLike(Long communityId) {
 
@@ -254,6 +288,7 @@ public class CommunityService {
     }
 
     public Long getLikeCount(Long communityId) {
+
         return communityRepository.findById(communityId)
                 .orElseThrow(() -> new RuntimeException("게시글 없음"))
                 .getLikeCount();
@@ -269,9 +304,9 @@ public class CommunityService {
         return communityLikeRepository.existsByUserAndCommunity(user, community);
     }
 
-    /**
-     * 🔥 로그인 유저 안전하게 가져오기
-     */
+    // =========================
+    // 🔐 현재 유저
+    // =========================
     private User getCurrentUser() {
 
         Object principal = SecurityContextHolder
@@ -286,6 +321,9 @@ public class CommunityService {
         throw new RuntimeException("로그인 사용자 정보 없음");
     }
 
+    // =========================
+    // 🔥 검증 로직
+    // =========================
     private void validateRequest(CommunityRequest request) {
 
         if (request.getTitle() == null || request.getTitle().trim().isEmpty())
@@ -312,7 +350,9 @@ public class CommunityService {
 
     private boolean isRatingCategory(String category) {
         return category != null &&
-                (category.equals("맛집게시판") || category.equals("사진게시판") || category.equals("후기게시판"));
+                (category.equals("맛집게시판") ||
+                        category.equals("사진게시판") ||
+                        category.equals("후기게시판"));
     }
 
     private boolean isEmpty(String value) {
