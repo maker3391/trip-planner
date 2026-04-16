@@ -77,47 +77,12 @@ public class CommunityController {
     // =========================
     // 🔹 게시글 단건 조회
     // =========================
-    // =========================
-    // 🔹 게시글 단건 조회
-    // =========================
     @Operation(summary = "게시글 상세 조회", description = "특정 ID의 게시글 상세 정보를 가져옵니다. 호출 시 조회수가 증가합니다.")
     @GetMapping("/posts/{postId}")
     public ResponseEntity<CommunityResponse> getPost(@PathVariable Long postId) {
 
         return ResponseEntity.ok(
                 communityService.getPost(postId)
-        );
-    }
-
-    // =========================
-    // 🔹 게시글 수정
-    // =========================
-    @PutMapping("/posts/{postId}")
-    public ResponseEntity<?> updatePost(
-            @PathVariable Long postId,
-            @RequestBody CommunityRequest request
-    ) {
-
-        communityService.updatePost(postId, request);
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "success", true,
-                        "message", "게시글이 수정되었습니다."
-                )
-        );
-    }
-
-    // =========================
-    // 🔹 게시글 삭제
-    // =========================
-    @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<?> deletePost(@PathVariable Long postId) {
-
-        communityService.deletePost(postId);
-
-        return ResponseEntity.ok(
-                Map.of("success", true)
         );
     }
 
@@ -216,7 +181,6 @@ public class CommunityController {
                 )
                 .body(image.getData());
     }
-<<<<<<< Updated upstream
 
     // =========================
     // 🔹 게시글 수정을 위한 데이터 조회
@@ -268,6 +232,4 @@ public class CommunityController {
                     .body(Map.of("success", false, "message", "삭제 실패"));
         }
     }
-=======
->>>>>>> Stashed changes
 }

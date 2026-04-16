@@ -2,6 +2,7 @@ package com.fiveguys.trip_planner.dto;
 
 import com.fiveguys.trip_planner.entity.TripPlan;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 @Schema(description = "여행 계획 응답 객체")
 @Getter
 @Builder
+@AllArgsConstructor
 public class TripPlanResponseDto {
 
     @Schema(description = "여행 계획 ID", example = "101")
@@ -86,10 +88,9 @@ public class TripPlanResponseDto {
 
     public static TripPlanResponseDto from(TripPlan tripPlan) {
 
-        // 🔥 매핑하는 클래스명 수정
         List<TripScheduleResponseDto> scheduleList = tripPlan.getSchedules() != null
                 ? tripPlan.getSchedules().stream()
-                .map(TripScheduleResponseDto::from) // 우리가 방금 만든 DTO의 from 메서드 호출
+                .map(TripScheduleResponseDto::from)
                 .collect(Collectors.toList())
                 : List.of();
 
@@ -101,7 +102,7 @@ public class TripPlanResponseDto {
                 .endDate(tripPlan.getEndDate())
                 .status(tripPlan.getStatus())
                 .createdAt(tripPlan.getCreatedAt())
-                .schedules(scheduleList) // 변환된 스케줄 리스트 삽입
+                .schedules(scheduleList)
                 .build();
     }
 }

@@ -2,6 +2,7 @@ package com.fiveguys.trip_planner.dto;
 
 import com.fiveguys.trip_planner.entity.TripSchedule;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,6 +13,7 @@ import java.time.LocalTime;
 @Schema(description = "여행 일정 응답 객체")
 @Getter
 @Builder
+@AllArgsConstructor
 public class TripScheduleResponseDto {
 
     @Schema(description = "일정 ID", example = "3001")
