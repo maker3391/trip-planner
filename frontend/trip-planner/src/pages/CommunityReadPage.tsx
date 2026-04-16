@@ -327,6 +327,47 @@ export default function CommunityReadPage() {
                                         <span>| {post?.createdAt?.slice(0, 10)}</span>
                                     </div>
                                 </div>
+
+                                {post?.tripPlan && (
+                                    <div className="attached-trip-box">
+                                        <h3>첨부된 여행 계획</h3>
+
+                                        <div><strong>여행 제목:</strong> {post.tripPlan.title}</div>
+                                        <div><strong>여행지:</strong> {post.tripPlan.destination}</div>
+                                        <div>
+                                            <strong>기간:</strong> {post.tripPlan.startDate} ~ {post.tripPlan.endDate}
+                                        </div>
+                                        <div>
+                                            <strong>일정 개수:</strong> {post.tripPlan.schedules?.length ?? 0}개
+                                        </div>
+
+                                        {post.tripPlan.schedules && post.tripPlan.schedules.length > 0 && (
+                                            <div className="attached-trip-schedule-list">
+                                                {post.tripPlan.schedules.slice(0, 5).map((schedule) => (
+                                                    <div key={schedule.id} className="attached-trip-schedule-item">
+                                                        <div>
+                                                            <strong>{schedule.dayNumber}일차</strong> · {schedule.title}
+                                                        </div>
+                                                        {(schedule.startTime || schedule.endTime) && (
+                                                            <div className="schedule-time">
+                                                                {schedule.startTime || "--:--"} ~ {schedule.endTime || "--:--"}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <button
+                                            type="button"
+                                            className="load-trip-button"
+                                            onClick={() => navigate("/", { state: { tripId: post.tripPlan?.id } })}
+                                        >
+                                            이 여행 계획 불러오기
+                                        </button>
+                                    </div>
+                                )}
+                                
                                 <div className="PostContent">
                                     <div className="ql-editor" dangerouslySetInnerHTML={{ __html: post?.content || "" }} />
                                     {post?.tags && (

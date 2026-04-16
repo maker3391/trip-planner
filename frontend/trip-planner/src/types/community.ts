@@ -45,6 +45,8 @@ export interface CommunityResponse {
     rating?: number;
 
     imageIds: number[];
+
+    tripPlan?: TripPlanResponse | null;
 }
 
 
@@ -71,4 +73,36 @@ export type CommunityDetailResponse = CommunityResponse;
 export interface LikeResponse {
     liked: boolean;
     likeCount: number;
+}
+
+export interface TripScheduleResponse {
+    id: number;
+    dayNumber: number;
+    title: string;
+    visitOrder: number;
+    startTime?: string;
+    endTime?: string;
+    memo?: string;
+    estimatedStayMinutes?: number;
+    placeId?: number;
+    placeName?: string;
+    placeAddress?: string;
+    latitude?: number;
+    longitude?: number;
+    googlePlaceId?: string;
+    pinColor?: string;
+    selectedPinColor?: string;
+    lineColor?: string;
+}
+
+export interface TripPlanResponse {
+    id: number;
+    ownerId?: number;
+    title: string;
+    destination: string;
+    startDate: string;
+    endDate: string;
+    status?: string;
+    createdAt?: string;
+    schedules?: TripScheduleResponse[];
 }
