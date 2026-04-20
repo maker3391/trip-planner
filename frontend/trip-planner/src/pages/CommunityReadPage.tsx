@@ -448,6 +448,22 @@ export default function CommunityReadPage() {
                                                             {approvedMembers.length}명
                                                         </div>
 
+                                                        { approvedMembers.length != 0 && (
+                                                            approvedMembers.map((member) => (
+                                                                <div
+                                                                    key={member.memberId}
+                                                                    className="member-manage-row"
+                                                                >
+                                                                    <div>
+                                                                        <strong>
+                                                                            {member.nickname}
+                                                                        </strong>{" "}
+                                                                        ({member.name})
+                                                                    </div>
+                                                                </div>
+                                                            ))
+                                                        )}
+
                                                         <div className="member-count-row">
                                                             <strong>대기 중:</strong>{" "}
                                                             {pendingMembers.length}명
@@ -472,6 +488,7 @@ export default function CommunityReadPage() {
 
                                                                     <div className="member-action-buttons">
                                                                         <button
+                                                                            className="accept-button"
                                                                             onClick={() =>
                                                                                 handleAcceptMember(
                                                                                     member.memberId
@@ -481,6 +498,7 @@ export default function CommunityReadPage() {
                                                                             수락
                                                                         </button>
                                                                         <button
+                                                                            className="reject-button"
                                                                             onClick={() =>
                                                                                 handleRemoveMember(
                                                                                     member.memberId
