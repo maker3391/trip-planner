@@ -201,7 +201,10 @@ public class CommunityService {
 
         User user = getCurrentUser();
 
-        if (!community.getAuthor().getId().equals(user.getId())) {
+        boolean isAuthor = community.getAuthor().getId().equals(user.getId());
+        boolean isAdmin = "ADMIN".equals(user.getRole());
+
+        if (!isAuthor && !isAdmin) {
             throw new IllegalArgumentException("본인이 작성한 글만 삭제할 수 있습니다.");
         }
 
