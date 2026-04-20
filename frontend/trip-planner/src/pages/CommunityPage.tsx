@@ -11,6 +11,7 @@ import { CommunityResponse, CommunityPageResponse } from "../types/community.ts"
 
 const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판", "사진게시판"];
 const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
+const ADMIN_ONLY_CATEGORIES = ["공지게시판"];
 
 // 🔥 API 요청 함수
 export const getCommunityPosts = async (
@@ -148,6 +149,11 @@ export default function CommunityPage() {
         </div>
       );
     }
+
+    if (post.category && ADMIN_ONLY_CATEGORIES.includes(post.category)) {
+      return " 관리자 게시글 ";
+    }
+
 
     return " - ";
   };

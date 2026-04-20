@@ -1,7 +1,6 @@
 package com.fiveguys.trip_planner.controller;
 
 import com.fiveguys.trip_planner.dto.CommunityRequest;
-import com.fiveguys.trip_planner.entity.CommunityImage;
 import com.fiveguys.trip_planner.response.CommunityResponse;
 import com.fiveguys.trip_planner.service.CommunityService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -77,7 +76,7 @@ public class CommunityController {
     // =========================
     // 🔹 게시글 단건 조회
     // =========================
-    @Operation(summary = "게시글 상세 조회", description = "특정 ID의 게시글 상세 정보를 가져옵니다. 호출 시 조회수가 증가합니다.")
+    @Operation(summary = "게시글 상세 조회", description = "특정 ID의 게시글 상세 정보를 가져옵니다. 호출 시 조회수가 증가하지는 않습니다. (별도 API 사용)")
     @GetMapping("/posts/{postId}")
     public ResponseEntity<CommunityResponse> getPost(@PathVariable Long postId) {
 
@@ -171,15 +170,18 @@ public class CommunityController {
     @GetMapping("/image/{id}")
     public ResponseEntity<byte[]> getImage(@PathVariable Long id) {
 
-        CommunityImage image = communityService.getImageEntity(id);
+        // 🔥 Service에 존재하는 메서드를 조합하여 사용하도록 수정했습니다.
+        byte[] imageData = communityService.getImage(id);
+        String contentType = communityService.getImageContentType(id);
+        String fileName = communityService.getImageName(id);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(image.getContentType()))
+                .contentType(MediaType.parseMediaType(contentType))
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + image.getOriginalName() + "\""
+                        "inline; filename=\"" + fileName + "\""
                 )
-                .body(image.getData());
+                .body(imageData);
     }
 
     // =========================
@@ -190,7 +192,6 @@ public class CommunityController {
     public ResponseEntity<CommunityResponse> getPostForEdit(
             @PathVariable Long postId
     ) {
-        // 🔥 조회수 증가 없는 조회용 메서드 쓰는 게 베스트
         CommunityResponse response = communityService.getPost(postId);
         return ResponseEntity.ok(response);
     }

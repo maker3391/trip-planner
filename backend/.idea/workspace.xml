@@ -74,6 +74,7 @@
   &quot;keyToString&quot;: {
     &quot;Gradle.Build trip-planner.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.trip-planner 빌드.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.소스 다운로드.executor&quot;: &quot;Run&quot;,
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,

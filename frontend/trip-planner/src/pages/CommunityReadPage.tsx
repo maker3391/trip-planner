@@ -97,6 +97,7 @@ export default function CommunityReadPage() {
     }, []);
 
     const isAuthor = post?.authorId === me?.id;
+    const isAdmin = me?.role === "ADMIN";
     const myMember = members.find((member) => member.userId === me?.id);
     const isJoined = !!myMember;
     const isPending = myMember?.role === "PENDING";
@@ -550,11 +551,16 @@ export default function CommunityReadPage() {
                             </div>
 
                             <div className="footer-right">
-                                {isAuthor && (
+                                {(isAuthor) && (
                                     <>
                                         <button className="edit-button" onClick={handleUpdate}>
                                             수정하기
                                         </button>
+                                    </>
+                                )}
+
+                                {(isAuthor || isAdmin) && (
+                                    <>
                                         <button className="delete-button" onClick={handleDelete}>
                                             삭제하기
                                         </button>
