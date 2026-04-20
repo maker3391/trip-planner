@@ -1,8 +1,5 @@
-/* =========================
-   전체 레이아웃
-========================= */
 .community-page {
-    background: #ffffff; /* 기존 미색(#fffdf5) 제거, 순백색 통일 */
+    background: #ffffff;
     min-height: 100vh;
 }
 
@@ -14,25 +11,18 @@
     padding: 20px;
 }
 
-/* =========================
-   메인 영역
-========================= */
 .community-main-content {
     flex: 1;
 }
 
-/* =========================
-   게시글 상세
-========================= */
 .community-post-form {
     background: #fff;
     border-radius: 12px;
     padding: 25px;
-    border: 1px solid #eee; /* 노란 테두리 제거 */
-    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    border: 1px solid #eee;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
-/* 상단 정보 */
 .form-row {
     display: flex;
     gap: 20px;
@@ -51,15 +41,12 @@
     color: #888;
 }
 
-/* =========================
-   추가 정보 (경로 / 평점)
-========================= */
 .post-extra-info {
     margin-bottom: 15px;
     padding: 15px;
     border-radius: 8px;
-    background: #f8f9fa; /* 연한 회색 배경 */
-    border: 1px solid #eee; /* 깔끔한 회색 테두리 */
+    background: #f8f9fa;
+    border: 1px solid #eee;
 }
 
 .route-display {
@@ -82,17 +69,13 @@
     color: #ffc107;
 }
 
-/* =========================
-   글 메인
-========================= */
 .form-main-area {
-    border: 1px solid #ddd; /* 노란 테두리 -> 연한 회색 */
+    border: 1px solid #ddd;
     border-radius: 10px;
     overflow: hidden;
     background: #fff;
 }
 
-/* 헤더 */
 .PostHeader {
     padding: 20px;
     border-bottom: 1px solid #eee;
@@ -111,7 +94,7 @@
     display: block;
     width: 40px;
     height: 3px;
-    background: #ffc107; /* 포인트 컬러 유지 */
+    background: #ffc107;
     margin-top: 10px;
     border-radius: 2px;
 }
@@ -124,7 +107,6 @@
     margin-top: 15px;
 }
 
-/* 본문 */
 .PostContent {
     padding: 30px 20px;
 }
@@ -135,7 +117,6 @@
     color: #333;
 }
 
-/* 태그 */
 .tags {
     margin-top: 20px;
     display: flex;
@@ -144,25 +125,22 @@
 }
 
 .tag {
-    background: #f8f9fa; /* 미색 제거 */
+    background: #f8f9fa;
     border: 1px solid #eee;
-    color: #ffb300; /* 텍스트에만 포인트 컬러 적용 */
+    color: #ffb300;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 500;
 }
 
-/* =========================
-   하단 액션
-========================= */
 .PostFooter {
     display: flex;
     gap: 20px;
     padding: 15px 20px;
-    border-top: 1px solid #eee; /* 노란 테두리 제거 */
+    border-top: 1px solid #eee;
     align-items: center;
-    background: #fbfbfb; /* 하단 액션바를 살짝 구분지어줌 */
+    background: #fbfbfb;
 }
 
 .footer-item {
@@ -178,7 +156,6 @@
     color: #ffc107;
 }
 
-/* 아이콘 버튼 */
 .icon-btn {
     border: none;
     background: transparent;
@@ -197,9 +174,6 @@
     color: #ffc107 !important;
 }
 
-/* ========================= */
-/* 🔥 컬럼 디테일 */
-/* ========================= */
 .col-title {
     text-align: left;
     padding: 0 15px;
@@ -225,11 +199,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-
     font-size: 11px;
     font-weight: 600;
     color: #b8860b;
-    background: #fff9e6; /* 라우트 박스는 시인성을 위해 매우 연한 노란색 유지 */
+    background: #fff9e6;
     padding: 3px 6px;
     border-radius: 4px;
 }
@@ -256,40 +229,29 @@
     font-weight: 500;
 }
 
-/* =========================
-   📭 게시글 없음 (Empty State)
-========================= */
 .no-posts {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    
-    /* 화면이 너무 텅 비어보이지 않도록 최소 높이와 여백 부여 */
-    min-height: 250px; 
+    min-height: 250px;
     padding: 60px 20px;
-    
-    background-color: #ffffff; /* 게시판 배경과 동일하게 화이트 */
-    color: #888; /* 차분한 회색 텍스트 */
+    background-color: #ffffff;
+    color: #888;
     font-size: 15px;
     font-weight: 500;
     text-align: center;
-    
-    border-bottom: 1px solid #eee; /* 리스트 디자인과 통일감 */
+    border-bottom: 1px solid #eee;
 }
 
-/* (선택) 텍스트 위에 둥근 아이콘 같은 시각적 요소를 살짝 더해주고 싶다면 */
 .no-posts::before {
-    content: "📁"; /* 문서나 빈 폴더 느낌의 이모지 (원치 않으면 삭제) */
+    content: "📁";
     font-size: 32px;
     margin-bottom: 12px;
-    opacity: 0.5; /* 색을 연하게 빼서 너무 튀지 않게 */
-    filter: grayscale(100%); /* 흑백 처리로 깔끔하게 */
+    opacity: 0.5;
+    filter: grayscale(100%);
 }
 
-/* =========================
-   페이지네이션
-========================= */
 .pagination {
     display: flex;
     justify-content: center;
@@ -317,12 +279,9 @@
     background: #ffc107 !important;
     border-color: #ffc107 !important;
     font-weight: 700;
-    color: #fff !important; /* 가독성을 위해 흰색 */
+    color: #fff !important;
 }
 
-/* =========================
-   ✨ 개편된 하단 버튼 영역 ✨
-========================= */
 .community-footer {
     display: flex;
     justify-content: space-between;
@@ -336,7 +295,6 @@
     gap: 10px;
 }
 
-/* 공통 버튼 스타일 */
 .community-footer button {
     padding: 10px 22px;
     border-radius: 6px;
@@ -346,9 +304,8 @@
     transition: all 0.2s ease-in-out;
 }
 
-/* 목록으로 */
 .to-list-button {
-    background-color: #f8f9fa; /* 노란 배경 제거 */
+    background-color: #f8f9fa;
     color: #555;
     border: 1px solid #ddd;
 }
@@ -358,7 +315,6 @@
     color: #333;
 }
 
-/* 수정하기 (중립적인 회색톤) */
 .edit-button {
     background-color: #f8f9fa;
     color: #495057;
@@ -370,7 +326,6 @@
     color: #212529;
 }
 
-/* 삭제하기 (경고용 붉은톤) */
 .delete-button {
     background-color: #fff0f0;
     color: #e03131;
@@ -383,10 +338,9 @@
     color: #c92a2a;
 }
 
-/* 글쓰기 (메인 강조 색상) */
 .write-button {
     background-color: #ffc107;
-    color: #fff; /* 흰색 텍스트로 가독성 및 세련미 향상 */
+    color: #fff;
     border: none;
     box-shadow: 0 4px 10px rgba(255, 193, 7, 0.2);
 }
@@ -432,12 +386,59 @@
     margin-top: 4px;
 }
 
-.load-trip-button {
+.trip-button-group {
+    display: flex;
+    gap: 12px;
     margin-top: 14px;
-    padding: 10px 14px;
+    flex-wrap: wrap;
+}
+
+.load-trip-button,
+.join-trip-button {
+    padding: 10px 16px;
     border: none;
     border-radius: 10px;
-    background: #ffcf33;
     font-weight: 700;
     cursor: pointer;
+}
+
+.load-trip-button {
+    background: #ffcf33;
+    color: #222;
+}
+
+.join-trip-button {
+    background: #f7c948;
+    color: #222;
+}
+
+.join-trip-button:disabled {
+    background: #ddd;
+    color: #777;
+    cursor: not-allowed;
+}
+
+.trip-member-manage-box {
+    margin-top: 20px;
+    padding: 16px;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    background: #fffdf6;
+}
+
+.member-count-row {
+    margin-bottom: 12px;
+}
+
+.member-manage-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.member-action-buttons {
+    display: flex;
+    gap: 8px;
 }
