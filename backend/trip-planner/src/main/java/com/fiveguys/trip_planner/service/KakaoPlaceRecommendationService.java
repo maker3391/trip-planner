@@ -262,7 +262,8 @@ public class KakaoPlaceRecommendationService {
                                               String aliasTargetParent,
                                               String rawAreaHint,
                                               String message) {
-        Set<String> candidates = new LinkedHashSet<>();
+        LinkedHashSet<String> queries = new LinkedHashSet<>();
+
         List<String> locationBases = buildLocationBases(
                 destination,
                 detailArea,
@@ -274,41 +275,15 @@ public class KakaoPlaceRecommendationService {
                 rawAreaHint
         );
 
-        if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
-            for (String base : locationBases) {
-                if (containsKeyword(message, "카페", "cafe")) {
-                    candidates.add(base + " 카페");
-                    candidates.add(base + " 커피");
-                } else if (containsKeyword(message, "술집")) {
-                    candidates.add(base + " 술집");
-                    candidates.add(base + " 주점");
-                } else if (containsKeyword(message, "밥집", "점심")) {
-                    candidates.add(base + " 식당");
-                    candidates.add(base + " 한식");
-                    candidates.add(base + " 밥집");
-                } else {
-                    candidates.add(base + " 맛집");
-                    candidates.add(base + " 식당");
-                    candidates.add(base + " 한식");
-                    candidates.add(base + " 밥집");
-                }
-            }
-        } else if ("STAY_RECOMMENDATION".equals(intent)) {
-            String primaryStayKeyword = resolveStayKeyword(message);
+        List<String> keywords = buildIntentKeywords(intent, message);
 
-            for (String base : locationBases) {
-                candidates.add(base + " " + primaryStayKeyword);
-                candidates.add(base + " 숙소");
-                candidates.add(base + " 호텔");
-                candidates.add(base + " 펜션");
-                candidates.add(base + " 리조트");
-                candidates.add(base + " 게스트하우스");
-                candidates.add(base + " 민박");
-                candidates.add(base + " 모텔");
+        for (String base : locationBases) {
+            for (String keyword : keywords) {
+                queries.add(base + " " + keyword);
             }
         }
 
-        return new ArrayList<>(candidates);
+        return new ArrayList<>(queries);
     }
 
     private List<String> buildLocationBases(String destination,
@@ -319,100 +294,155 @@ public class KakaoPlaceRecommendationService {
                                             String aliasTargetName,
                                             String aliasTargetParent,
                                             String rawAreaHint) {
-        List<String> bases = new ArrayList<>();
+        LinkedHashSet<String> bases = new LinkedHashSet<>();
 
-        if (StringUtils.hasText(detailArea)) {
-            bases.add(joinDistinctLocation(destination, detailArea));
-        }
+        addExpandedArea(bases, detailArea);
+        addExpandedArea(bases, neighborhood);
+        addExpandedArea(bases, aliasTargetName);
+        addExpandedArea(bases, rawAreaHint);
+        addExpandedArea(bases, district);
+        addExpandedArea(bases, aliasTargetParent);
+        addExpandedArea(bases, aliasQueryHint);
+        addExpandedArea(bases, destination);
 
-        if (StringUtils.hasText(neighborhood)) {
-            bases.add(joinDistinctLocation(destination, neighborhood));
-        }
-
-        if (StringUtils.hasText(aliasTargetName)) {
-            bases.add(joinDistinctLocation(destination, aliasTargetName));
-        }
-
-        if (StringUtils.hasText(aliasQueryHint)) {
-            bases.add(joinDistinctLocation(destination, aliasQueryHint));
-        }
-
-        if (StringUtils.hasText(aliasTargetParent) && StringUtils.hasText(aliasQueryHint)) {
-            bases.add(joinDistinctLocation(joinDistinctLocation(destination, aliasTargetParent), aliasQueryHint));
-        }
-
-        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            bases.add(joinDistinctLocation(destination, district));
-        }
-
-        if (StringUtils.hasText(rawAreaHint)) {
-            bases.add(joinDistinctLocation(destination, rawAreaHint));
-        }
-
-        bases.add(destination);
-
-        return dedupStrings(bases);
+        return new ArrayList<>(bases);
     }
 
-    private String joinDistinctLocation(String first, String second) {
-        if (!StringUtils.hasText(first)) {
-            return normalizeDisplayArea(second);
-        }
-        if (!StringUtils.hasText(second)) {
-            return normalizeDisplayArea(first);
+    private void addExpandedArea(Set<String> bases, String area) {
+        if (!StringUtils.hasText(area)) {
+            return;
         }
 
-        String a = normalizeDisplayArea(first);
-        String b = normalizeDisplayArea(second);
-
-        if (normalizeAreaName(a).equals(normalizeAreaName(b))) {
-            return a;
-        }
-
-        return (a + " " + b).replaceAll("\\s+", " ").trim();
-    }
-
-    private String normalizeDisplayArea(String value) {
-        if (!StringUtils.hasText(value)) {
-            return "";
-        }
-        return value.trim().replaceAll("\\s+", " ");
-    }
-
-    private String normalizeAreaName(String value) {
-        if (!StringUtils.hasText(value)) {
-            return "";
-        }
-        return value.replaceAll("\\s+", "").trim().toLowerCase();
-    }
-
-    private List<String> dedupStrings(List<String> values) {
-        Set<String> seen = new LinkedHashSet<>();
-        List<String> result = new ArrayList<>();
-
-        for (String value : values) {
-            if (!StringUtils.hasText(value)) {
-                continue;
-            }
-
-            String normalized = value.trim().replaceAll("\\s+", " ");
-            if (seen.add(normalized)) {
-                result.add(normalized);
+        for (String variant : expandAreaVariants(normalizeDisplayArea(area))) {
+            if (StringUtils.hasText(variant)) {
+                bases.add(variant);
             }
         }
+    }
 
-        return result;
+    private List<String> expandAreaVariants(String area) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+
+        if (!StringUtils.hasText(area)) {
+            return new ArrayList<>();
+        }
+
+        String value = area.trim();
+        result.add(value);
+
+        switch (value) {
+            case "경상북":
+                result.add("경북");
+                result.add("경상북도");
+                break;
+            case "경상남":
+                result.add("경남");
+                result.add("경상남도");
+                break;
+            case "전라북":
+                result.add("전북");
+                result.add("전라북도");
+                break;
+            case "전라남":
+                result.add("전남");
+                result.add("전라남도");
+                break;
+            case "충청북":
+                result.add("충북");
+                result.add("충청북도");
+                break;
+            case "충청남":
+                result.add("충남");
+                result.add("충청남도");
+                break;
+            case "강원":
+                result.add("강원도");
+                result.add("강원특별자치도");
+                break;
+            case "제주":
+                result.add("제주도");
+                result.add("제주특별자치도");
+                break;
+            case "경기":
+                result.add("경기도");
+                break;
+            case "서울":
+                result.add("서울특별시");
+                break;
+            case "부산":
+                result.add("부산광역시");
+                break;
+            case "대구":
+                result.add("대구광역시");
+                break;
+            case "인천":
+                result.add("인천광역시");
+                break;
+            case "광주":
+                result.add("광주광역시");
+                break;
+            case "대전":
+                result.add("대전광역시");
+                break;
+            case "울산":
+                result.add("울산광역시");
+                break;
+            case "세종":
+                result.add("세종특별자치시");
+                break;
+            default:
+                break;
+        }
+
+        return new ArrayList<>(result);
+    }
+
+    private List<String> buildIntentKeywords(String intent, String message) {
+        LinkedHashSet<String> keywords = new LinkedHashSet<>();
+        String normalizedMessage = message == null ? "" : message.toLowerCase();
+
+        if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
+            keywords.add("맛집");
+            keywords.add("식당");
+            keywords.add("밥집");
+            keywords.add("한식");
+
+            if (normalizedMessage.contains("카페")) {
+                keywords.add("카페");
+            }
+            if (normalizedMessage.contains("술집") || normalizedMessage.contains("주점")) {
+                keywords.add("술집");
+                keywords.add("주점");
+            }
+        } else {
+            keywords.add("숙소");
+            keywords.add("호텔");
+            keywords.add("모텔");
+            keywords.add("펜션");
+            keywords.add("게스트하우스");
+
+            if (normalizedMessage.contains("리조트")) {
+                keywords.add("리조트");
+            }
+            if (normalizedMessage.contains("풀빌라")) {
+                keywords.add("풀빌라");
+            }
+            if (normalizedMessage.contains("한옥스테이")) {
+                keywords.add("한옥스테이");
+            }
+        }
+
+        return new ArrayList<>(keywords);
     }
 
     private List<JsonNode> extractDocuments(JsonNode root) {
         List<JsonNode> result = new ArrayList<>();
-        JsonNode docs = root.path("documents");
 
-        if (!docs.isArray()) {
+        if (root == null || !root.has("documents") || !root.get("documents").isArray()) {
             return result;
         }
 
-        for (JsonNode doc : docs) {
+        for (JsonNode doc : root.get("documents")) {
             result.add(doc);
         }
 
@@ -427,227 +457,139 @@ public class KakaoPlaceRecommendationService {
                                                                    String district,
                                                                    String aliasQueryHint,
                                                                    String aliasTargetParent) {
-        List<ScoredPlace> scoredPlaces = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        List<ScoredPlace> scored = new ArrayList<>();
 
         for (JsonNode doc : docs) {
-            if (!isAllowedCategory(doc, intent)) {
+            int score = scorePlace(doc, intent, destination, detailArea, neighborhood, district, aliasQueryHint, aliasTargetParent);
+            if (score <= 0) {
                 continue;
             }
 
-            if (!isLocationRelevant(doc, destination, detailArea, neighborhood, district, aliasQueryHint, aliasTargetParent)) {
+            String name = text(doc, "place_name");
+            String address = resolveAddress(doc);
+            String key = (name + "|" + address).trim();
+
+            if (!seen.add(key)) {
                 continue;
             }
 
-            String name = clean(doc.path("place_name").asText());
-            String address = chooseAddress(doc);
-            String placeUrl = clean(doc.path("place_url").asText());
-            String category = clean(doc.path("category_name").asText());
-
-            if (!StringUtils.hasText(name)) {
-                continue;
-            }
-
-            if (looksLikeNoise(name, category)) {
-                continue;
-            }
-
-            String dedupKey = buildDedupKey(name, address);
-            if (!seen.add(dedupKey)) {
-                continue;
-            }
-
-            int score = score(doc, intent, detailArea, neighborhood, district, aliasQueryHint, aliasTargetParent);
-            scoredPlaces.add(new ScoredPlace(name, address, placeUrl, category, score));
+            scored.add(new ScoredPlace(doc, score));
         }
 
-        scoredPlaces.sort(Comparator.comparingInt(ScoredPlace::score).reversed());
+        scored.sort(Comparator.comparingInt(ScoredPlace::score).reversed());
 
         List<RecommendationItemResponse> result = new ArrayList<>();
-        for (ScoredPlace place : scoredPlaces) {
-            result.add(new RecommendationItemResponse(
-                    place.name(),
-                    place.address(),
-                    place.placeUrl(),
-                    place.category()
-            ));
-
+        for (ScoredPlace place : scored) {
             if (result.size() >= MAX_ITEMS) {
                 break;
             }
+
+            JsonNode doc = place.doc();
+            result.add(new RecommendationItemResponse(
+                    text(doc, "place_name"),
+                    resolveAddress(doc),
+                    text(doc, "place_url"),
+                    resolveCategory(intent, doc)
+            ));
         }
 
         return result;
     }
 
-    private boolean isAllowedCategory(JsonNode doc, String intent) {
-        String categoryGroupCode = clean(doc.path("category_group_code").asText());
-        String categoryName = clean(doc.path("category_name").asText());
-
-        if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
-            return "FD6".equals(categoryGroupCode)
-                    || "CE7".equals(categoryGroupCode)
-                    || containsKeyword(categoryName, "음식점", "카페", "주점", "술집", "한식", "중식", "일식", "양식");
-        }
-
-        if ("STAY_RECOMMENDATION".equals(intent)) {
-            return containsKeyword(categoryName, "숙박", "호텔", "모텔", "펜션", "리조트", "게스트하우스", "민박");
-        }
-
-        return true;
-    }
-
-    private boolean isLocationRelevant(JsonNode doc,
-                                       String destination,
-                                       String detailArea,
-                                       String neighborhood,
-                                       String district,
-                                       String aliasQueryHint,
-                                       String aliasTargetParent) {
-        String name = clean(doc.path("place_name").asText());
-        String roadAddress = clean(doc.path("road_address_name").asText());
-        String addressName = clean(doc.path("address_name").asText());
-
-        String merged = ((roadAddress == null ? "" : roadAddress) + " "
-                + (addressName == null ? "" : addressName) + " "
-                + (name == null ? "" : name)).toLowerCase();
-
-        boolean destinationMatch = !StringUtils.hasText(destination) || containsLooseRegion(merged, destination);
-        boolean detailMatch = !StringUtils.hasText(detailArea) || containsLooseRegion(merged, detailArea);
-        boolean neighborhoodMatch = !StringUtils.hasText(neighborhood) || containsLooseRegion(merged, neighborhood);
-        boolean districtMatch = !StringUtils.hasText(district) || isCityOrCounty(district) || containsLooseRegion(merged, district);
-        boolean aliasHintMatch = !StringUtils.hasText(aliasQueryHint) || containsLooseRegion(merged, aliasQueryHint);
-        boolean aliasParentMatch = !StringUtils.hasText(aliasTargetParent) || containsLooseRegion(merged, aliasTargetParent);
-
-        if (!destinationMatch) {
-            return false;
-        }
-
-        if (StringUtils.hasText(detailArea)) {
-            return detailMatch;
-        }
-
-        if (StringUtils.hasText(neighborhood)) {
-            return neighborhoodMatch;
-        }
-
-        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            return districtMatch;
-        }
-
-        if (StringUtils.hasText(aliasQueryHint)) {
-            return aliasHintMatch;
-        }
-
-        if (StringUtils.hasText(aliasTargetParent)) {
-            return aliasParentMatch;
-        }
-
-        return true;
-    }
-
-    private int score(JsonNode doc,
-                      String intent,
-                      String detailArea,
-                      String neighborhood,
-                      String district,
-                      String aliasQueryHint,
-                      String aliasTargetParent) {
+    private int scorePlace(JsonNode doc,
+                           String intent,
+                           String destination,
+                           String detailArea,
+                           String neighborhood,
+                           String district,
+                           String aliasQueryHint,
+                           String aliasTargetParent) {
         int score = 0;
 
-        String name = clean(doc.path("place_name").asText());
-        String mergedAddress = combinedAddress(doc);
-        String category = clean(doc.path("category_name").asText());
+        String placeName = normalizeAreaName(text(doc, "place_name"));
+        String address = normalizeAreaName(resolveAddress(doc));
+        String category = normalizeAreaName(text(doc, "category_name"));
 
-        if (StringUtils.hasText(detailArea)) {
-            if (containsLooseRegion(mergedAddress, detailArea)) score += 18;
-            if (containsLooseRegion(name, detailArea)) score += 10;
+        if (StringUtils.hasText(detailArea) && containsArea(address, placeName, detailArea)) {
+            score += 50;
         }
 
-        if (StringUtils.hasText(neighborhood)) {
-            if (containsLooseRegion(mergedAddress, neighborhood)) score += 15;
-            if (containsLooseRegion(name, neighborhood)) score += 7;
+        if (StringUtils.hasText(neighborhood) && containsArea(address, placeName, neighborhood)) {
+            score += 40;
         }
 
-        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            if (containsLooseRegion(mergedAddress, district)) score += 12;
-            if (containsLooseRegion(name, district)) score += 5;
+        if (StringUtils.hasText(district) && containsArea(address, placeName, district)) {
+            score += 35;
         }
 
-        if (StringUtils.hasText(aliasQueryHint)) {
-            if (containsLooseRegion(mergedAddress, aliasQueryHint)) score += 14;
-            if (containsLooseRegion(name, aliasQueryHint)) score += 8;
+        if (StringUtils.hasText(aliasTargetParent) && containsArea(address, placeName, aliasTargetParent)) {
+            score += 30;
         }
 
-        if (StringUtils.hasText(aliasTargetParent)) {
-            if (containsLooseRegion(mergedAddress, aliasTargetParent)) score += 9;
-            if (containsLooseRegion(name, aliasTargetParent)) score += 4;
+        if (StringUtils.hasText(aliasQueryHint) && containsArea(address, placeName, aliasQueryHint)) {
+            score += 25;
+        }
+
+        if (StringUtils.hasText(destination) && containsArea(address, placeName, destination)) {
+            score += 20;
         }
 
         if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
-            if (containsKeyword(category, "음식점", "한식", "중식", "일식", "양식")) score += 5;
-            if (containsKeyword(category, "카페") && !containsKeyword(name, "카페")) score -= 2;
+            if (category.contains("음식점")) score += 30;
+            if (category.contains("한식")) score += 20;
+            if (category.contains("중식")) score += 20;
+            if (category.contains("일식")) score += 20;
+            if (category.contains("양식")) score += 20;
+            if (category.contains("카페")) score += 15;
+            if (category.contains("주점")) score += 15;
+        } else {
+            if (category.contains("숙박")) score += 35;
+            if (category.contains("호텔")) score += 25;
+            if (category.contains("모텔")) score += 25;
+            if (category.contains("펜션")) score += 25;
+            if (category.contains("리조트")) score += 25;
+            if (category.contains("게스트하우스")) score += 25;
         }
 
-        if ("STAY_RECOMMENDATION".equals(intent)) {
-            if (containsKeyword(category, "호텔", "모텔", "펜션", "리조트", "게스트하우스", "숙박")) score += 5;
+        if (StringUtils.hasText(text(doc, "road_address_name"))) {
+            score += 5;
         }
 
-        if (StringUtils.hasText(doc.path("road_address_name").asText())) {
-            score += 2;
-        }
-
-        if (StringUtils.hasText(doc.path("phone").asText())) {
-            score += 1;
-        }
-
-        if (StringUtils.hasText(name) && name.length() <= 20) {
-            score += 1;
+        if (StringUtils.hasText(text(doc, "phone"))) {
+            score += 3;
         }
 
         return score;
     }
 
-    private boolean looksLikeNoise(String name, String category) {
-        if (!StringUtils.hasText(name)) {
-            return true;
-        }
-
-        if (name.length() > 35) {
-            return true;
-        }
-
-        return containsKeyword(name, "주차장", "관리사무소", "행정복지센터", "주민센터", "버스정류장")
-                || containsKeyword(category, "교통", "공공기관", "행정기관");
+    private boolean containsArea(String address, String placeName, String area) {
+        String normalized = normalizeAreaName(area);
+        return address.contains(normalized) || placeName.contains(normalized);
     }
 
-    private String chooseAddress(JsonNode doc) {
-        String roadAddress = clean(doc.path("road_address_name").asText());
-        if (StringUtils.hasText(roadAddress)) {
-            return roadAddress;
+    private String resolveCategory(String intent, JsonNode doc) {
+        String category = text(doc, "category_name");
+
+        if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
+            if (category.contains("카페")) {
+                return "카페";
+            }
+            if (category.contains("주점")) {
+                return "술집";
+            }
+            return "맛집";
         }
-        return clean(doc.path("address_name").asText());
+
+        return "숙소";
     }
 
-    private String combinedAddress(JsonNode doc) {
-        String roadAddress = clean(doc.path("road_address_name").asText());
-        String addressName = clean(doc.path("address_name").asText());
-
-        if (StringUtils.hasText(roadAddress) && StringUtils.hasText(addressName)) {
-            return roadAddress + " | " + addressName;
+    private String resolveAddress(JsonNode doc) {
+        String road = text(doc, "road_address_name");
+        if (StringUtils.hasText(road)) {
+            return road;
         }
-
-        if (StringUtils.hasText(roadAddress)) {
-            return roadAddress;
-        }
-
-        return addressName;
-    }
-
-    private String buildDedupKey(String name, String address) {
-        return (clean(name) + "|" + clean(address))
-                .toLowerCase()
-                .replaceAll("[\\s\\-_/()\\[\\],.]", "");
+        return text(doc, "address_name");
     }
 
     private String buildDisplayDestination(String destination,
@@ -656,106 +598,56 @@ public class KakaoPlaceRecommendationService {
                                            String district,
                                            String aliasQueryHint) {
         if (StringUtils.hasText(detailArea)) {
-            return joinDistinctLocation(destination, detailArea);
+            return detailArea;
         }
-
         if (StringUtils.hasText(neighborhood)) {
-            return joinDistinctLocation(destination, neighborhood);
+            return neighborhood;
         }
-
         if (StringUtils.hasText(aliasQueryHint)) {
-            return joinDistinctLocation(destination, aliasQueryHint);
+            return aliasQueryHint;
         }
-
-        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            return joinDistinctLocation(destination, district);
+        if (StringUtils.hasText(district)) {
+            return district;
         }
-
         return destination;
     }
 
-    private String resolveStayKeyword(String message) {
-        String value = message == null ? "" : message.toLowerCase();
-
-        if (value.contains("모텔")) return "모텔";
-        if (value.contains("펜션")) return "펜션";
-        if (value.contains("게스트하우스")) return "게스트하우스";
-        if (value.contains("리조트")) return "리조트";
-        if (value.contains("호스텔")) return "호스텔";
-        if (value.contains("민박")) return "민박";
-        if (value.contains("풀빌라")) return "풀빌라";
-        if (value.contains("한옥스테이")) return "한옥스테이";
-        if (value.contains("에어비앤비")) return "에어비앤비";
-
-        return "호텔";
-    }
-
-    private boolean containsKeyword(String value, String... keywords) {
-        if (!StringUtils.hasText(value)) {
-            return false;
-        }
-
-        String lower = value.toLowerCase();
-        for (String keyword : keywords) {
-            if (lower.contains(keyword.toLowerCase())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean containsLooseRegion(String value, String keyword) {
-        if (!StringUtils.hasText(value) || !StringUtils.hasText(keyword)) {
-            return false;
-        }
-
-        String normalizedValue = normalizeForMatch(value);
-        String normalizedKeyword = normalizeForMatch(keyword);
-
-        if (normalizedValue.equals(normalizedKeyword)) {
-            return true;
-        }
-
-        if (normalizedValue.contains(normalizedKeyword)) {
-            return true;
-        }
-
-        String strippedKeyword = stripRegionSuffixForLooseMatch(normalizedKeyword);
-        return StringUtils.hasText(strippedKeyword)
-                && strippedKeyword.length() >= 2
-                && normalizedValue.contains(strippedKeyword);
-    }
-
-    private String stripRegionSuffixForLooseMatch(String value) {
-        return value.replaceAll("(특별자치도|특별자치시|광역시|특별시|도|시|군|구|동|읍|면|리)$", "").trim();
-    }
-
-    private String normalizeForMatch(String value) {
-        return value.toLowerCase()
-                .replaceAll("[^가-힣a-z0-9\\s]", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
-    }
-
-    private String clean(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-        return value.trim().replaceAll("\\s+", " ");
-    }
-
-    private record ScoredPlace(String name, String address, String placeUrl, String category, int score) {
-    }
-
     private Duration resolveTtl(String intent) {
-        if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
-            return Duration.ofHours(2);
-        }
-
         if ("STAY_RECOMMENDATION".equals(intent)) {
-            return Duration.ofHours(4);
+            return Duration.ofHours(12);
+        }
+        return Duration.ofHours(6);
+    }
+
+    private String normalizeDisplayArea(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
         }
 
-        return Duration.ofHours(12);
+        return value.trim()
+                .replaceAll("\\s+", " ");
+    }
+
+    private String normalizeAreaName(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+
+        return value.trim()
+                .replaceAll("\\s+", "")
+                .replace("특별자치도", "")
+                .replace("특별자치시", "")
+                .replace("광역시", "")
+                .replace("특별시", "");
+    }
+
+    private String text(JsonNode node, String fieldName) {
+        if (node == null || !node.has(fieldName) || node.get(fieldName).isNull()) {
+            return "";
+        }
+        return node.get(fieldName).asText("");
+    }
+
+    private record ScoredPlace(JsonNode doc, int score) {
     }
 }
