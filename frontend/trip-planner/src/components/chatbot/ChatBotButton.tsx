@@ -13,6 +13,11 @@ export default function ChatBotButton({ onClick }: ChatBotButtonProps) {
     setShowTooltip(true);
   }, []);
 
+  const handleClick = (): void => {
+    onClick();
+    setShowTooltip(false);
+  };
+
   return (
     <div className="chatbot-fab-wrap">
       {showTooltip && (
@@ -23,10 +28,7 @@ export default function ChatBotButton({ onClick }: ChatBotButtonProps) {
 
       <button
         className="chatbot-fab"
-        onClick={() => {
-          onClick();
-          setShowTooltip(false);
-        }}
+        onClick={handleClick}
         aria-label="AI 여행 도우미 열기"
         type="button"
       >
