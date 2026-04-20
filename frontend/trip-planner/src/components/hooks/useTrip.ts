@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../api/client";
 import { TripPlanRequest } from "../../types/trip";
+import toast from "react-hot-toast"; // 1. toast 임포트
 
 /* 여행 목록 데이터를 가져오는 커스텀 훅 */
 export const useTrips = () => {
@@ -24,13 +25,13 @@ export const useCreateTrip = () => {
     },
 
     onSuccess: () => {
-      alert("여행 계획이 저장되었습니다!");
+      toast.success("여행 계획이 저장되었습니다! 💾"); // alert -> toast
       queryClient.invalidateQueries({ queryKey: ["trips"] });
     },
 
     onError: (error) => {
       console.error("저장 실패.", error);
-      alert("여행 계획 저장이 실패하였습니다.");
+      toast.error("여행 계획 저장이 실패하였습니다. ❌"); // alert -> toast
     },
   });
 };
@@ -47,7 +48,7 @@ export const useGetTrip = (tripId: number | string | null) => {
   });
 };
 
-// 특정 여행 계획 수정(업데이트) 훅 추가
+// 특정 여행 계획 수정(업데이트) 훅
 export const useUpdateTrip = (tripId: number | string | null) => {
   const queryClient = useQueryClient();
 
@@ -58,14 +59,14 @@ export const useUpdateTrip = (tripId: number | string | null) => {
     },
 
     onSuccess: () => {
-      alert("여행 계획이 수정되었습니다! ✨");
+      toast.success("여행 계획이 수정되었습니다! ✨"); // alert -> toast
       queryClient.invalidateQueries({ queryKey: ["trips"] });
       queryClient.invalidateQueries({ queryKey: ["trips", tripId] });
     },
 
     onError: (error) => {
       console.error("수정 실패.", error);
-      alert("여행 계획 수정에 실패하였습니다.");
+      toast.error("여행 계획 수정에 실패하였습니다. ❌"); // 이미지에서 보셨던 그 부분!
     },
   });
 };
@@ -80,14 +81,14 @@ export const useDeleteTrip = () => {
     },
 
     onSuccess: (_data, tripId) => {
-      alert("여행 계획이 삭제되었습니다.");
+      toast.success("여행 계획이 삭제되었습니다. 🗑️"); // alert -> toast
       queryClient.invalidateQueries({ queryKey: ["trips"] });
       queryClient.removeQueries({ queryKey: ["trips", tripId] });
     },
 
     onError: (error) => {
       console.error("삭제 실패.", error);
-      alert("여행 계획 삭제에 실패하였습니다.");
+      toast.error("여행 계획 삭제에 실패하였습니다. ❌"); // alert -> toast
     },
   });
 };
