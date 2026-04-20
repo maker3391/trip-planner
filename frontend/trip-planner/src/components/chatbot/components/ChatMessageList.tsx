@@ -1,5 +1,5 @@
 import type {
-  UIEvent,
+  RefObject,
   TouchEvent as ReactTouchEvent,
   WheelEvent as ReactWheelEvent,
 } from "react";
@@ -7,16 +7,18 @@ import type { ChatMessage } from "../types/chatUi";
 import TypingText from "./TypingText";
 import LoadingBubble from "./LoadingBubble";
 import ScrollToBottomButton from "./ScrollToBottomButton";
+import ItineraryBubbleRenderer from "./ItineraryBubbleRenderer";
+import RecommendationBubbleRenderer from "./RecommendationBubbleRenderer";
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
   isLoading: boolean;
   typingMessageId: number | null;
   animatedMessageIds: number[];
-  chatBodyRef: React.RefObject<HTMLDivElement | null>;
+  chatBodyRef: RefObject<HTMLDivElement>;
   onTypingProgress: () => void;
   onTypingEnd: (messageId: number) => void;
-  onScroll: (_event: UIEvent<HTMLDivElement>) => void;
+  onScroll: () => void;
   onWheelCapture: (event: ReactWheelEvent<HTMLDivElement>) => void;
   onTouchStart: (event: ReactTouchEvent<HTMLDivElement>) => void;
   onTouchMove: (event: ReactTouchEvent<HTMLDivElement>) => void;
@@ -64,6 +66,26 @@ export default function ChatMessageList({
           message.id === typingMessageId &&
           !animatedMessageIds.includes(message.id);
 
+        const bubbleClassName = [
+          "chat-bubble",
+          isWelcomeMessage ? "welcome" : "",
+          message.variant === "itinerary" ? "itinerary" : "",
+          message.variant === "recommendation" ? "recommendation" : "",
+          message.variant === "error" ? "error" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        const isItineraryMessage =
+          message.role === "assistant" && message.variant === "itinerary";
+
+        const recommendationPayload =
+          message.role === "assistant" && message.variant === "recommendation"
+            ? message.payload
+            : undefined;
+
+        const isRecommendationMessage = Boolean(recommendationPayload);
+
         return (
           <div
             key={message.id}
@@ -71,10 +93,12 @@ export default function ChatMessageList({
               message.role === "user" ? "user" : "assistant"
             }`}
           >
-            <div
-              className={`chat-bubble ${isWelcomeMessage ? "welcome" : ""}`}
-            >
-              {message.role === "assistant" ? (
+            <div className={bubbleClassName}>
+              {isItineraryMessage ? (
+                <ItineraryBubbleRenderer content={message.content} />
+              ) : isRecommendationMessage && recommendationPayload ? (
+                <RecommendationBubbleRenderer payload={recommendationPayload} />
+              ) : message.role === "assistant" ? (
                 <TypingText
                   content={message.content}
                   animate={shouldAnimate}

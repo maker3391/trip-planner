@@ -1,37 +1,25 @@
 import { useState } from "react";
-import type { ChatResponse } from "../../api/chat";
 import { sendChatMessage } from "../../api/chat";
+import type { ChatResponse } from "../../api/chat";
 import type { ChatMessage } from "../types/chatUi";
 import { formatChatResponse } from "../utils/chatFormatter";
 import { extractChatErrorMessage } from "../utils/chatError";
 import {
-  createUserMessage,
   createAssistantMessage,
+  createUserMessage,
 } from "../utils/chatMessage";
 import { WELCOME_MESSAGE } from "../constants/chatConstants";
 
 export default function useChatMessages() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    WELCOME_MESSAGE,
-  ]);
-
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [typingMessageId, setTypingMessageId] = useState<number | null>(null);
   const [animatedMessageIds, setAnimatedMessageIds] = useState<number[]>([]);
 
-  const handleTypingEnd = (messageId: number) => {
-    setAnimatedMessageIds((prev) =>
-      prev.includes(messageId) ? prev : [...prev, messageId]
-    );
+  const sendMessage = async (rawInput: string): Promise<void> => {
+    const trimmed = rawInput.trim();
 
-    setTypingMessageId((prev) =>
-      prev === messageId ? null : prev
-    );
-  };
-
-  const sendMessage = async (text: string) => {
-    const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
     const userMessage = createUserMessage(trimmed);
@@ -45,22 +33,37 @@ export default function useChatMessages() {
         message: trimmed,
       });
 
-      const botMessage = createAssistantMessage(
-        formatChatResponse(response)
+      const formatted = formatChatResponse(response);
+
+      const assistantMessage = createAssistantMessage(
+        formatted.content,
+        formatted.variant,
+        formatted.payload
       );
 
-      setTypingMessageId(botMessage.id);
-      setMessages((prev) => [...prev, botMessage]);
+      setTypingMessageId(assistantMessage.id);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: unknown) {
-      const botMessage = createAssistantMessage(
-        extractChatErrorMessage(error)
+      console.error("챗봇 API 호출 실패:", error);
+
+      const errorMessage = createAssistantMessage(
+        extractChatErrorMessage(error),
+        "error"
       );
 
-      setTypingMessageId(botMessage.id);
-      setMessages((prev) => [...prev, botMessage]);
+      setTypingMessageId(errorMessage.id);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTypingEnd = (messageId: number): void => {
+    setAnimatedMessageIds((prev) =>
+      prev.includes(messageId) ? prev : [...prev, messageId]
+    );
+
+    setTypingMessageId((prev) => (prev === messageId ? null : prev));
   };
 
   return {

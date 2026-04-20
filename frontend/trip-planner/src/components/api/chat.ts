@@ -7,6 +7,8 @@ export interface RecommendationItem {
   content?: string;
   address?: string;
   category?: string;
+  placeUrl?: string;
+  link?: string;
 }
 
 export interface DayPlanResponse {
@@ -22,7 +24,6 @@ export interface RecommendationContentResponse {
   places?: RecommendationItem[];
   restaurants?: RecommendationItem[];
   hotels?: RecommendationItem[];
-
   dayPlans?: DayPlanResponse[];
 }
 

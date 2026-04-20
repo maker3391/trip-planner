@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import type {
-  UIEvent,
+  RefObject,
   TouchEvent as ReactTouchEvent,
   WheelEvent as ReactWheelEvent,
 } from "react";
 
 interface UseChatScrollReturn {
-  chatBodyRef: React.RefObject<HTMLDivElement | null>;
+  chatBodyRef: RefObject<HTMLDivElement>;
   showScrollToBottomButton: boolean;
   maybeAutoScrollToBottom: () => void;
   enableAutoScrollAndJumpToBottom: () => void;
   resetAutoScroll: () => void;
-  handleBodyScroll: (_event: UIEvent<HTMLDivElement>) => void;
+  handleBodyScroll: () => void;
   handleWheelCapture: (event: ReactWheelEvent<HTMLDivElement>) => void;
   handleTouchStart: (event: ReactTouchEvent<HTMLDivElement>) => void;
   handleTouchMove: (event: ReactTouchEvent<HTMLDivElement>) => void;
@@ -21,7 +21,7 @@ export default function useChatScroll(open: boolean): UseChatScrollReturn {
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
     useState(false);
 
-  const chatBodyRef = useRef<HTMLDivElement | null>(null);
+  const chatBodyRef = useRef<HTMLDivElement>(null);
   const autoScrollEnabledRef = useRef(true);
   const touchStartYRef = useRef<number | null>(null);
 
@@ -70,7 +70,7 @@ export default function useChatScroll(open: boolean): UseChatScrollReturn {
     }
   };
 
-  const handleBodyScroll = (_event: UIEvent<HTMLDivElement>): void => {
+  const handleBodyScroll = (): void => {
     if (isNearBottom()) {
       autoScrollEnabledRef.current = true;
       setShowScrollToBottomButton(false);
