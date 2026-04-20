@@ -57,6 +57,9 @@ public class TripPlanResponseDto {
     @Schema(description = "초대 코드", example = "a1b2c3d4")
     private final String inviteCode;
 
+    @Schema(description = "최대 참여 인원", example = "5")
+    private Integer maxMembers;
+
     public TripPlanResponseDto(TripPlan tripPlan) {
         this.id = tripPlan.getId();
         this.ownerId = tripPlan.getOwner().getId();

@@ -40,4 +40,7 @@ public class TripPlanRequestDto {
 
     @Schema(description = "통화", example = "원")
     private String currency = "원";
+
+    @Schema(description = "최대 참여 인원", example = "5")
+    private Integer maxMembers;
 }

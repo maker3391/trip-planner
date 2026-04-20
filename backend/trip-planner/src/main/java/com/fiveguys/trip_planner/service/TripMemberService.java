@@ -56,6 +56,14 @@ public class TripMemberService {
         TripPlan tripPlan = getTripPlan(tripPlanId);
         validateOwner(tripPlan);
 
+        long currentMemberCount = tripPlan.getMembers().stream()
+                .filter(m -> "OWNER".equals(m.getRole()) || "MEMBER".equals((m.getRole())))
+                .count();
+
+        if(currentMemberCount >= tripPlan.getMaxMembers()) {
+            throw new IllegalArgumentException("최대 참여 인원(" + tripPlan.getMaxMembers() + "명)이 초과되었습니다.");
+        }
+
         TripMember tripMember = tripMemberRepository.findByIdAndTripPlan(memberId, tripPlan)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 참가 신청입니다."));
 
@@ -76,6 +84,21 @@ public class TripMemberService {
 
         if("OWNER".equals(tripMember.getRole())) {
             throw new IllegalArgumentException("방장은 강퇴할 수 없습니다.");
+        }
+
+        tripMemberRepository.delete(tripMember);
+    }
+
+    @Transactional
+    public void leaveTrip(Long tripPlanId) {
+        TripPlan tripPlan = getTripPlan(tripPlanId);
+        User currentUser = getCurrentUser();
+
+        TripMember tripMember = tripMemberRepository.findByTripPlanAndUser(tripPlan, currentUser)
+                .orElseThrow(() -> new IllegalArgumentException("참여 중이거나 신청한 내역이 없습니다."));
+
+        if("OWNER".equals(tripMember.getRole())) {
+            throw new IllegalArgumentException("방장은 모임에서 나갈 수 없습니다. 여행 계획을 삭제해주세요.");
         }
 
         tripMemberRepository.delete(tripMember);

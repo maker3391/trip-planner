@@ -35,8 +35,16 @@ public class TripPlanService {
         tripPlan.setDestination(requestDto.getDestination());
         tripPlan.setStartDate(requestDto.getStartDate());
         tripPlan.setEndDate(requestDto.getEndDate());
+        tripPlan.setMaxMembers(requestDto.getMaxMembers() != null ? requestDto.getMaxMembers() : 10);
         tripPlan.setStatus("PLANNING");
         tripPlan.setInviteCode(UUID.randomUUID().toString().substring(0, 8));
+
+        if(requestDto.getMaxMembers() != null) {
+            if(requestDto.getMaxMembers() < 1) {
+                throw new IllegalArgumentException("최소 인원은 방장을 포함하여 1명 이상이어야 합니다.");
+            }
+            tripPlan.setMaxMembers(requestDto.getMaxMembers());
+        }
 
         if (requestDto.getSchedules() != null) {
             for (TripScheduleRequestDto scheduleRequestDto : requestDto.getSchedules()) {
@@ -135,6 +143,18 @@ public class TripPlanService {
         if(!tripPlan.getOwner().getId().equals(user.getId())) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
+
+        if(requestDto.getMaxMembers() != null) {
+            long currentMemberCount = tripPlan.getMembers().stream()
+                    .filter(m -> "OWNER".equals(m.getRole()) || "MEMBER".equals(m.getRole()))
+                    .count();
+
+            if(requestDto.getMaxMembers() < currentMemberCount) {
+                throw new IllegalArgumentException("현재 참여 중인 인원(" + currentMemberCount + "명)보다 적게 제한을 설정할 수 없습니다.");
+            }
+            tripPlan.setMaxMembers(requestDto.getMaxMembers());
+        }
+
 
         if (requestDto.getTitle() != null) tripPlan.setTitle(requestDto.getTitle());
         if (requestDto.getDestination() != null) tripPlan.setDestination(requestDto.getDestination());

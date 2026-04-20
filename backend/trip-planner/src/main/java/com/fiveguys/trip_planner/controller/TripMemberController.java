@@ -57,4 +57,15 @@ public class TripMemberController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
+    @Operation(summary = "신청 취소 / 방 나가기", description = "로그인한 유저 본인이 참가 신청을 취소하거나 여행에서 나갑니다.")
+    @DeleteMapping("/me")
+    public ResponseEntity<?> leaveTrip(@PathVariable Long tripId) {
+        try {
+            tripMemberService.leaveTrip(tripId);
+            return ResponseEntity.ok(Map.of("success", true, "message", "정상적으로 취소/퇴장 되었습니다."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
 }
