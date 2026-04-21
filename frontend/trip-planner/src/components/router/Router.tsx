@@ -13,6 +13,8 @@ import ProtectedRoute from "./ProtectedRoute";
 import ChatBotButton from "../chatbot/ChatBotButton";
 import ChatBotModal from "../chatbot/ChatBotModal";
 import CommunityReadPage from "../../pages/CommunityReadPage";
+import ForgotPasswordPage from "../../pages/ForgotPasswordPage";
+import ResetPasswordPage from "../../pages/ResetPasswordPage";
 
 export default function Router() {
   const [openChatBot, setOpenChatBot] = useState(false);
@@ -28,6 +30,8 @@ export default function Router() {
         <Route path="/" element={<MainPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />}/>
+        <Route path="/reset-password" element={<ResetPasswordPage />}/>
         <Route
           path="/mypage"
           element={
