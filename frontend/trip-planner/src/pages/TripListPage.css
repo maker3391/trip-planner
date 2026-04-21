@@ -523,3 +523,93 @@
     width: 100%;
   }
 }
+
+/*탭 */
+/* 탭 컨테이너 */
+.trip-list-tabs {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+/* 탭 하나하나의 스타일 */
+.trip-tab {
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ccc; /* 비활성화 색상 */
+  transition: all 0.2s ease;
+  position: relative;
+  margin: 0;
+}
+
+/* 활성화된 탭 스타일 */
+.trip-tab.active {
+  color: #333; /* 활성화 색상 */
+}
+
+/* 활성화된 탭 밑줄 효과 */
+.trip-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #fadb14; /* 노란색 포인트 */
+  border-radius: 2px;
+}
+
+.trip-tab:hover {
+  color: #666;
+}
+
+/* 1. 헤더 왼쪽 영역 고정 */
+.trip-list-header-left {
+  display: flex;
+  align-items: center; /* 수직 중앙 정렬 고정 */
+  gap: 20px;
+  min-height: 45px; /* 헤더의 최소 높이를 지정하여 글자 크기 차이로 인한 밀림 방지 */
+}
+
+/* 2. 탭 컨테이너 */
+.trip-list-tabs-container {
+  display: flex;
+  gap: 20px;
+}
+
+/* 3. 탭 스타일 고정 (폰트 두께 변화로 인한 너비 변화 방지) */
+.trip-tab {
+  margin: 0;
+  padding-bottom: 5px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  /* 폰트가 두꺼워질 때 너비가 변하지 않도록 설정 */
+  display: inline-block;
+  text-align: center;
+  min-width: 120px; 
+}
+
+/* 4. 오른쪽 버튼 영역 고정 */
+.trip-list-header-right {
+  min-width: 150px; /* 버튼의 너비만큼 미리 확보 */
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 버튼이 없을 때도 높이를 유지 */
+.button-placeholder {
+  height: 40px; 
+  visibility: hidden;
+}
+
+/* 5. 콘텐츠 전환 시 튀는 현상 방지 */
+.tab-content-wrapper {
+  position: relative;
+  min-height: 500px; /* 콘텐츠 영역의 최소 높이를 확보하여 하단 푸터 등이 요동치는 것 방지 */
+}
+
+/* 애니메이션 시 위치 틀어짐 방지 */
+.joined-trip-view, .trip-list-layout {
+  width: 100%;
+}

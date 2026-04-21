@@ -20,6 +20,12 @@ import java.io.IOException;
 @Transactional(readOnly = true)
 public class CommunityService {
 
+    // =========================
+    // 🔥 이미지 저장 방식 선택
+    // "DB" or "S3"
+    // =========================
+    private final String IMAGE_STORAGE = "DB";
+
     private final CommunityRepository communityRepository;
     private final UserRepository userRepository;
     private final CommunityImageRepository communityImageRepository;
@@ -201,7 +207,10 @@ public class CommunityService {
 
         User user = getCurrentUser();
 
-        if (!community.getAuthor().getId().equals(user.getId())) {
+        boolean isAuthor = community.getAuthor().getId().equals(user.getId());
+        boolean isAdmin = "ADMIN".equals(user.getRole());
+
+        if (!isAuthor && !isAdmin) {
             throw new IllegalArgumentException("본인이 작성한 글만 삭제할 수 있습니다.");
         }
 
@@ -214,6 +223,14 @@ public class CommunityService {
     @Transactional
     public Long uploadImage(MultipartFile file) {
 
+        if ("S3".equalsIgnoreCase(IMAGE_STORAGE)) {
+            return uploadToS3(file);
+        }
+
+        return uploadToDB(file);
+    }
+
+    private Long uploadToDB(MultipartFile file) {
         try {
             CommunityImage image = CommunityImage.builder()
                     .originalName(file.getOriginalFilename())
@@ -224,17 +241,61 @@ public class CommunityService {
             return communityImageRepository.save(image).getId();
 
         } catch (IOException e) {
-            throw new RuntimeException("이미지 저장 중 오류 발생", e);
+            throw new RuntimeException("DB 이미지 저장 실패", e);
+        }
+    }
+
+    private Long uploadToS3(MultipartFile file) {
+        try {
+            // 🔥 나중에 진짜 S3 업로드 로직 넣는 자리
+            String s3Url = "https://s3.amazonaws.com/bucket/" + file.getOriginalFilename();
+
+            CommunityImage image = CommunityImage.builder()
+                    .originalName(file.getOriginalFilename())
+                    .contentType(file.getContentType())
+                    .data(s3Url.getBytes()) // 임시 (⚠️ 추후 imageUrl 필드 추천)
+                    .build();
+
+            return communityImageRepository.save(image).getId();
+
+        } catch (Exception e) {
+            throw new RuntimeException("S3 이미지 저장 실패", e);
         }
     }
 
     // =========================
     // 🔹 이미지 조회
     // =========================
-    public CommunityImage getImageEntity(Long id) {
+    public byte[] getImage(Long id) {
 
+        if ("S3".equalsIgnoreCase(IMAGE_STORAGE)) {
+            return getFromS3(id);
+        }
+
+        return getFromDB(id);
+    }
+
+    private byte[] getFromDB(Long id) {
         return communityImageRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("이미지를 찾을 수 없습니다. ID: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("이미지 없음"))
+                .getData();
+    }
+
+    private byte[] getFromS3(Long id) {
+        // 🔥 나중에 S3 다운로드
+        return new byte[0];
+    }
+
+    public String getImageContentType(Long id) {
+        return communityImageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("이미지 없음"))
+                .getContentType();
+    }
+
+    public String getImageName(Long id) {
+        return communityImageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("이미지 없음"))
+                .getOriginalName();
     }
 
     // =========================

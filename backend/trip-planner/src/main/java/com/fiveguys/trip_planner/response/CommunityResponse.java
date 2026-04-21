@@ -79,6 +79,8 @@ public class CommunityResponse {
     @Schema(description = "연결된 이미지 ID 목록 (이미지 조회 API에서 사용)", example = "[1, 2, 5]")
     private List<Long> imageIds;
 
+
+
     /**
      * 🔥 Entity → DTO 변환 (목록용)
      */

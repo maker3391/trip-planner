@@ -47,6 +47,9 @@ public class TripPlan {
     @Column(unique = true)
     private String inviteCode;
 
+    @Column(nullable = false)
+    private Integer maxMembers = 10;
+
     @LastModifiedDate // 조회한 Entity의 값을 변경할 때 시간이 자동 저장됨
     private LocalDateTime updatedAt;
 

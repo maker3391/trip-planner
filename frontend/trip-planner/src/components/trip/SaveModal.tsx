@@ -28,8 +28,21 @@ export default function SaveModal({ isOpen, onClose, onSave, tripForm, setTripFo
           style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }} 
         />
         <div style={{ display: 'flex', gap: '10px' }}>
-          <input type="date" value={tripForm.startDate} onChange={(e) => setTripForm({ ...tripForm, startDate: e.target.value })} style={{ flex: 1, padding: '10px' }} />
-          <input type="date" value={tripForm.endDate} onChange={(e) => setTripForm({ ...tripForm, endDate: e.target.value })} style={{ flex: 1, padding: '10px' }} />
+          <input 
+            type="date" 
+            value={tripForm.startDate} 
+            onChange={(e) => setTripForm({ ...tripForm, startDate: e.target.value })} 
+            style={{ flex: 1, padding: '10px' }} 
+          />
+          
+          <input 
+            type="date" 
+            value={tripForm.endDate} 
+            // 출발일(startDate)을 min값으로 설정하여 이전 날짜 선택 방지
+            min={tripForm.startDate} 
+            onChange={(e) => setTripForm({ ...tripForm, endDate: e.target.value })} 
+            style={{ flex: 1, padding: '10px' }} 
+          />
         </div>
         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
           <button onClick={onClose} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>취소</button>

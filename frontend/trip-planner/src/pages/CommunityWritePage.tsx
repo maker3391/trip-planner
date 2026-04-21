@@ -4,8 +4,8 @@ import client from "../components/api/client.ts";
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./CommunityWritePage.css";
-import { getMe } from "../components/api/auth.ts";
 import Header from "../components/layout/Header.tsx";
+import { UserMeResponse } from "../components/api/auth.ts";
 
 type TripPlanItem = {
     id: number;
@@ -14,6 +14,11 @@ type TripPlanItem = {
     startDate: string;
     endDate: string;
     schedules?: unknown[];
+};
+
+export const getMe = async () => {
+    const res = await client.get("/auth/me");
+    return res.data;
 };
 
 // =========================
@@ -53,7 +58,9 @@ export default function CommunityWritePage() {
     // =========================
     const [uploadedImageIds, setUploadedImageIds] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(isEditMode);
-    const [me, setMe] = useState<{ id: number } | null>(null);
+    const [me, setMe] = useState<UserMeResponse | null>(null);
+
+    const isAdmin = me?.role === "ADMIN";
 
     const [formData, setFormData] = useState({
         category: "자유게시판",
@@ -67,7 +74,16 @@ export default function CommunityWritePage() {
         tripPlanId: ""
     });
 
-    const categories = [
+    const categories_user = [
+        "자유게시판",
+        "질문게시판",
+        "여행플랜 공유",
+        "맛집게시판",
+        "후기게시판",
+        "사진게시판"
+    ];
+
+    const categories_admin = [
         "자유게시판",
         "질문게시판",
         "여행플랜 공유",
@@ -76,6 +92,8 @@ export default function CommunityWritePage() {
         "사진게시판",
         "공지게시판"
     ];
+
+    const categories = isAdmin ? categories_admin : categories_user;
 
     const regions = [
         "서울", "경기", "인천", "강원",
@@ -241,7 +259,7 @@ export default function CommunityWritePage() {
         e.preventDefault();
 
         try {
-            const user = await getMe();
+            const user = await me || await getMe();
             const payload = {
                 ...formData,
                 tripPlanId: formData.tripPlanId ? Number(formData.tripPlanId) : null,
@@ -389,10 +407,10 @@ export default function CommunityWritePage() {
 
                                 <input
                                     className="post-input-tags"
-                                    name="tags"
+                                    name="tags" 
                                     value={formData.tags}
                                     onChange={handleChange}
-                                    placeholder="#태그를 입력하세요 (예: #서울 #맛집)"
+                                    placeholder="#태그를 입력하세요 (예: 서울,맛집)"
                                 />
                             </div>
 
