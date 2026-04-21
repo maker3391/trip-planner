@@ -2,7 +2,7 @@ import { useState } from "react";
 import { sendChatMessage } from "../../api/chat";
 import type { ChatResponse } from "../../api/chat";
 import type { ChatMessage } from "../types/chatUi";
-import { formatChatResponse } from "../utils/chatFormatter";
+import { formatChatResponses } from "../utils/chatFormatter";
 import { extractChatErrorMessage } from "../utils/chatError";
 import {
   createAssistantMessage,
@@ -33,16 +33,22 @@ export default function useChatMessages() {
         message: trimmed,
       });
 
-      const formatted = formatChatResponse(response);
-
-      const assistantMessage = createAssistantMessage(
-        formatted.content,
-        formatted.variant,
-        formatted.payload
+      const formattedResponses = formatChatResponses(response);
+      const assistantMessages = formattedResponses.map((formatted) =>
+        createAssistantMessage(
+          formatted.content,
+          formatted.variant,
+          formatted.payload
+        )
       );
 
-      setTypingMessageId(assistantMessage.id);
-      setMessages((prev) => [...prev, assistantMessage]);
+      if (assistantMessages.length === 1) {
+        setTypingMessageId(assistantMessages[0].id);
+      } else {
+        setTypingMessageId(null);
+      }
+
+      setMessages((prev) => [...prev, ...assistantMessages]);
     } catch (error: unknown) {
       console.error("챗봇 API 호출 실패:", error);
 

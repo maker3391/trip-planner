@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fiveguys.trip_planner.dto.TripPlanResponseDto;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -122,5 +123,15 @@ public class TripMemberService {
         if(!tripPlan.getOwner().getId().equals(currentUser.getId())) {
             throw new IllegalArgumentException("방장만 멤버를 관리할 수 있습니다.");
         }
+    }
+
+    public List<TripPlanResponseDto> getJoinedTrips() {
+        User currentUser = getCurrentUser();
+
+        return tripMemberRepository
+                .findAllByUserAndRoleIn(currentUser, List.of("MEMBER", "PENDING"))
+                .stream()
+                .map(tm -> TripPlanResponseDto.from(tm.getTripPlan()))
+                .collect(Collectors.toList());
     }
 }

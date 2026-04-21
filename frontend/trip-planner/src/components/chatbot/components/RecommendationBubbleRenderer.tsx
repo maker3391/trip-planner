@@ -31,44 +31,46 @@ export default function RecommendationBubbleRenderer({
                 <div className="recommendation-item__title-row">
                   <p className="recommendation-item__name">{item.title}</p>
 
-                  {item.link && (
-                    <a
-                      className="recommendation-item__icon-link"
-                      href={item.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`${item.title} 상세 보기`}
-                      title="상세 보기"
-                    >
-                      <svg
-                        className="recommendation-item__icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        aria-hidden="true"
-                      >
-                        <circle
-                          cx="10.5"
-                          cy="10.5"
-                          r="5.5"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                        />
-                        <path
-                          d="M15 15L19.5 19.5"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </a>
-                  )}
-                </div>
+                  <div className="recommendation-item__actions">
+                    {kind === "restaurant" && item.category && (
+                      <span className="recommendation-item__category">
+                        {item.category}
+                      </span>
+                    )}
 
-                {kind === "restaurant" && item.category && (
-                  <span className="recommendation-item__category">
-                    {item.category}
-                  </span>
-                )}
+                    {item.link && (
+                      <a
+                        className="recommendation-item__icon-link"
+                        href={item.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${item.title} 상세 보기`}
+                        title="상세 보기"
+                      >
+                        <svg
+                          className="recommendation-item__icon"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <circle
+                            cx="10.5"
+                            cy="10.5"
+                            r="5.5"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                          />
+                          <path
+                            d="M15 15L19.5 19.5"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {item.description && (

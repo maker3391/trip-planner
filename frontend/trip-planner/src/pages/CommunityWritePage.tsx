@@ -7,6 +7,9 @@ import "./CommunityWritePage.css";
 import Header from "../components/layout/Header.tsx";
 import { UserMeResponse } from "../components/api/auth.ts";
 
+// react-hot-toast 임포트
+import toast, { Toaster } from "react-hot-toast";
+
 type TripPlanItem = {
     id: number;
     title: string;
@@ -129,7 +132,6 @@ export default function CommunityWritePage() {
         const fetchPost = async () => {
             try {
                 setIsLoading(true);
-                // currentPostId를 사용하여 호출
                 const res = await client.get(`/community/posts/${currentPostId}`);
                 const data = res.data;
 
@@ -147,7 +149,7 @@ export default function CommunityWritePage() {
                 setUploadedImageIds(data.imageIds || []);
             } catch (err) {
                 console.error(err);
-                alert("게시글 정보를 불러오지 못했습니다.");
+                toast.error("게시글 정보를 불러오지 못했습니다.");
                 navigate("/community");
             } finally {
                 setIsLoading(false);
@@ -235,7 +237,7 @@ export default function CommunityWritePage() {
 
                 editor.insertEmbed(range.index, "image", imageUrl);
             } catch {
-                alert("이미지 업로드 실패");
+                toast.error("이미지 업로드 실패");
             }
         };
     };
@@ -258,27 +260,33 @@ export default function CommunityWritePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (!formData.title.trim()) {
+            toast.error("제목을 입력해주세요.");
+            return;
+        }
+
         try {
-            const user = await me || await getMe();
             const payload = {
                 ...formData,
                 tripPlanId: formData.tripPlanId ? Number(formData.tripPlanId) : null,
                 imageIds: uploadedImageIds
             };
 
-            // isEditMode와 currentPostId가 확실할 때만 PUT 호출
             if (isEditMode && currentPostId) {
                 await client.put(`/community/posts/${currentPostId}`, payload);
-                alert("게시글이 수정되었습니다.");
+                toast.success("게시글이 수정되었습니다.");
             } else {
                 await client.post("/community/posts", payload);
-                alert("새 게시글이 등록되었습니다.");
+                toast.success("새 게시글이 등록되었습니다.");
             }
 
-            navigate("/community");
+            // 토스트를 보여주기 위해 약간의 지연 후 이동
+            setTimeout(() => {
+                navigate("/community");
+            }, 1000);
         } catch (err) {
             console.error(err);
-            alert("저장에 실패했습니다.");
+            toast.error("저장에 실패했습니다.");
         }
     };
 
@@ -294,6 +302,7 @@ export default function CommunityWritePage() {
     }
     return (
         <>
+            <Toaster position="top-center" reverseOrder={false} />
             <Header />
             <div className="community-page">
                 <div className="community-container">

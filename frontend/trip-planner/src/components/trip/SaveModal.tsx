@@ -31,6 +31,7 @@ export default function SaveModal({ isOpen, onClose, onSave, tripForm, setTripFo
           <input 
             type="date" 
             value={tripForm.startDate} 
+            max={tripForm.endDate}
             onChange={(e) => setTripForm({ ...tripForm, startDate: e.target.value })} 
             style={{ flex: 1, padding: '10px' }} 
           />
