@@ -352,7 +352,7 @@
 }
 
 .attached-trip-box {
-    margin: 16px 0 20px;
+    margin: 16px 10px 20px;
     padding: 16px;
     border: 1px solid #f1df9a;
     border-radius: 14px;
@@ -434,11 +434,67 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
+
+    padding: 12px 14px;
+    margin-bottom: 8px;
+
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: all 0.2s ease;
 }
 
+/* hover 시 카드 느낌 */
+.member-manage-row:hover {
+    background: #fff8dc;
+    border-color: #f3d97a;
+    transform: translateY(-1px);
+}
+
+/* 이름 영역 */
+.member-manage-row > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* 버튼 영역 */
 .member-action-buttons {
     display: flex;
     gap: 8px;
+}
+
+/* 버튼 공통 */
+.member-action-buttons button {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+/* 수락 */
+.member-action-buttons button:first-child {
+    background: #e6f4ea;
+    color: #2e7d32;
+}
+
+.member-action-buttons button:first-child:hover {
+    background: #c8e6c9;
+}
+
+/* 거절 */
+.member-action-buttons button:last-child {
+    background: #fdecea;
+    color: #c62828;
+}
+
+.member-action-buttons button:last-child:hover {
+    background: #ffcdd2;
 }

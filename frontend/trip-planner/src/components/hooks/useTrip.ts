@@ -66,7 +66,7 @@ export const useUpdateTrip = (tripId: number | string | null) => {
 
     onError: (error) => {
       console.error("수정 실패.", error);
-      toast.error("여행 계획 수정에 실패하였습니다. ❌"); // 이미지에서 보셨던 그 부분!
+      toast.error("여행 계획 수정에 실패하였습니다. ❌");
     },
   });
 };

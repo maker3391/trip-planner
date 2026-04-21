@@ -15,6 +15,7 @@ import {
 } from "../components/hooks/useTrip";
 import { useNavigate } from "react-router-dom";
 import "./MainPage.css";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function MainPage() {
   const location = useLocation();
@@ -140,7 +141,7 @@ export default function MainPage() {
   );
 
   const handleSaveToBackend = () => {
-    if (!tripForm.title) return alert("제목을 입력해주세요.");
+    if (!tripForm.title) return toast.error("제목을 입력해주세요.");
 
     const schedules = path.map((p, index) => ({
       dayNumber: p.dayNumber ?? 1,
@@ -181,18 +182,17 @@ export default function MainPage() {
           setTargetTripId(data.id);
         }
         setIsModalOpen(false);
-        alert("여행 계획과 예산이 안전하게 저장되었습니다! 💾");
         navigate("/trip-list");
       },
       onError: (error) => {
         console.error("저장 중 오류 발생:", error);
-        alert("저장에 실패했습니다. 서버 로그를 확인해주세요.");
       },
     });
   };
 
   return (
     <div className="main-page">
+      <Toaster position="top-center" reverseOrder={false} />
       <Header />
 
       <div
@@ -210,7 +210,7 @@ export default function MainPage() {
             onOpenSaveModal={() =>
               path.length > 0
                 ? setIsModalOpen(true)
-                : alert("장소를 추가해주세요.")
+                : toast.error("장소를 추가해주세요.")
             }
             isLoading={isTripLoading}
           />

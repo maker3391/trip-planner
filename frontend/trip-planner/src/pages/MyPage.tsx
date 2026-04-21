@@ -4,6 +4,7 @@ import Header from "../components/layout/Header";
 import { getMe, updateMe, withdrawApi } from "../components/api/auth.ts";
 import "./MyPage.css";
 
+
 interface UserInfo {
   id: number;
   email: string;
