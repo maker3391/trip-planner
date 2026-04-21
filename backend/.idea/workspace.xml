@@ -7,6 +7,16 @@
     <list default="true" id="a2df37b3-aa01-4868-8497-a6f003698507" name="변경" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/KakaoPlaceRecommendationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/KakaoPlaceRecommendationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/RegionResolverService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/RegionResolverService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/ChatBot.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/ChatBot.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/components/ChatMessageList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/components/ChatMessageList.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/constants/chatConstants.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/constants/chatConstants.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/hooks/useChatMessages.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/hooks/useChatMessages.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/types/chatUi.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/types/chatUi.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/utils/chatError.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/utils/chatError.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/utils/chatFormatter.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/utils/chatFormatter.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
