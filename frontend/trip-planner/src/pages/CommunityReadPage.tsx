@@ -11,20 +11,11 @@ import {
     TripMemberResponse,
 } from "../components/api/tripMember.ts";
 
-<<<<<<< Updated upstream
 import ShareIcon from "@mui/icons-material/Share";
 import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
 import StarIcon from "@mui/icons-material/Star";
-=======
-// 아이콘
-import ShareIcon from '@mui/icons-material/Share';
-import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
-import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
-import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
-import StarIcon from '@mui/icons-material/Star';
->>>>>>> Stashed changes
 
 import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";

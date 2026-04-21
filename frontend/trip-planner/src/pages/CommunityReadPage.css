@@ -229,7 +229,6 @@
     font-weight: 500;
 }
 
-<<<<<<< Updated upstream
 .no-posts {
     display: flex;
     flex-direction: column;
@@ -253,11 +252,6 @@
     filter: grayscale(100%);
 }
 
-=======
-/* =========================
-   페이지네이션
-========================= */
->>>>>>> Stashed changes
 .pagination {
     display: flex;
     justify-content: center;
