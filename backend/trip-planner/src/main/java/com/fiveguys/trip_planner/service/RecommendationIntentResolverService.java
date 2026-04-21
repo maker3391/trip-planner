@@ -5,12 +5,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class RecommendationIntentResolverService {
 
+    private final RestaurantKeywordService restaurantKeywordService;
+
+    public RecommendationIntentResolverService(RestaurantKeywordService restaurantKeywordService) {
+        this.restaurantKeywordService = restaurantKeywordService;
+    }
+
     public String resolve(String message) {
         String value = message == null ? "" : message.toLowerCase();
 
         boolean hasRestaurant = containsAny(value,
                 "맛집", "음식", "식당", "카페", "먹거리", "술집", "밥집",
-                "restaurant", "food", "cafe");
+                "restaurant", "food", "cafe")
+                || restaurantKeywordService.containsRestaurantFoodKeyword(value);
 
         boolean hasStay = containsAny(value,
                 "숙소", "호텔", "리조트", "펜션", "게스트하우스",
