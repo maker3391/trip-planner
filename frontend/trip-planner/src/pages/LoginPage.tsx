@@ -120,9 +120,13 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <a href="#" className="login-forgot">
+          <span
+            className="login=forgot"
+            onClick={() => navigate("/forgot-password")}
+            style={{cursor: "pointer"}}
+          >
             비밀번호를 잊으셨나요?
-          </a>
+          </span>
 
           <div className="login-divider">또는</div>
 
