@@ -93,18 +93,6 @@ export default function TermsModal({ open, onClose, title }: TermsModalProps) {
           />
         </Box>
 
-        {/* 제4조 마케팅 (선택) */}
-        <Box sx={{ mt: 4 }}>
-          <SectionTitle title="제4조 마케팅·광고 목적 수집·이용" badge="선택" badgeType="optional" />
-          <TermsTable
-            headers={["처리 목적", "처리 항목", "보유기간"]}
-            rows={[
-              ["이벤트/정보기본 안내", "성명, 이메일, 휴대전화번호", "동의 철회 또는 3년"],
-              ["맞춤형 광고 제공", "방문 기록, 클릭 이력, 쿠키", "수집일로부터 1년"],
-            ]}
-          />
-        </Box>
-
         {/* 권리 안내 섹션 */}
         <Box sx={{ mt: 4 }}>
           <Typography sx={{ fontSize: "13px", fontWeight: 700, color: "#1a2744", borderBottom: "2px solid #1a2744", pb: 1, mb: 1.5 }}>
@@ -123,19 +111,13 @@ export default function TermsModal({ open, onClose, title }: TermsModalProps) {
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ padding: "16px 28px", backgroundColor: "#f7f9fd" }}>
-        <Button
-          onClick={onClose}
-          fullWidth
-          variant="contained"
-          sx={{
-            backgroundColor: "#1a2744",
-            height: "45px",
-            fontWeight: 700,
-            "&:hover": { backgroundColor: "#243258" },
-          }}
+      <DialogActions sx={{ padding: '15px' }}>
+        <Button 
+          onClick={onClose} 
+          variant="contained" 
+          sx={{ backgroundColor: '#4a90e2', '&:hover': { backgroundColor: '#357abd' } }}
         >
-          내용을 확인했습니다
+          확인
         </Button>
       </DialogActions>
     </Dialog>

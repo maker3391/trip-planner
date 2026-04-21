@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import LogoIcon from "../assets/icons/logo.png"
 import { requestPasswordReset } from "../components/api/auth";
-import "./LoginPage.css";
+import "./ForgotPasswordPage.css";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
       <Header />
       <div className="login-page-body">
         <div className="login-card">
-          <div className="login-geader">
+          <div className="login-header">
             <img src={LogoIcon} alt="로고" className="login-logo" />
           </div>
           <h1 className="login-title">비밀번호 찾기</h1>
