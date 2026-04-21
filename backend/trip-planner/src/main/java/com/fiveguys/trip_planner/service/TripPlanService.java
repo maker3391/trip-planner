@@ -126,11 +126,10 @@ public class TripPlanService {
         return new TripPlanResponseDto(tripPlan);
     }
 
-    @Transactional(readOnly = true)
     public List<TripPlanResponseDto> getMyTripPlans(User user) {
-        List<TripMember> memberships = tripMemberRepository.findByUser(user);
-
+        List<TripMember> memberships = this.tripMemberRepository.findByUser(user);
         return memberships.stream()
+                .filter(member -> "OWNER".equals(member.getRole())) // ✅ OWNER만 필터링
                 .map(member -> new TripPlanResponseDto(member.getTripPlan()))
                 .collect(Collectors.toList());
     }

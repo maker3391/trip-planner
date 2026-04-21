@@ -27,11 +27,16 @@ export interface RecommendationContentResponse {
   dayPlans?: DayPlanResponse[];
 }
 
+export interface CombinedItineraryResponse {
+  dayPlans?: DayPlanResponse[];
+  items?: RecommendationItem[];
+}
+
 export interface CombinedRecommendationResponse {
   summary?: string;
-  itinerary?: string;
-  items?: RecommendationItem[];
-  recommendations?: RecommendationItem[];
+  itinerary?: CombinedItineraryResponse | null;
+  restaurants?: RecommendationItem[];
+  stays?: RecommendationItem[];
 }
 
 export interface ChatRequest {

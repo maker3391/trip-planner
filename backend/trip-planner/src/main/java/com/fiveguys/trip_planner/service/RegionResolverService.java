@@ -23,8 +23,15 @@ public class RegionResolverService {
         String normalizedMessage = normalize(message);
         List<String> tokens = tokenize(message);
 
-        RegionRecord province = findBestProvince(normalizedMessage, tokens);
-        String provinceName = province != null ? province.getName() : "";
+        String broadProvinceAlias = resolveBroadProvinceAlias(tokens);
+
+        RegionRecord province = StringUtils.hasText(broadProvinceAlias)
+                ? null
+                : findBestProvince(normalizedMessage, tokens);
+
+        String provinceName = StringUtils.hasText(broadProvinceAlias)
+                ? broadProvinceAlias
+                : (province != null ? province.getName() : "");
 
         RegionRecord district = findBestDistrict(normalizedMessage, tokens, provinceName);
         String resolvedDistrict = district != null ? district.getName() : "";
@@ -82,6 +89,10 @@ public class RegionResolverService {
         String normalizedMessage = normalize(message);
         List<String> tokens = tokenize(message);
 
+        if (tokens.contains("전라도") || tokens.contains("경상도") || tokens.contains("충청도")) {
+            return true;
+        }
+
         for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
             if (!"CTPRVN".equals(region.getLevel()) && !"SIG".equals(region.getLevel())) {
                 continue;
@@ -93,6 +104,29 @@ public class RegionResolverService {
         }
 
         return false;
+    }
+
+    private String resolveBroadProvinceAlias(List<String> tokens) {
+        if (tokens.contains("전라도")) {
+            return "전라도";
+        }
+        if (tokens.contains("경상도")) {
+            return "경상도";
+        }
+        if (tokens.contains("충청도")) {
+            return "충청도";
+        }
+        return "";
+    }
+
+    private boolean isBroadProvinceAlias(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+
+        return "전라도".equals(value)
+                || "경상도".equals(value)
+                || "충청도".equals(value);
     }
 
     private boolean matchesTopLevel(List<String> tokens, String normalizedMessage, RegionRecord region) {
@@ -150,7 +184,7 @@ public class RegionResolverService {
     private RegionRecord findBestDistrict(String normalizedMessage, List<String> tokens, String provinceName) {
         RegionRecord byProvince = null;
 
-        if (StringUtils.hasText(provinceName)) {
+        if (StringUtils.hasText(provinceName) && !isBroadProvinceAlias(provinceName)) {
             byProvince = findBestMatch(normalizedMessage, tokens, "SIG", provinceName, null);
         }
 
@@ -172,7 +206,7 @@ public class RegionResolverService {
             }
         }
 
-        if (StringUtils.hasText(provinceName)) {
+        if (StringUtils.hasText(provinceName) && !isBroadProvinceAlias(provinceName)) {
             RegionRecord byProvince = findBestMatch(normalizedMessage, tokens, "EMD", provinceName, null);
             if (byProvince != null) {
                 return byProvince;
@@ -221,7 +255,9 @@ public class RegionResolverService {
                 continue;
             }
 
-            if (StringUtils.hasText(provinceName) && !isSameAreaName(region.getCity(), provinceName)) {
+            if (StringUtils.hasText(provinceName)
+                    && !isBroadProvinceAlias(provinceName)
+                    && !isSameAreaName(region.getCity(), provinceName)) {
                 continue;
             }
 
@@ -243,7 +279,9 @@ public class RegionResolverService {
                 continue;
             }
 
-            if (StringUtils.hasText(cityFilter) && !isSameAreaName(region.getCity(), cityFilter)) {
+            if (StringUtils.hasText(cityFilter)
+                    && !isBroadProvinceAlias(cityFilter)
+                    && !isSameAreaName(region.getCity(), cityFilter)) {
                 continue;
             }
 
