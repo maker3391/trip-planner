@@ -68,4 +68,5 @@ public class TripMemberController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
 }
