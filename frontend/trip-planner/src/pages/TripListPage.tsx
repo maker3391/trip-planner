@@ -5,9 +5,13 @@ import "./TripListPage.css";
 import { useTrips, useGetTrip, useDeleteTrip } from "../components/hooks/useTrip.ts";
 import { TripPlanResponse } from "../types/trip.ts";
 import { useTripStore } from "../components/store/useTripStore.ts";
+import { getJoinedTrips, leaveTripMember } from "../components/api/tripMember.ts";
 
 import MyTripList from "./MyTripList";
 import JoinedTripList from "./JoinedTripList";
+
+// react-hot-toast가 필요하다면 추가하세요 (선택 사항)
+import toast, { Toaster } from "react-hot-toast";
 
 export default function TripListPage() {
   const location = useLocation();
@@ -19,31 +23,56 @@ export default function TripListPage() {
   const { data: tripList, isLoading, isError } = useTrips();
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   
-  // 삭제 뮤테이션 복구
   const deleteTripMutation = useDeleteTrip();
-
   const { data: selectedTrip, isLoading: isDetailLoading, isError: isDetailError } = useGetTrip(selectedTripId);
 
+  // 1. 내 여행 계획 정렬 (최신순)
+  // 원본 데이터(tripList)를 복사한 뒤 뒤집어서 가장 최근 데이터가 앞으로 오게 합니다.
+  const sortedMyTrips = tripList ? [...tripList].reverse() : [];
+
   useEffect(() => {
-  // CommunityReadPage에서 보낸 joinedTrip 데이터가 있는지 확인
+    const fetchJoinedTrips = async () => {
+        try {
+            const data = await getJoinedTrips();
+            // 2. 서버에서 가져온 참가 목록도 최신순으로 정렬
+            setJoinedTrips(data ? [...data].reverse() : []);
+        } catch (error) {
+            console.error("참가한 여행 목록 로드 실패:", error);
+        }
+    };
+    fetchJoinedTrips();
+  }, []);
+
+  useEffect(() => {
     if (location.state?.joinedTrip) {
       const newTrip = location.state.joinedTrip;
       setJoinedTrips((prev) => {
-        // 이미 리스트에 있는 여행인지 중복 체크
         const isExisted = prev.find((t) => t.id === newTrip.id);
         if (isExisted) return prev;
         
-        // 기존 참가 리스트에 새 여행 계획 추가
-        return [...prev, newTrip];
+        // 3. 커뮤니티에서 신청하고 넘어온 경우에도 목록 맨 앞에 추가 (unshift 대신 새 배열의 앞쪽에 배치)
+        return [newTrip, ...prev];
       });
 
-      // 탭을 '참가한 여행 계획'으로 즉시 전환
       setActiveTab("JOINED");
-
-      // 주소창의 state를 비워주어 새로고침 시 중복 추가되는 현상 방지
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  const handleLeaveTrip = async () => {
+    if (!selectedTripId) return;
+    const confirmed = window.confirm("정말 이 여행에서 나가시겠습니까?");
+    if (!confirmed) return;
+
+    try {
+        await leaveTripMember(selectedTripId);
+        setJoinedTrips(prev => prev.filter(t => t.id !== selectedTripId));
+        setSelectedTripId(null);
+        toast.success("여행에서 나갔습니다.");
+    } catch (error) {
+        toast.error("나가기에 실패했습니다.");
+    }
+};
 
   const handleTabChange = (tab: "MY" | "JOINED") => {
     setActiveTab(tab);
@@ -54,7 +83,6 @@ export default function TripListPage() {
   const handleSelectTrip = (tripId: number) => setSelectedTripId(tripId);
   const handleCloseDetail = () => setSelectedTripId(null);
 
-  // 삭제 함수 복구
   const handleDeleteTrip = async () => {
     if (!selectedTripId) return;
     const confirmed = window.confirm("정말 이 여행 계획을 삭제하시겠습니까?");
@@ -62,9 +90,11 @@ export default function TripListPage() {
 
     try {
       await deleteTripMutation.mutateAsync(selectedTripId);
-      setSelectedTripId(null); // 삭제 후 상세창 닫기
+      setSelectedTripId(null);
+      toast.success("여행 계획이 삭제되었습니다.");
     } catch (error) {
       console.error("삭제 실패:", error);
+      toast.error("삭제에 실패했습니다.");
     }
   };
 
@@ -80,6 +110,7 @@ export default function TripListPage() {
 
   return (
     <div className="trip-list-page">
+      <Toaster position="top-center" />
       <Header />
       <main className="trip-list-body">
         <section className="trip-list-intro">
@@ -97,7 +128,7 @@ export default function TripListPage() {
               <h2 className={`trip-tab ${activeTab === "JOINED" ? "active" : ""}`} onClick={() => handleTabChange("JOINED")}>참가한 여행 계획</h2>
             </div>
             <span className="trip-list-count">
-              총 {activeTab === "MY" ? (tripList?.length || 0) : joinedTrips.length}개
+              총 {activeTab === "MY" ? (sortedMyTrips.length) : joinedTrips.length}개
             </span>
           </div>
 
@@ -105,7 +136,8 @@ export default function TripListPage() {
             <div className="trip-list-column">
               {activeTab === "MY" ? (
                 <MyTripList 
-                  tripList={tripList || []} 
+                  // 4. 정렬된 리스트를 전달
+                  tripList={sortedMyTrips} 
                   selectedTripId={selectedTripId} 
                   handleSelectTrip={handleSelectTrip} 
                   handleLoadTrip={handleLoadTrip} 
@@ -122,7 +154,6 @@ export default function TripListPage() {
               )}
             </div>
 
-            {/* 상세보기 패널 및 삭제 버튼 복구 */}
             {selectedTripId && (
               <aside className="trip-detail-panel">
                 <div className="trip-detail-header-row">
@@ -131,18 +162,27 @@ export default function TripListPage() {
                     <h3 className="trip-detail-title">여행 상세보기</h3>
                   </div>
                   <div className="trip-detail-header-actions">
-                    {/* 내 계획 탭일 때만 삭제 버튼 노출 (참가한 계획은 삭제가 아닌 탈퇴 개념이므로) */}
-                    {activeTab === "MY" && (
-                      <button 
-                        type="button" 
-                        className="trip-detail-delete" 
-                        onClick={handleDeleteTrip}
-                        disabled={deleteTripMutation.isPending}
-                      >
-                        {deleteTripMutation.isPending ? "삭제 중..." : "삭제"}
-                      </button>
-                    )}
-                    <button type="button" className="trip-detail-close" onClick={handleCloseDetail}>닫기</button>
+                      {activeTab === "MY" && (
+                          <button 
+                              type="button" 
+                              className="trip-detail-delete" 
+                              onClick={handleDeleteTrip}
+                              disabled={deleteTripMutation.isPending}
+                          >
+                              {deleteTripMutation.isPending ? "삭제 중..." : "삭제"}
+                          </button>
+                      )}
+                      {/* ✅ JOINED 탭일 때 나가기 버튼 */}
+                      {activeTab === "JOINED" && (
+                          <button 
+                              type="button" 
+                              className="trip-detail-delete" 
+                              onClick={handleLeaveTrip}
+                          >
+                              나가기
+                          </button>
+                      )}
+                      <button type="button" className="trip-detail-close" onClick={handleCloseDetail}>닫기</button>
                   </div>
                 </div>
 

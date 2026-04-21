@@ -5,13 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a2df37b3-aa01-4868-8497-a6f003698507" name="변경" comment="">
+      <change afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/controller/MyJoinedTripController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/.env" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/hooks/useTrip.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/hooks/useTrip.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/router/Router.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/router/Router.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/CommunityReadPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/CommunityReadPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/controller/TripMemberController.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/controller/TripMemberController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/repository/TripMemberRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/repository/TripMemberRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/TripMemberService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/TripMemberService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/TripPlanService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/TripPlanService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/api/tripMember.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/api/tripMember.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/TripListPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/TripListPage.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

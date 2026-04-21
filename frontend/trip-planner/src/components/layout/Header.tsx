@@ -10,6 +10,9 @@ import tplanner from "../../assets/icons/tplanner2.png";
 import GuidePopup from "../guide/GuidePopup.tsx";
 import { getMe } from "../api/auth.ts";
 
+// react-hot-toast를 사용 중이라면 임포트 (기존 alert 대체용)
+import toast, { Toaster } from "react-hot-toast";
+
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,6 +21,9 @@ export default function Header() {
   const [openGuidePopup, setOpenGuidePopup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // 현재 페이지가 메인 페이지인지 확인 (경로가 "/" 인 경우)
+  const isMainPage = location.pathname === "/";
 
   const match = location.pathname.match(/\d+/);
   const currentTripId = match ? parseInt(match[0], 10) : 1;
@@ -52,13 +58,11 @@ export default function Header() {
 
       try {
         await getMe();
-
         if (isMounted) {
           setIsLoggedIn(true);
         }
       } catch (error) {
         clearAuth();
-
         if (isMounted) {
           setIsLoggedIn(false);
         }
@@ -88,32 +92,28 @@ export default function Header() {
     } finally {
       clearAuth();
       setIsLoggedIn(false);
-      alert("로그아웃되었습니다.");
+      toast.success("로그아웃되었습니다.");
       navigate("/login");
     }
   };
 
   const handleTripListClick = () => {
     if (isCheckingAuth) return;
-
     if (!isLoggedIn) {
-      alert("로그인 후 이용 가능합니다.");
+      toast.error("로그인 후 이용 가능합니다.");
       navigate("/login");
       return;
     }
-
     navigate("/trip-list");
   };
 
   const handleCommunityClick = () => {
     if (isCheckingAuth) return;
-
     if (!isLoggedIn) {
-      alert("로그인 후 이용 가능합니다.");
+      toast.error("로그인 후 이용 가능합니다.");
       navigate("/login");
       return;
     }
-
     navigate("/community");
   };
 
@@ -123,6 +123,7 @@ export default function Header() {
 
   return (
     <>
+      <Toaster position="top-center" />
       <AppBar position="static" elevation={0} className="header">
         <Toolbar className="header-toolbar">
           <div className="header-logo" onClick={() => navigate("/")}>
@@ -137,15 +138,18 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
-            <span className="header-icon">
-              <button
-                type="button"
-                onClick={handleCalculatorClick}
-                className="header-icon-btn"
-              >
-                <ShoppingCartOutlinedIcon />
-              </button>
-            </span>
+            {/* 메인 페이지에서만 계산기 아이콘 노출 */}
+            {isMainPage && (
+              <span className="header-icon">
+                <button
+                  type="button"
+                  onClick={handleCalculatorClick}
+                  className="header-icon-btn"
+                >
+                  <ShoppingCartOutlinedIcon />
+                </button>
+              </span>
+            )}
 
             {!isCheckingAuth && isLoggedIn ? (
               <>
@@ -189,7 +193,8 @@ export default function Header() {
         onClose={() => setOpenTutorial(false)}
       />
 
-      {currentTripId && <Calculator tripId={currentTripId} />}
+      {/* 메인 페이지이고 tripId가 있을 때만 계산기 컴포넌트 활성화 */}
+      {isMainPage && currentTripId && <Calculator tripId={currentTripId} />}
     </>
   );
 }
