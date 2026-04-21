@@ -21,6 +21,9 @@ import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";
 import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
 
+// react-hot-toast 임포트
+import toast, { Toaster } from "react-hot-toast";
+
 export const getPost = async (id: number) => {
     const res = await client.get(`/community/posts/${id}`);
     return res.data;
@@ -43,7 +46,7 @@ export default function CommunityReadPage() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [liked, setLiked] = useState(false);
-    const [me, setMe] = useState<{ id: number } | null>(null);
+    const [me, setMe] = useState<{ id: number; role?: string } | null>(null);
     const [members, setMembers] = useState<TripMemberResponse[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState("전체보기");
@@ -181,10 +184,10 @@ export default function CommunityReadPage() {
 
         try {
             await client.delete(`/community/posts/${id}`);
-            alert("삭제되었습니다.");
+            toast.success("삭제되었습니다.");
             navigate("/community");
         } catch (err) {
-            alert("삭제 실패");
+            toast.error("삭제 실패");
         }
     };
 
@@ -204,6 +207,7 @@ export default function CommunityReadPage() {
             );
         } catch (err) {
             console.error("좋아요 실패:", err);
+            toast.error("좋아요 처리에 실패했습니다.");
         }
     };
 
@@ -215,7 +219,7 @@ export default function CommunityReadPage() {
             const res = await client.patch(`/community/posts/${post.id}/share`);
             const newShareCount = res.data.shareCount ?? ((post.shareCount || 0) + 1);
 
-            alert("링크가 복사되었습니다!");
+            toast.success("링크가 복사되었습니다!");
 
             setPost((prev) => (prev ? { ...prev, shareCount: newShareCount } : null));
 
@@ -223,7 +227,7 @@ export default function CommunityReadPage() {
                 prev.map((p) => (p.id === post.id ? { ...p, shareCount: newShareCount } : p))
             );
         } catch (error) {
-            alert("공유 실패");
+            toast.error("공유 실패");
         }
     };
 
@@ -243,27 +247,28 @@ export default function CommunityReadPage() {
 
     const handleJoinTrip = async () => {
         if (!me) {
-            alert("로그인 후 참가 신청이 가능합니다.");
+            toast.error("로그인 후 참가 신청이 가능합니다.");
             navigate("/login");
             return;
         }
 
         if (!post?.tripPlan?.id) {
-            alert("연결된 여행 계획이 없습니다.");
+            toast.error("연결된 여행 계획이 없습니다.");
             return;
         }
 
         try {
             const res = await requestJoinTrip(post.tripPlan.id);
-            alert(res.message || "참가 신청이 완료되었습니다.");
+            toast.success(res.message || "참가 신청이 완료되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
 
-            // ✅ 성공 후 TripListPage로 이동하면서 tripPlan 데이터 전달
-            navigate("/trip-list", { state: { joinedTrip: post.tripPlan } });
+            setTimeout(() => {
+                navigate("/trip-list", { state: { joinedTrip: post.tripPlan } });
+            }, 1000);
 
         } catch (err: any) {
             const message = err?.response?.data?.message || "참가 신청에 실패했습니다.";
-            alert(message);
+            toast.error(message);
         }
     };
 
@@ -272,11 +277,11 @@ export default function CommunityReadPage() {
 
         try {
             const res = await acceptTripMember(post.tripPlan.id, memberId);
-            alert(res.message || "참가가 수락되었습니다.");
+            toast.success(res.message || "참가가 수락되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
         } catch (err: any) {
             const message = err?.response?.data?.message || "참가 수락에 실패했습니다.";
-            alert(message);
+            toast.error(message);
         }
     };
 
@@ -285,16 +290,17 @@ export default function CommunityReadPage() {
 
         try {
             const res = await removeTripMember(post.tripPlan.id, memberId);
-            alert(res.message || "멤버가 삭제되었습니다.");
+            toast.success(res.message || "멤버가 삭제되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
         } catch (err: any) {
             const message = err?.response?.data?.message || "멤버 삭제에 실패했습니다.";
-            alert(message);
+            toast.error(message);
         }
     };
 
     return (
         <>
+            <Toaster position="top-center" reverseOrder={false} />
             <Header />
             <div className="community-page">
                 <div className="community-container">

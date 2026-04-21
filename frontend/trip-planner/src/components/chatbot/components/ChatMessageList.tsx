@@ -3,7 +3,7 @@ import type {
   TouchEvent as ReactTouchEvent,
   WheelEvent as ReactWheelEvent,
 } from "react";
-import type { ChatMessage } from "../types/chatUi";
+import type { ChatMessage, RecommendationPayload } from "../types/chatUi";
 import TypingText from "./TypingText";
 import LoadingBubble from "./LoadingBubble";
 import ScrollToBottomButton from "./ScrollToBottomButton";
@@ -81,10 +81,8 @@ export default function ChatMessageList({
 
         const recommendationPayload =
           message.role === "assistant" && message.variant === "recommendation"
-            ? message.payload
+            ? (message.payload as RecommendationPayload | undefined)
             : undefined;
-
-        const isRecommendationMessage = Boolean(recommendationPayload);
 
         return (
           <div
@@ -96,7 +94,7 @@ export default function ChatMessageList({
             <div className={bubbleClassName}>
               {isItineraryMessage ? (
                 <ItineraryBubbleRenderer content={message.content} />
-              ) : isRecommendationMessage && recommendationPayload ? (
+              ) : recommendationPayload ? (
                 <RecommendationBubbleRenderer payload={recommendationPayload} />
               ) : message.role === "assistant" ? (
                 <TypingText

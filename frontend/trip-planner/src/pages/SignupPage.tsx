@@ -1,14 +1,19 @@
 import { useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast"; // 1. toast 임포트
+import toast, { Toaster } from "react-hot-toast";
 import type { SignupRequest } from "../types/auth";
 import Header from "../components/layout/Header";
 import KakaoIcon from "../assets/icons/Kakao.png";
 import GoogleIcon from "../assets/icons/google.png";
 import LogoIcon from "../assets/icons/logo.png";
+import TermsModal from "../components/agree/TermsModal";
+import TermsSecurityModal from "../components/agree/TermsSecurityModal";
 import "./SignupPage.css";
 
 export default function SignupPage() {
+  const navigate = useNavigate();
+
+  // 1. 회원가입 입력 데이터 상태
   const [formData, setFormData] = useState<SignupRequest>({
     email: "",
     password: "",
@@ -17,8 +22,19 @@ export default function SignupPage() {
     phone: "",
   });
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const navigate = useNavigate();
 
+  // 2. 약관 동의 상태
+  const [agreements, setAgreements] = useState({
+    all: false,
+    terms: false,    // 이용약관 (필수)
+    privacy: false,  // 개인정보 수집 (필수)
+    marketing: false // 마케팅 수신 (선택)
+  });
+
+  // 3. 모달 상태 제어 ("terms" | "privacy" | null)
+  const [activeModal, setActiveModal] = useState<"terms" | "privacy" | null>(null);
+
+  // 입력 핸들러
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -27,10 +43,31 @@ export default function SignupPage() {
     }));
   };
 
+  // 체크박스 핸들러
+  const handleAgreementChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+
+    if (name === "all") {
+      setAgreements({
+        all: checked,
+        terms: checked,
+        privacy: checked,
+        marketing: checked,
+      });
+    } else {
+      const updatedAgreements = { ...agreements, [name]: checked };
+      // 모든 개별 항목이 체크되면 'all'도 체크, 하나라도 해제되면 'all' 해제
+      updatedAgreements.all = 
+        updatedAgreements.terms && updatedAgreements.privacy && updatedAgreements.marketing;
+      setAgreements(updatedAgreements);
+    }
+  };
+
+  // 회원가입 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // --- 유효성 검사 (Toast 적용) ---
+    // 유효성 검사
     if (!formData.email || !formData.password || !passwordConfirm || !formData.name) {
       toast.error("필수 내용을 모두 입력해주세요. ✍️");
       return;
@@ -46,6 +83,12 @@ export default function SignupPage() {
       return;
     }
 
+    // 약관 동의 검사 (필수 항목 체크 여부)
+    if (!agreements.terms || !agreements.privacy) {
+      toast.error("필수 약관에 모두 동의해주세요. ✅");
+      return;
+    }
+
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
       toast.error("올바른 이메일 형식이 아닙니다. @");
       return;
@@ -55,7 +98,6 @@ export default function SignupPage() {
       formData.nickname = formData.name;
     }
 
-    // --- 서버 통신 ---
     try {
       const response = await fetch("http://localhost:8080/api/auth/signup", {
         method: "POST",
@@ -65,12 +107,11 @@ export default function SignupPage() {
 
       if (response.ok) {
         const data = await response.json();
-
         if (data.accessToken && data.refreshToken) {
           localStorage.setItem("accessToken", data.accessToken);
           localStorage.setItem("refreshToken", data.refreshToken);
           toast.success("반가워요! 회원가입 및 로그인이 완료되었습니다! 🎉");
-          setTimeout(() => navigate("/"), 1500); // 토스트를 보여줄 시간을 줍니다.
+          setTimeout(() => navigate("/"), 1500);
         } else {
           toast.success("회원가입 성공! 로그인 해주세요. 😊");
           setTimeout(() => navigate("/login"), 1500);
@@ -85,31 +126,21 @@ export default function SignupPage() {
     }
   };
 
-  // 에러 메시지 처리 함수 (Toast 적용)
   const handleSignupFailure = (status: number, serverMessage?: string) => {
     if (serverMessage) {
       toast.error(`실패: ${serverMessage}`);
       return;
     }
-
     switch (status) {
-      case 400:
-        toast.error("입력 형식이 올바르지 않습니다.");
-        break;
-      case 409:
-        toast.error("이미 사용 중인 이메일입니다. 📧");
-        break;
-      case 500:
-        toast.error("서버 내부 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
-        break;
-      default:
-        toast.error("회원가입에 실패했습니다.");
+      case 400: toast.error("입력 형식이 올바르지 않습니다."); break;
+      case 409: toast.error("이미 사용 중인 이메일입니다. 📧"); break;
+      case 500: toast.error("서버 내부 문제가 발생했습니다. 잠시 후 다시 시도해주세요."); break;
+      default: toast.error("회원가입에 실패했습니다.");
     }
   };
 
   return (
     <div className="signup-page">
-      {/* 2. 토스트 컨테이너 배치 */}
       <Toaster position="top-center" reverseOrder={false} />
       <Header />
 
@@ -119,55 +150,49 @@ export default function SignupPage() {
             <img src={LogoIcon} alt="로고 아이콘" className="signup-logo" />
           </div>
           <h1 className="signup-title">회원가입</h1>
-          <p className="signup-subtitle">이메일과 비밀번호를 이용해 회원가입하세요</p>
+          
+          <div className="signup-form-fields">
+            <input className="signup-input" type="email" name="email" placeholder="* 이메일" value={formData.email} onChange={handleChange} />
+            <input className="signup-input" type="text" name="nickname" placeholder="* 닉네임" value={formData.nickname} onChange={handleChange} />
+            <input className="signup-input" type="password" name="password" placeholder="* 비밀번호" value={formData.password} onChange={handleChange} />
+            <input className="signup-input" type="password" placeholder="* 비밀번호 확인" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} />
+            <input className="signup-input" type="text" name="name" placeholder="* 이름" value={formData.name} onChange={handleChange} />
+            <input className="signup-input" type="text" name="phone" placeholder="전화번호 (예: 010-1234-5678)" value={formData.phone} onChange={handleChange} />
+          </div>
 
-          <input
-            className="signup-input"
-            type="email"
-            name="email"
-            placeholder="* 이메일"
-            value={formData.email}
-            onChange={handleChange}
-          />
-          <input
-            className="signup-input"
-            type="text"
-            name="nickname"
-            placeholder="* 닉네임"
-            value={formData.nickname}
-            onChange={handleChange}
-          />
-          <input
-            className="signup-input"
-            type="password"
-            name="password"
-            placeholder="* 비밀번호"
-            value={formData.password}
-            onChange={handleChange}
-          />
-          <input
-            className="signup-input"
-            type="password"
-            placeholder="* 비밀번호 확인"
-            value={passwordConfirm}
-            onChange={(e) => setPasswordConfirm(e.target.value)}
-          />
-          <input
-            className="signup-input"
-            type="text"
-            name="name"
-            placeholder="* 이름"
-            value={formData.name}
-            onChange={handleChange}
-          />
-          <input
-            className="signup-input"
-            type="text"
-            name="phone"
-            placeholder="전화번호 (예: 010-1234-5678)"
-            value={formData.phone}
-            onChange={handleChange}
-          />
+          {/* 약관 동의 섹션 */}
+          <div className="agreement-section">
+            <div className="agreement-item all-agree">
+              <label>
+                <input type="checkbox" name="all" checked={agreements.all} onChange={handleAgreementChange} />
+                <span>전체 동의합니다.</span>
+              </label>
+            </div>
+            <div className="agreement-divider"></div>
+            
+            <div className="agreement-item">
+              <label>
+                <input type="checkbox" name="terms" checked={agreements.terms} onChange={handleAgreementChange} />
+                <span>이용약관 동의 (필수)</span>
+              </label>
+              <span className="view-detail" onClick={() => setActiveModal("terms")}>보기</span>
+            </div>
+
+            <div className="agreement-item">
+              <label>
+                <input type="checkbox" name="privacy" checked={agreements.privacy} onChange={handleAgreementChange} />
+                <span>개인정보 수집 및 이용 동의 (필수)</span>
+              </label>
+              <span className="view-detail" onClick={() => setActiveModal("privacy")}>보기</span>
+            </div>
+
+            <div className="agreement-item">
+              <label>
+                <input type="checkbox" name="marketing" checked={agreements.marketing} onChange={handleAgreementChange} />
+                <span>마케팅 정보 수신 동의 (선택)</span>
+              </label>
+            </div>
+          </div>
 
           <button className="signup-button" onClick={handleSubmit}>
             회원가입
@@ -189,6 +214,18 @@ export default function SignupPage() {
           </p>
         </div>
       </div>
+
+      {/* 약관 상세 보기 모달 분기 처리 */}
+      <TermsModal 
+        open={activeModal === "terms"} 
+        onClose={() => setActiveModal(null)} 
+        title="이용약관" 
+      />
+      <TermsSecurityModal 
+        open={activeModal === "privacy"} 
+        onClose={() => setActiveModal(null)} 
+        title="개인정보 수집 및 이용 동의" 
+      />
     </div>
   );
 }

@@ -27,3 +27,13 @@ export const removeTripMember = async (tripId: number, memberId: number) => {
   const response = await client.delete(`/trips/${tripId}/members/${memberId}`);
   return response.data;
 };
+
+export const getJoinedTrips = async () => {// 참가한 여행계획
+  const response = await client.get("/trip-members/joined");
+  return response.data;
+};
+
+export const leaveTripMember = async (tripId: number) => {
+  const response = await client.delete(`/trips/${tripId}/members/me`);
+  return response.data;
+};

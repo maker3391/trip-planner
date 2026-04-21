@@ -23,6 +23,11 @@ export interface UpdateMeRequest {
   newPassword?: string;
 }
 
+export interface PasswordResetConfirmRequest {
+  token: string;
+  newPassword: string;
+}
+
 export const getMe = async (): Promise<UserMeResponse> => {
   const token = localStorage.getItem("accessToken");
 
@@ -52,3 +57,13 @@ export const withdrawApi = async (): Promise<MessageResponse> => {
   const response = await client.delete<MessageResponse>("/auth/withdraw");
   return response.data;
 }
+
+export const requestPasswordReset = async (email: string): Promise<MessageResponse> => {
+  const response = await client.post<MessageResponse>(`/auth/password-reset/request?email=${email}`);
+  return response.data;
+};
+
+export const confirmPasswordReset = async (data: PasswordResetConfirmRequest): Promise<MessageResponse> => {
+  const response = await client.post<MessageResponse>("/auth/password-reset/confirm", data);
+  return response.data;
+};

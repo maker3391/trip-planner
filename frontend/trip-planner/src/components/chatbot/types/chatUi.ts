@@ -16,6 +16,13 @@ export interface RecommendationPayload {
   items: RecommendationCardItem[];
 }
 
+export interface CombinedRecommendationPayload {
+  title: string;
+  itineraryContent: string;
+  restaurants?: RecommendationPayload;
+  stays?: RecommendationPayload;
+}
+
 export interface ChatMessage {
   id: number;
   role: "user" | "assistant";

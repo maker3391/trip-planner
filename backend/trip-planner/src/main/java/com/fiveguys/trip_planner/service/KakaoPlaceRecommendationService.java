@@ -23,6 +23,15 @@ public class KakaoPlaceRecommendationService {
     private static final int MAX_ITEMS = 5;
     private static final int MAX_COLLECT_SIZE = 20;
 
+    private static final String STAY_SUBTYPE_GENERIC = "generic";
+    private static final String STAY_SUBTYPE_HOTEL = "hotel";
+    private static final String STAY_SUBTYPE_MOTEL = "motel";
+    private static final String STAY_SUBTYPE_PENSION = "pension";
+    private static final String STAY_SUBTYPE_RESORT = "resort";
+    private static final String STAY_SUBTYPE_GUEST_HOUSE = "guesthouse";
+    private static final String STAY_SUBTYPE_HANOK = "hanok";
+    private static final String STAY_SUBTYPE_POOL_VILLA = "poolvilla";
+
     private final KakaoLocalClient kakaoLocalClient;
     private final RecommendationIntentResolverService intentResolverService;
     private final RegionResolverService regionResolverService;
@@ -53,6 +62,8 @@ public class KakaoPlaceRecommendationService {
         validateRegionStrict(message);
 
         String intent = intentResolverService.resolve(message);
+        String staySubtype = resolveStaySubtype(message, intent);
+
         RegionResolverService.ResolvedRegion resolvedRegion = regionResolverService.resolve(message);
 
         String destination = resolvedRegion.getCity();
@@ -137,6 +148,7 @@ public class KakaoPlaceRecommendationService {
 
         List<String> queryCandidates = buildQueryCandidates(
                 intent,
+                staySubtype,
                 queryDestination,
                 detailArea,
                 neighborhood,
@@ -171,6 +183,7 @@ public class KakaoPlaceRecommendationService {
         List<RecommendationItemResponse> items = filterScoreSortAndMap(
                 collectedDocs,
                 intent,
+                staySubtype,
                 queryDestination,
                 detailArea,
                 neighborhood,
@@ -252,7 +265,40 @@ public class KakaoPlaceRecommendationService {
                 && (value.endsWith("시") || value.endsWith("군"));
     }
 
+    private String resolveStaySubtype(String message, String intent) {
+        if (!"STAY_RECOMMENDATION".equals(intent)) {
+            return STAY_SUBTYPE_GENERIC;
+        }
+
+        String normalizedMessage = message == null ? "" : message.toLowerCase();
+
+        if (normalizedMessage.contains("풀빌라")) {
+            return STAY_SUBTYPE_POOL_VILLA;
+        }
+        if (normalizedMessage.contains("한옥스테이")) {
+            return STAY_SUBTYPE_HANOK;
+        }
+        if (normalizedMessage.contains("게스트하우스")) {
+            return STAY_SUBTYPE_GUEST_HOUSE;
+        }
+        if (normalizedMessage.contains("리조트")) {
+            return STAY_SUBTYPE_RESORT;
+        }
+        if (normalizedMessage.contains("펜션")) {
+            return STAY_SUBTYPE_PENSION;
+        }
+        if (normalizedMessage.contains("무인텔") || normalizedMessage.contains("모텔")) {
+            return STAY_SUBTYPE_MOTEL;
+        }
+        if (normalizedMessage.contains("호텔")) {
+            return STAY_SUBTYPE_HOTEL;
+        }
+
+        return STAY_SUBTYPE_GENERIC;
+    }
+
     private List<String> buildQueryCandidates(String intent,
+                                              String staySubtype,
                                               String destination,
                                               String detailArea,
                                               String neighborhood,
@@ -275,7 +321,7 @@ public class KakaoPlaceRecommendationService {
                 rawAreaHint
         );
 
-        List<String> keywords = buildIntentKeywords(intent, message);
+        List<String> keywords = buildIntentKeywords(intent, staySubtype, message);
 
         for (String base : locationBases) {
             for (String keyword : keywords) {
@@ -356,40 +402,87 @@ public class KakaoPlaceRecommendationService {
                 result.add("충청남도");
                 break;
             case "강원":
+            case "강원도":
+                result.add("강원");
                 result.add("강원도");
                 result.add("강원특별자치도");
                 break;
             case "제주":
+            case "제주도":
+                result.add("제주");
                 result.add("제주도");
                 result.add("제주특별자치도");
                 break;
             case "경기":
+            case "경기도":
+                result.add("경기");
                 result.add("경기도");
                 break;
             case "서울":
+            case "서울시":
+                result.add("서울");
                 result.add("서울특별시");
                 break;
             case "부산":
+            case "부산시":
+                result.add("부산");
                 result.add("부산광역시");
                 break;
             case "대구":
+            case "대구시":
+                result.add("대구");
                 result.add("대구광역시");
                 break;
             case "인천":
+            case "인천시":
+                result.add("인천");
                 result.add("인천광역시");
                 break;
             case "광주":
+                result.add("광주");
                 result.add("광주광역시");
                 break;
+
+            case "광주시":
+                result.add("광주시");
+                break;
             case "대전":
+            case "대전시":
+                result.add("대전");
                 result.add("대전광역시");
                 break;
             case "울산":
+            case "울산시":
+                result.add("울산");
                 result.add("울산광역시");
                 break;
             case "세종":
+            case "세종시":
+                result.add("세종");
                 result.add("세종특별자치시");
                 break;
+
+            case "전라도":
+                result.add("전남");
+                result.add("전라남도");
+                result.add("전북");
+                result.add("전라북도");
+                break;
+
+            case "경상도":
+                result.add("경남");
+                result.add("경상남도");
+                result.add("경북");
+                result.add("경상북도");
+                break;
+
+            case "충청도":
+                result.add("충남");
+                result.add("충청남도");
+                result.add("충북");
+                result.add("충청북도");
+                break;
+
             default:
                 break;
         }
@@ -397,7 +490,7 @@ public class KakaoPlaceRecommendationService {
         return new ArrayList<>(result);
     }
 
-    private List<String> buildIntentKeywords(String intent, String message) {
+    private List<String> buildIntentKeywords(String intent, String staySubtype, String message) {
         LinkedHashSet<String> keywords = new LinkedHashSet<>();
         String normalizedMessage = message == null ? "" : message.toLowerCase();
 
@@ -414,22 +507,49 @@ public class KakaoPlaceRecommendationService {
                 keywords.add("술집");
                 keywords.add("주점");
             }
-        } else {
-            keywords.add("숙소");
-            keywords.add("호텔");
-            keywords.add("모텔");
-            keywords.add("펜션");
-            keywords.add("게스트하우스");
+            return new ArrayList<>(keywords);
+        }
 
-            if (normalizedMessage.contains("리조트")) {
+        switch (staySubtype) {
+            case STAY_SUBTYPE_MOTEL:
+                keywords.add("모텔");
+                keywords.add("무인텔");
+                keywords.add("숙박");
+                break;
+            case STAY_SUBTYPE_HOTEL:
+                keywords.add("호텔");
+                keywords.add("숙소");
+                break;
+            case STAY_SUBTYPE_PENSION:
+                keywords.add("펜션");
+                keywords.add("숙소");
+                break;
+            case STAY_SUBTYPE_RESORT:
                 keywords.add("리조트");
-            }
-            if (normalizedMessage.contains("풀빌라")) {
-                keywords.add("풀빌라");
-            }
-            if (normalizedMessage.contains("한옥스테이")) {
+                keywords.add("숙소");
+                break;
+            case STAY_SUBTYPE_GUEST_HOUSE:
+                keywords.add("게스트하우스");
+                keywords.add("숙소");
+                break;
+            case STAY_SUBTYPE_HANOK:
                 keywords.add("한옥스테이");
-            }
+                keywords.add("한옥 숙소");
+                keywords.add("숙소");
+                break;
+            case STAY_SUBTYPE_POOL_VILLA:
+                keywords.add("풀빌라");
+                keywords.add("리조트");
+                keywords.add("숙소");
+                break;
+            default:
+                keywords.add("숙소");
+                keywords.add("숙박");
+                keywords.add("호텔");
+                keywords.add("모텔");
+                keywords.add("펜션");
+                keywords.add("게스트하우스");
+                break;
         }
 
         return new ArrayList<>(keywords);
@@ -451,6 +571,7 @@ public class KakaoPlaceRecommendationService {
 
     private List<RecommendationItemResponse> filterScoreSortAndMap(List<JsonNode> docs,
                                                                    String intent,
+                                                                   String staySubtype,
                                                                    String destination,
                                                                    String detailArea,
                                                                    String neighborhood,
@@ -461,7 +582,11 @@ public class KakaoPlaceRecommendationService {
         List<ScoredPlace> scored = new ArrayList<>();
 
         for (JsonNode doc : docs) {
-            int score = scorePlace(doc, intent, destination, detailArea, neighborhood, district, aliasQueryHint, aliasTargetParent);
+            if (!matchesRequestedType(doc, intent, staySubtype)) {
+                continue;
+            }
+
+            int score = scorePlace(doc, intent, staySubtype, destination, detailArea, neighborhood, district, aliasQueryHint, aliasTargetParent);
             if (score <= 0) {
                 continue;
             }
@@ -497,8 +622,57 @@ public class KakaoPlaceRecommendationService {
         return result;
     }
 
+    private boolean matchesRequestedType(JsonNode doc, String intent, String staySubtype) {
+        if (!"STAY_RECOMMENDATION".equals(intent)) {
+            return true;
+        }
+
+        if (STAY_SUBTYPE_GENERIC.equals(staySubtype)) {
+            return isAnyStayPlace(doc);
+        }
+
+        return matchesStaySubtype(doc, staySubtype);
+    }
+
+    private boolean isAnyStayPlace(JsonNode doc) {
+        String haystack = normalizeAreaName(text(doc, "place_name") + " " + text(doc, "category_name"));
+        return haystack.contains("숙박")
+                || haystack.contains("호텔")
+                || haystack.contains("모텔")
+                || haystack.contains("무인텔")
+                || haystack.contains("펜션")
+                || haystack.contains("리조트")
+                || haystack.contains("게스트하우스")
+                || haystack.contains("한옥")
+                || haystack.contains("풀빌라");
+    }
+
+    private boolean matchesStaySubtype(JsonNode doc, String staySubtype) {
+        String haystack = normalizeAreaName(text(doc, "place_name") + " " + text(doc, "category_name"));
+
+        switch (staySubtype) {
+            case STAY_SUBTYPE_MOTEL:
+                return haystack.contains("모텔") || haystack.contains("무인텔");
+            case STAY_SUBTYPE_HOTEL:
+                return haystack.contains("호텔");
+            case STAY_SUBTYPE_PENSION:
+                return haystack.contains("펜션");
+            case STAY_SUBTYPE_RESORT:
+                return haystack.contains("리조트");
+            case STAY_SUBTYPE_GUEST_HOUSE:
+                return haystack.contains("게스트하우스");
+            case STAY_SUBTYPE_HANOK:
+                return haystack.contains("한옥");
+            case STAY_SUBTYPE_POOL_VILLA:
+                return haystack.contains("풀빌라");
+            default:
+                return isAnyStayPlace(doc);
+        }
+    }
+
     private int scorePlace(JsonNode doc,
                            String intent,
+                           String staySubtype,
                            String destination,
                            String detailArea,
                            String neighborhood,
@@ -545,11 +719,42 @@ public class KakaoPlaceRecommendationService {
             if (category.contains("주점")) score += 15;
         } else {
             if (category.contains("숙박")) score += 35;
-            if (category.contains("호텔")) score += 25;
-            if (category.contains("모텔")) score += 25;
-            if (category.contains("펜션")) score += 25;
-            if (category.contains("리조트")) score += 25;
-            if (category.contains("게스트하우스")) score += 25;
+
+            switch (staySubtype) {
+                case STAY_SUBTYPE_MOTEL:
+                    if (category.contains("모텔")) score += 45;
+                    if (placeName.contains("모텔") || placeName.contains("무인텔")) score += 35;
+                    break;
+                case STAY_SUBTYPE_HOTEL:
+                    if (category.contains("호텔")) score += 45;
+                    if (placeName.contains("호텔")) score += 35;
+                    break;
+                case STAY_SUBTYPE_PENSION:
+                    if (category.contains("펜션")) score += 45;
+                    if (placeName.contains("펜션")) score += 35;
+                    break;
+                case STAY_SUBTYPE_RESORT:
+                    if (category.contains("리조트")) score += 45;
+                    if (placeName.contains("리조트")) score += 35;
+                    break;
+                case STAY_SUBTYPE_GUEST_HOUSE:
+                    if (category.contains("게스트하우스")) score += 45;
+                    if (placeName.contains("게스트하우스")) score += 35;
+                    break;
+                case STAY_SUBTYPE_HANOK:
+                    if (placeName.contains("한옥") || category.contains("한옥")) score += 45;
+                    break;
+                case STAY_SUBTYPE_POOL_VILLA:
+                    if (placeName.contains("풀빌라") || category.contains("풀빌라")) score += 45;
+                    break;
+                default:
+                    if (category.contains("호텔")) score += 25;
+                    if (category.contains("모텔")) score += 25;
+                    if (category.contains("펜션")) score += 25;
+                    if (category.contains("리조트")) score += 25;
+                    if (category.contains("게스트하우스")) score += 25;
+                    break;
+            }
         }
 
         if (StringUtils.hasText(text(doc, "road_address_name"))) {
@@ -570,18 +775,76 @@ public class KakaoPlaceRecommendationService {
 
     private String resolveCategory(String intent, JsonNode doc) {
         String category = text(doc, "category_name");
+        String normalized = normalizeAreaName(category + " " + text(doc, "place_name"));
 
         if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
-            if (category.contains("카페")) {
-                return "카페";
-            }
-            if (category.contains("주점")) {
-                return "술집";
-            }
-            return "맛집";
+            return resolveRestaurantCategory(category);
+        }
+
+        if (normalized.contains("모텔") || normalized.contains("무인텔")) {
+            return "모텔";
+        }
+        if (normalized.contains("호텔")) {
+            return "호텔";
+        }
+        if (normalized.contains("펜션")) {
+            return "펜션";
+        }
+        if (normalized.contains("리조트")) {
+            return "리조트";
+        }
+        if (normalized.contains("게스트하우스")) {
+            return "게스트하우스";
+        }
+        if (normalized.contains("한옥")) {
+            return "한옥스테이";
+        }
+        if (normalized.contains("풀빌라")) {
+            return "풀빌라";
         }
 
         return "숙소";
+    }
+
+    private String resolveRestaurantCategory(String categoryName) {
+        if (!StringUtils.hasText(categoryName)) {
+            return "맛집";
+        }
+
+        String[] parts = categoryName.split(">");
+        for (int i = parts.length - 1; i >= 0; i--) {
+            String part = parts[i].trim();
+
+            if (!StringUtils.hasText(part)) {
+                continue;
+            }
+
+            if (isGenericRestaurantCategory(part)) {
+                continue;
+            }
+
+            if (part.contains("주점")) {
+                return "술집";
+            }
+
+            return part;
+        }
+
+        if (categoryName.contains("카페")) {
+            return "카페";
+        }
+        if (categoryName.contains("주점")) {
+            return "술집";
+        }
+
+        return "맛집";
+    }
+
+    private boolean isGenericRestaurantCategory(String value) {
+        return "음식점".equals(value)
+                || "식당".equals(value)
+                || "레스토랑".equals(value)
+                || "맛집".equals(value);
     }
 
     private String resolveAddress(JsonNode doc) {
