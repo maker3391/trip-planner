@@ -38,6 +38,7 @@ public class KakaoPlaceRecommendationService {
     private final KakaoPlaceQueryBuilder kakaoPlaceQueryBuilder;
     private final KakaoPlaceMapper kakaoPlaceMapper;
     private final KakaoPlaceScoringService kakaoPlaceScoringService;
+    private final RecommendationDisplayService recommendationDisplayService;
 
     public KakaoPlaceRecommendationService(KakaoLocalClient kakaoLocalClient,
                                            RecommendationIntentResolverService intentResolverService,
@@ -48,7 +49,7 @@ public class KakaoPlaceRecommendationService {
                                            RecommendationCacheKeyGenerator cacheKeyGenerator,
                                            KakaoPlaceQueryBuilder kakaoPlaceQueryBuilder,
                                            KakaoPlaceMapper kakaoPlaceMapper,
-                                           KakaoPlaceScoringService kakaoPlaceScoringService) {
+                                           KakaoPlaceScoringService kakaoPlaceScoringService, RecommendationDisplayService recommendationDisplayService) {
         this.kakaoLocalClient = kakaoLocalClient;
         this.intentResolverService = intentResolverService;
         this.regionResolverService = regionResolverService;
@@ -59,6 +60,7 @@ public class KakaoPlaceRecommendationService {
         this.kakaoPlaceQueryBuilder = kakaoPlaceQueryBuilder;
         this.kakaoPlaceMapper = kakaoPlaceMapper;
         this.kakaoPlaceScoringService = kakaoPlaceScoringService;
+        this.recommendationDisplayService = recommendationDisplayService;
     }
 
     public ChatResponse recommend(ChatRequest request) {
@@ -222,14 +224,32 @@ public class KakaoPlaceRecommendationService {
             items.add(kakaoPlaceMapper.toRecommendationItemResponse(intent, candidate.doc()));
         }
 
+        String displayDestination = buildDisplayDestination(
+                queryDestination,
+                detailArea,
+                neighborhood,
+                district,
+                aliasQueryHint
+        );
+
+        RecommendationDisplayService.DisplayMeta displayMeta =
+                recommendationDisplayService.buildPlaceDisplayMeta(
+                        intent,
+                        message,
+                        displayDestination,
+                        items
+                );
+
         ChatResponse response = new ChatResponse(
                 message,
                 intent,
-                buildDisplayDestination(queryDestination, detailArea, neighborhood, district, aliasQueryHint),
+                displayDestination,
                 null,
                 new RecommendationContentResponse(
                         new ArrayList<>(),
-                        items
+                        items,
+                        displayMeta.displayType(),
+                        displayMeta.displayTitle()
                 )
         );
 

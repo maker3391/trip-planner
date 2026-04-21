@@ -14,6 +14,12 @@ public class RecommendationContentResponse {
     @Schema(description = "AI가 엄선한 개별 추천 장소/아이템 리스트")
     private List<RecommendationItemResponse> items = new ArrayList<>();
 
+    @Schema(description = "프론트 표시용 추천 타입", example = "국밥")
+    private String displayType;
+
+    @Schema(description = "프론트 표시용 추천 제목", example = "부산 해운대구에서 가볼 만한 국밥집을 모아봤어요")
+    private String displayTitle;
+
     public RecommendationContentResponse() {
     }
 
@@ -21,6 +27,16 @@ public class RecommendationContentResponse {
                                          List<RecommendationItemResponse> items) {
         this.dayPlans = dayPlans;
         this.items = items;
+    }
+
+    public RecommendationContentResponse(List<DayPlanResponse> dayPlans,
+                                         List<RecommendationItemResponse> items,
+                                         String displayType,
+                                         String displayTitle) {
+        this.dayPlans = dayPlans;
+        this.items = items;
+        this.displayType = displayType;
+        this.displayTitle = displayTitle;
     }
 
     public List<DayPlanResponse> getDayPlans() {
@@ -37,5 +53,21 @@ public class RecommendationContentResponse {
 
     public void setItems(List<RecommendationItemResponse> items) {
         this.items = items;
+    }
+
+    public String getDisplayType() {
+        return displayType;
+    }
+
+    public void setDisplayType(String displayType) {
+        this.displayType = displayType;
+    }
+
+    public String getDisplayTitle() {
+        return displayTitle;
+    }
+
+    public void setDisplayTitle(String displayTitle) {
+        this.displayTitle = displayTitle;
     }
 }

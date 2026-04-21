@@ -25,6 +25,8 @@ export interface RecommendationContentResponse {
   restaurants?: RecommendationItem[];
   hotels?: RecommendationItem[];
   dayPlans?: DayPlanResponse[];
+  displayType?: string;
+  displayTitle?: string;
 }
 
 export interface CombinedItineraryResponse {
@@ -37,6 +39,8 @@ export interface CombinedRecommendationResponse {
   itinerary?: CombinedItineraryResponse | null;
   restaurants?: RecommendationItem[];
   stays?: RecommendationItem[];
+  restaurantDisplayTitle?: string;
+  stayDisplayTitle?: string;
 }
 
 export interface ChatRequest {

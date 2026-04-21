@@ -24,67 +24,6 @@ const isNonEmptyArray = <T>(value?: T[] | null): value is T[] => {
   return Array.isArray(value) && value.length > 0;
 };
 
-const RECOMMENDATION_TYPE_KEYWORDS = [
-  "맛집",
-  "숙소",
-  "숙박",
-  "호텔",
-  "모텔",
-  "펜션",
-  "리조트",
-  "게스트하우스",
-  "한옥스테이",
-  "풀빌라",
-  "카페",
-  "디저트",
-  "베이커리",
-  "빵집",
-  "케이크",
-  "빙수",
-  "와플",
-  "도넛",
-  "아이스크림",
-  "술집",
-  "주점",
-  "포차",
-  "호프",
-  "와인바",
-  "칵테일바",
-];
-
-const RESTAURANT_GENERIC_CATEGORY_KEYWORDS = [
-  "맛집",
-  "음식점",
-  "식당",
-  "레스토랑",
-  "음식",
-];
-
-const CAFE_KEYWORDS = [
-  "카페",
-  "디저트",
-  "베이커리",
-  "빵집",
-  "케이크",
-  "빙수",
-  "와플",
-  "도넛",
-  "아이스크림",
-  "브런치카페",
-];
-
-const PUB_KEYWORDS = [
-  "술집",
-  "주점",
-  "포차",
-  "호프",
-  "와인바",
-  "칵테일바",
-  "이자카야",
-  "bar",
-  "pub",
-];
-
 const normalizeDestinationLabel = (rawDestination?: string | null): string => {
   const destination = safeText(rawDestination);
   if (!destination) return "";
@@ -99,136 +38,6 @@ const normalizeDestinationLabel = (rawDestination?: string | null): string => {
   }
 
   return normalizedParts.join(" ");
-};
-
-const stripRecommendationSuffix = (message?: string | null): string => {
-  const text = safeText(message);
-  if (!text) return "";
-
-  let stripped = text.replace(/\s*추천\s*$/u, "").trim();
-
-  for (const keyword of RECOMMENDATION_TYPE_KEYWORDS) {
-    const pattern = new RegExp(`\\s*${keyword}\\s*$`, "u");
-    stripped = stripped.replace(pattern, "").trim();
-  }
-
-  stripped = stripped.replace(/\s*여행\s*$/u, "").trim();
-
-  return stripped;
-};
-
-const isRecommendationTypeKeyword = (value?: string | null): boolean => {
-  const text = safeText(value);
-  if (!text) return false;
-
-  return RECOMMENDATION_TYPE_KEYWORDS.includes(text);
-};
-
-const extractRequestedAreaLabel = (originalMessage?: string | null): string => {
-  const base = stripRecommendationSuffix(originalMessage);
-  if (!base) return "";
-
-  const parts = base.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-
-  const filteredParts = parts.filter(
-    (part) => !isRecommendationTypeKeyword(part)
-  );
-
-  if (filteredParts.length === 0) return "";
-
-  const priorityPatterns = [/(동|읍|면|리)$/u, /(구|군)$/u, /시$/u];
-
-  for (const pattern of priorityPatterns) {
-    for (let i = filteredParts.length - 1; i >= 0; i -= 1) {
-      if (pattern.test(filteredParts[i])) {
-        return filteredParts[i];
-      }
-    }
-  }
-
-  if (filteredParts.length >= 2) {
-    return filteredParts.slice(-2).join(" ");
-  }
-
-  return filteredParts[filteredParts.length - 1] ?? "";
-};
-
-const splitCategoryParts = (rawCategory?: string | null): string[] => {
-  const category = safeText(rawCategory);
-  if (!category) return [];
-
-  return category
-    .split(">")
-    .map((part) => part.trim())
-    .filter(Boolean);
-};
-
-const extractCompactCategory = (rawCategory?: string | null): string => {
-  const parts = splitCategoryParts(rawCategory);
-  if (parts.length === 0) return "";
-
-  return parts[parts.length - 1] ?? "";
-};
-
-const isRestaurantGenericCategory = (value?: string | null): boolean => {
-  const text = safeText(value);
-  if (!text) return true;
-
-  return RESTAURANT_GENERIC_CATEGORY_KEYWORDS.includes(text);
-};
-
-const extractRestaurantDisplayCategory = (
-  rawCategory?: string | null
-): string => {
-  const parts = splitCategoryParts(rawCategory);
-
-  if (parts.length === 0) {
-    return "";
-  }
-
-  const meaningfulParts = parts.filter(
-    (part) => !isRestaurantGenericCategory(part)
-  );
-
-  if (meaningfulParts.length > 0) {
-    return meaningfulParts[meaningfulParts.length - 1] ?? "";
-  }
-
-  return parts[parts.length - 1] ?? "";
-};
-
-const extractRequestedStayType = (originalMessage?: string | null): string => {
-  const text = safeText(originalMessage);
-  if (!text) return "";
-
-  if (text.includes("풀빌라")) return "풀빌라";
-  if (text.includes("한옥스테이")) return "한옥스테이";
-  if (text.includes("게스트하우스")) return "게스트하우스";
-  if (text.includes("리조트")) return "리조트";
-  if (text.includes("펜션")) return "펜션";
-  if (text.includes("무인텔") || text.includes("모텔")) return "모텔";
-  if (text.includes("호텔")) return "호텔";
-  if (text.includes("숙소") || text.includes("숙박")) return "숙소";
-
-  return "";
-};
-
-const resolveStayDisplayType = (
-  originalMessage: string,
-  items: RecommendationCardItem[]
-): string => {
-  const requestedStayType = extractRequestedStayType(originalMessage);
-  if (requestedStayType) {
-    return requestedStayType;
-  }
-
-  const firstCategory = safeText(items[0]?.category);
-  if (firstCategory) {
-    return firstCategory;
-  }
-
-  return "숙소";
 };
 
 const pickRecommendationItems = (
@@ -360,348 +169,51 @@ const formatItineraryResponse = (data: ChatResponse): FormattedChatResponse => {
 
 const normalizeRecommendationCardItems = (
   items: RecommendationItem[],
-  kind: RecommendationKind
+  _kind: RecommendationKind
 ): RecommendationCardItem[] => {
   return items.map((item, index) => ({
     id: `${safeText(item.name) || safeText(item.title) || "recommendation"}-${index}`,
     title: safeText(item.name) || safeText(item.title) || `추천 ${index + 1}`,
-    category:
-      kind === "restaurant"
-        ? extractRestaurantDisplayCategory(item.category)
-        : extractCompactCategory(item.category),
+    category: safeText(item.category),
     description: safeText(item.description) || safeText(item.content),
     address: safeText(item.address),
     link: safeText(item.placeUrl) || safeText(item.link),
   }));
 };
 
-const pickRandomTemplate = (templates: string[]): string => {
-  if (templates.length === 0) {
-    return "{region} 정보를 모아봤어요";
-  }
-
-  const index = Math.floor(Math.random() * templates.length);
-  return templates[index] ?? templates[0];
-};
-
-const resolveRecommendationRegion = (
-  originalMessage: string,
-  destination: string
-): string => {
-  const requestedAreaLabel = extractRequestedAreaLabel(originalMessage);
-  const normalizedDestination = normalizeDestinationLabel(destination);
-
-  if (
-    requestedAreaLabel &&
-    !isRecommendationTypeKeyword(requestedAreaLabel)
-  ) {
-    return requestedAreaLabel;
-  }
-
-  if (
-    normalizedDestination &&
-    !isRecommendationTypeKeyword(normalizedDestination)
-  ) {
-    return normalizedDestination;
-  }
-
-  return "이 지역";
-};
-
-const attachObjectParticle = (word: string): string => {
-  if (!word) return "";
-
-  const lastChar = word[word.length - 1];
-  const code = lastChar.charCodeAt(0);
-
-  if (code < 0xac00 || code > 0xd7a3) {
-    return word + "를";
-  }
-
-  const hasBatchim = (code - 0xac00) % 28 !== 0;
-  return word + (hasBatchim ? "을" : "를");
-};
-
-const isCafeCategory = (value?: string | null): boolean => {
-  const text = safeText(value).toLowerCase();
-  if (!text) return false;
-  return CAFE_KEYWORDS.some((keyword) => text.includes(keyword.toLowerCase()));
-};
-
-const isPubCategory = (value?: string | null): boolean => {
-  const text = safeText(value).toLowerCase();
-  if (!text) return false;
-  return PUB_KEYWORDS.some((keyword) => text.includes(keyword.toLowerCase()));
-};
-
-const extractRequestedRestaurantType = (
-  originalMessage?: string | null,
-  items?: RecommendationCardItem[]
-): string => {
-  const text = safeText(originalMessage);
-
-  if (CAFE_KEYWORDS.some((keyword) => text.includes(keyword))) {
-    return "카페";
-  }
-
-  if (PUB_KEYWORDS.some((keyword) => text.includes(keyword))) {
-    return "술집";
-  }
-
-  const foodKeywords = [
-    "국밥",
-    "돼지국밥",
-    "순대국",
-    "설렁탕",
-    "곰탕",
-    "갈비탕",
-    "해장국",
-    "감자탕",
-    "김치찌개",
-    "된장찌개",
-    "청국장",
-    "순두부",
-    "부대찌개",
-    "동태찌개",
-    "매운탕",
-    "추어탕",
-    "삼계탕",
-    "백숙",
-    "닭한마리",
-    "전골",
-    "곱도리탕",
-    "닭볶음탕",
-    "아구찜",
-    "해물탕",
-    "해물찜",
-    "샤브샤브",
-    "백반",
-    "한정식",
-    "비빔밥",
-    "쌈밥",
-    "보리밥",
-    "기사식당",
-    "꼬막비빔밥",
-    "불고기",
-    "갈비",
-    "돼지갈비",
-    "소갈비",
-    "양념갈비",
-    "생갈비",
-    "삼겹살",
-    "목살",
-    "항정살",
-    "가브리살",
-    "족발",
-    "보쌈",
-    "닭갈비",
-    "제육볶음",
-    "오리구이",
-    "장어구이",
-    "생선구이",
-    "게장",
-    "육회",
-    "육사시미",
-    "닭발",
-    "쭈꾸미",
-    "오징어볶음",
-    "낙곱새",
-    "한우",
-    "소고기",
-    "꽃등심",
-    "등심",
-    "안심",
-    "차돌박이",
-    "토시살",
-    "살치살",
-    "안창살",
-    "갈비살",
-    "업진살",
-    "제비추리",
-    "부채살",
-    "곱창",
-    "대창",
-    "막창",
-    "소막창",
-    "돼지막창",
-    "흑돼지",
-    "냉면",
-    "밀면",
-    "칼국수",
-    "수제비",
-    "국수",
-    "막국수",
-    "초밥",
-    "스시",
-    "횟집",
-    "회",
-    "사시미",
-    "라멘",
-    "우동",
-    "소바",
-    "돈까스",
-    "텐동",
-    "덮밥",
-    "오마카세",
-    "이자카야",
-    "짜장면",
-    "짬뽕",
-    "탕수육",
-    "마라탕",
-    "마라샹궈",
-    "훠궈",
-    "양꼬치",
-    "딤섬",
-    "파스타",
-    "스테이크",
-    "리조또",
-    "피자",
-    "브런치",
-    "샐러드",
-    "버거",
-    "수제버거",
-    "바베큐",
-    "떡볶이",
-    "김밥",
-    "순대",
-    "튀김",
-    "라볶이",
-    "오뎅",
-    "토스트",
-    "치킨",
-    "닭강정",
-    "디저트",
-    "베이커리",
-    "빵집",
-    "케이크",
-    "빙수",
-    "와플",
-    "도넛",
-    "아이스크림",
-  ];
-
-  const matchedKeyword = foodKeywords.find((keyword) => text.includes(keyword));
-  if (matchedKeyword) {
-    return matchedKeyword;
-  }
-
-  const firstCategory = safeText(items?.[0]?.category);
-  if (isCafeCategory(firstCategory)) {
-    return "카페";
-  }
-  if (isPubCategory(firstCategory)) {
-    return "술집";
-  }
-  if (firstCategory) {
-    return firstCategory;
-  }
-
-  return "맛집";
-};
-
-const RESTAURANT_COMMENT_TEMPLATES = [
-  "{region}에서 가볼 만한 {type}을 모아봤어요",
-  "{region}에서 들러볼 만한 {type}을 정리했어요",
-  "{region} 근처 {type}들을 추려봤어요",
-  "{region}에서 괜찮은 {type}을 골라봤어요",
-];
-
-const CAFE_COMMENT_TEMPLATES = [
-  "{region}에서 가볼 만한 카페를 모아봤어요",
-  "{region} 근처 카페들을 추려봤어요",
-  "{region}에서 들러볼 카페를 정리했어요",
-  "{region}에서 괜찮은 카페를 골라봤어요",
-];
-
-const PUB_COMMENT_TEMPLATES = [
-  "{region}에서 가볼 만한 술집을 모아봤어요",
-  "{region} 근처 술집들을 추려봤어요",
-  "{region}에서 들러볼 술집을 정리했어요",
-  "{region}에서 괜찮은 술집을 골라봤어요",
-];
-
-const STAY_COMMENT_TEMPLATES = [
-  "{region} {typeObj} 골라봤어요",
-  "{region} {typeObj} 추천해드려요",
-  "{region}에 어울리는 {type}들 찾아봤어요",
-  "{region}에서 괜찮은 {type}들 골라봤어요",
-];
-
-const buildRecommendationComment = (
-  originalMessage: string,
+const buildFallbackRecommendationTitle = (
   destination: string,
-  kind: RecommendationKind,
-  items: RecommendationCardItem[]
+  kind: RecommendationKind
 ): string => {
-  const region = resolveRecommendationRegion(originalMessage, destination);
-
-  if (kind === "restaurant") {
-    const requestedType = extractRequestedRestaurantType(originalMessage, items);
-
-    if (requestedType === "카페") {
-      return pickRandomTemplate(CAFE_COMMENT_TEMPLATES).replace(
-        "{region}",
-        region
-      );
-    }
-
-    if (requestedType === "술집") {
-      return pickRandomTemplate(PUB_COMMENT_TEMPLATES).replace(
-        "{region}",
-        region
-      );
-    }
-
-    return pickRandomTemplate(RESTAURANT_COMMENT_TEMPLATES)
-      .replace("{region}", region)
-      .replace(/\{type\}/g, requestedType || "맛집");
-  }
-
-  const stayType = resolveStayDisplayType(originalMessage, items);
-  const typeObj = attachObjectParticle(stayType);
-
-  return pickRandomTemplate(STAY_COMMENT_TEMPLATES)
-    .replace("{region}", region)
-    .replace("{typeObj}", typeObj)
-    .replace(/\{type\}/g, stayType);
+  const region = normalizeDestinationLabel(destination) || "이 지역";
+  return kind === "restaurant"
+    ? `${region} 추천 정보를 모아봤어요`
+    : `${region} 숙소 정보를 모아봤어요`;
 };
 
 const createRecommendationPayload = (
-  originalMessage: string,
-  destination: string,
   kind: RecommendationKind,
   rawItems: RecommendationItem[],
+  title: string,
   summary = ""
 ): RecommendationPayload => {
   const normalizedItems = normalizeRecommendationCardItems(rawItems, kind);
 
   return {
     kind,
-    title: buildRecommendationComment(
-      safeText(originalMessage),
-      safeText(destination),
-      kind,
-      normalizedItems
-    ),
+    title,
     summary,
     items: normalizedItems,
   };
 };
 
 const createRecommendationFormattedResponse = (
-  originalMessage: string,
-  destination: string,
   kind: RecommendationKind,
   rawItems: RecommendationItem[],
+  title: string,
   summary = ""
 ): FormattedChatResponse => {
-  const payload = createRecommendationPayload(
-    originalMessage,
-    destination,
-    kind,
-    rawItems,
-    summary
-  );
+  const payload = createRecommendationPayload(kind, rawItems, title, summary);
 
   const fallbackTextLines: string[] = [];
   fallbackTextLines.push(payload.title);
@@ -747,23 +259,16 @@ const formatRecommendationResponse = (
     safeText(data.recommendation?.summary) ||
     safeText(data.combinedRecommendation?.summary);
 
+  const title =
+    safeText(data.recommendation?.displayTitle) ||
+    buildFallbackRecommendationTitle(safeText(data.destination), kind);
+
   return createRecommendationFormattedResponse(
-    safeText(data.originalMessage),
-    safeText(data.destination),
     kind,
     pickRecommendationItems(data),
+    title,
     summary
   );
-};
-
-const buildCombinedSyntheticMessage = (
-  destination: string,
-  kind: RecommendationKind
-): string => {
-  const region = safeText(destination) || "이 지역";
-  return kind === "restaurant"
-    ? `${region} 맛집 추천`
-    : `${region} 숙소 추천`;
 };
 
 const formatCombinedResponses = (
@@ -789,10 +294,10 @@ const formatCombinedResponses = (
   if (isNonEmptyArray(combined?.restaurants)) {
     responses.push(
       createRecommendationFormattedResponse(
-        buildCombinedSyntheticMessage(safeText(data.destination), "restaurant"),
-        safeText(data.destination),
         "restaurant",
-        combined?.restaurants ?? []
+        combined?.restaurants ?? [],
+        safeText(combined?.restaurantDisplayTitle) ||
+          buildFallbackRecommendationTitle(safeText(data.destination), "restaurant")
       )
     );
   }
@@ -800,10 +305,10 @@ const formatCombinedResponses = (
   if (isNonEmptyArray(combined?.stays)) {
     responses.push(
       createRecommendationFormattedResponse(
-        buildCombinedSyntheticMessage(safeText(data.destination), "stay"),
-        safeText(data.destination),
         "stay",
-        combined?.stays ?? []
+        combined?.stays ?? [],
+        safeText(combined?.stayDisplayTitle) ||
+          buildFallbackRecommendationTitle(safeText(data.destination), "stay")
       )
     );
   }
