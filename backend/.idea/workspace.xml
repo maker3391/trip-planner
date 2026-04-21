@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a6ab657d-11d1-4aa6-86cf-01bfc39e6cb7" name="변경" comment="">
+      <change afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/RecommendationDisplayService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/CombinedRecommendationResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/CombinedRecommendationResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/RecommendationContentResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/RecommendationContentResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CombinedRecommendationOrchestratorService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CombinedRecommendationOrchestratorService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/KakaoPlaceRecommendationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/KakaoPlaceRecommendationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/api/chat.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/api/chat.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/utils/chatFormatter.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/utils/chatFormatter.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.trip-planner 빌드.executor": "Run",
+    "Spring Boot.TripPlannerApplication.executor": "Run",
+    "git-widget-placeholder": "develop"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <servers />
+  </component>
+</project>

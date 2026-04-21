@@ -33,6 +33,7 @@ public class CombinedRecommendationOrchestratorService {
     private final RecommendationCacheKeyGenerator cacheKeyGenerator;
     private final ItineraryRequestResolverService itineraryRequestResolverService;
     private final KakaoPlaceRecommendationService kakaoPlaceRecommendationService;
+    private final RecommendationDisplayService recommendationDisplayService;
 
     public CombinedRecommendationOrchestratorService(OpenAiClient openAiClient,
                                                      RecommendationValidationService validationService,
@@ -41,7 +42,7 @@ public class CombinedRecommendationOrchestratorService {
                                                      RecommendationCacheService recommendationCacheService,
                                                      RecommendationCacheKeyGenerator cacheKeyGenerator,
                                                      ItineraryRequestResolverService itineraryRequestResolverService,
-                                                     KakaoPlaceRecommendationService kakaoPlaceRecommendationService) {
+                                                     KakaoPlaceRecommendationService kakaoPlaceRecommendationService, RecommendationDisplayService recommendationDisplayService) {
         this.openAiClient = openAiClient;
         this.validationService = validationService;
         this.normalizationService = normalizationService;
@@ -50,6 +51,7 @@ public class CombinedRecommendationOrchestratorService {
         this.cacheKeyGenerator = cacheKeyGenerator;
         this.itineraryRequestResolverService = itineraryRequestResolverService;
         this.kakaoPlaceRecommendationService = kakaoPlaceRecommendationService;
+        this.recommendationDisplayService = recommendationDisplayService;
     }
 
     public ChatResponse recommend(ChatRequest request) {
@@ -97,10 +99,14 @@ public class CombinedRecommendationOrchestratorService {
             List<RecommendationItemResponse> restaurants = restaurantFuture.join();
             List<RecommendationItemResponse> stays = stayFuture.join();
 
+            String displayDestination = buildLocationText(context);
+
             CombinedRecommendationResponse combined = new CombinedRecommendationResponse(
                     itinerary,
                     restaurants == null ? new ArrayList<>() : restaurants,
-                    stays == null ? new ArrayList<>() : stays
+                    stays == null ? new ArrayList<>() : stays,
+                    recommendationDisplayService.buildCombinedRestaurantTitle(displayDestination),
+                    recommendationDisplayService.buildCombinedStayTitle(displayDestination)
             );
 
             ChatResponse response = new ChatResponse(

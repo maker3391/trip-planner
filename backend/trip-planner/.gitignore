@@ -37,3 +37,11 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# JetBrains IDE (IntelliJ, etc.)
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
