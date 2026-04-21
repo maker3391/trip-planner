@@ -4,7 +4,7 @@ export default function LoadingBubble() {
       <div className="chat-bubble loading">
         <div className="chat-loading">
           <span className="chat-spinner" aria-hidden="true" />
-          <p>여행 정보를 정리하고 있어요.</p>
+          <p>여행 정보를 정리하고 있어요</p>
         </div>
       </div>
     </div>

@@ -35,6 +35,21 @@ const RECOMMENDATION_TYPE_KEYWORDS = [
   "게스트하우스",
   "한옥스테이",
   "풀빌라",
+  "카페",
+  "디저트",
+  "베이커리",
+  "빵집",
+  "케이크",
+  "빙수",
+  "와플",
+  "도넛",
+  "아이스크림",
+  "술집",
+  "주점",
+  "포차",
+  "호프",
+  "와인바",
+  "칵테일바",
 ];
 
 const RESTAURANT_GENERIC_CATEGORY_KEYWORDS = [
@@ -43,6 +58,31 @@ const RESTAURANT_GENERIC_CATEGORY_KEYWORDS = [
   "식당",
   "레스토랑",
   "음식",
+];
+
+const CAFE_KEYWORDS = [
+  "카페",
+  "디저트",
+  "베이커리",
+  "빵집",
+  "케이크",
+  "빙수",
+  "와플",
+  "도넛",
+  "아이스크림",
+  "브런치카페",
+];
+
+const PUB_KEYWORDS = [
+  "술집",
+  "주점",
+  "포차",
+  "호프",
+  "와인바",
+  "칵테일바",
+  "이자카야",
+  "bar",
+  "pub",
 ];
 
 const normalizeDestinationLabel = (rawDestination?: string | null): string => {
@@ -335,13 +375,6 @@ const normalizeRecommendationCardItems = (
   }));
 };
 
-const RESTAURANT_COMMENT_TEMPLATES = [
-  "{region} 맛집을 모아봤어요",
-  "{region}에서 가볼 만한 맛집을 정리했어요",
-  "{region} 근처 맛집들을 추려봤어요",
-  "{region}에서 들러볼 맛집을 모아봤어요",
-];
-
 const pickRandomTemplate = (templates: string[]): string => {
   if (templates.length === 0) {
     return "{region} 정보를 모아봤어요";
@@ -375,13 +408,6 @@ const resolveRecommendationRegion = (
   return "이 지역";
 };
 
-const STAY_COMMENT_TEMPLATES = [
-  "{region} {typeObj} 골라봤어요",
-  "{region} {typeObj} 추천해드려요",
-  "{region}에 어울리는 {type}들 찾아봤어요",
-  "{region}에서 괜찮은 {type}들 골라봤어요",
-];
-
 const attachObjectParticle = (word: string): string => {
   if (!word) return "";
 
@@ -396,6 +422,211 @@ const attachObjectParticle = (word: string): string => {
   return word + (hasBatchim ? "을" : "를");
 };
 
+const isCafeCategory = (value?: string | null): boolean => {
+  const text = safeText(value).toLowerCase();
+  if (!text) return false;
+  return CAFE_KEYWORDS.some((keyword) => text.includes(keyword.toLowerCase()));
+};
+
+const isPubCategory = (value?: string | null): boolean => {
+  const text = safeText(value).toLowerCase();
+  if (!text) return false;
+  return PUB_KEYWORDS.some((keyword) => text.includes(keyword.toLowerCase()));
+};
+
+const extractRequestedRestaurantType = (
+  originalMessage?: string | null,
+  items?: RecommendationCardItem[]
+): string => {
+  const text = safeText(originalMessage);
+
+  if (CAFE_KEYWORDS.some((keyword) => text.includes(keyword))) {
+    return "카페";
+  }
+
+  if (PUB_KEYWORDS.some((keyword) => text.includes(keyword))) {
+    return "술집";
+  }
+
+  const foodKeywords = [
+    "국밥",
+    "돼지국밥",
+    "순대국",
+    "설렁탕",
+    "곰탕",
+    "갈비탕",
+    "해장국",
+    "감자탕",
+    "김치찌개",
+    "된장찌개",
+    "청국장",
+    "순두부",
+    "부대찌개",
+    "동태찌개",
+    "매운탕",
+    "추어탕",
+    "삼계탕",
+    "백숙",
+    "닭한마리",
+    "전골",
+    "곱도리탕",
+    "닭볶음탕",
+    "아구찜",
+    "해물탕",
+    "해물찜",
+    "샤브샤브",
+    "백반",
+    "한정식",
+    "비빔밥",
+    "쌈밥",
+    "보리밥",
+    "기사식당",
+    "꼬막비빔밥",
+    "불고기",
+    "갈비",
+    "돼지갈비",
+    "소갈비",
+    "양념갈비",
+    "생갈비",
+    "삼겹살",
+    "목살",
+    "항정살",
+    "가브리살",
+    "족발",
+    "보쌈",
+    "닭갈비",
+    "제육볶음",
+    "오리구이",
+    "장어구이",
+    "생선구이",
+    "게장",
+    "육회",
+    "육사시미",
+    "닭발",
+    "쭈꾸미",
+    "오징어볶음",
+    "낙곱새",
+    "한우",
+    "소고기",
+    "꽃등심",
+    "등심",
+    "안심",
+    "차돌박이",
+    "토시살",
+    "살치살",
+    "안창살",
+    "갈비살",
+    "업진살",
+    "제비추리",
+    "부채살",
+    "곱창",
+    "대창",
+    "막창",
+    "소막창",
+    "돼지막창",
+    "흑돼지",
+    "냉면",
+    "밀면",
+    "칼국수",
+    "수제비",
+    "국수",
+    "막국수",
+    "초밥",
+    "스시",
+    "횟집",
+    "회",
+    "사시미",
+    "라멘",
+    "우동",
+    "소바",
+    "돈까스",
+    "텐동",
+    "덮밥",
+    "오마카세",
+    "이자카야",
+    "짜장면",
+    "짬뽕",
+    "탕수육",
+    "마라탕",
+    "마라샹궈",
+    "훠궈",
+    "양꼬치",
+    "딤섬",
+    "파스타",
+    "스테이크",
+    "리조또",
+    "피자",
+    "브런치",
+    "샐러드",
+    "버거",
+    "수제버거",
+    "바베큐",
+    "떡볶이",
+    "김밥",
+    "순대",
+    "튀김",
+    "라볶이",
+    "오뎅",
+    "토스트",
+    "치킨",
+    "닭강정",
+    "디저트",
+    "베이커리",
+    "빵집",
+    "케이크",
+    "빙수",
+    "와플",
+    "도넛",
+    "아이스크림",
+  ];
+
+  const matchedKeyword = foodKeywords.find((keyword) => text.includes(keyword));
+  if (matchedKeyword) {
+    return matchedKeyword;
+  }
+
+  const firstCategory = safeText(items?.[0]?.category);
+  if (isCafeCategory(firstCategory)) {
+    return "카페";
+  }
+  if (isPubCategory(firstCategory)) {
+    return "술집";
+  }
+  if (firstCategory) {
+    return firstCategory;
+  }
+
+  return "맛집";
+};
+
+const RESTAURANT_COMMENT_TEMPLATES = [
+  "{region}에서 가볼 만한 {type}을 모아봤어요",
+  "{region}에서 들러볼 만한 {type}을 정리했어요",
+  "{region} 근처 {type}들을 추려봤어요",
+  "{region}에서 괜찮은 {type}을 골라봤어요",
+];
+
+const CAFE_COMMENT_TEMPLATES = [
+  "{region}에서 가볼 만한 카페를 모아봤어요",
+  "{region} 근처 카페들을 추려봤어요",
+  "{region}에서 들러볼 카페를 정리했어요",
+  "{region}에서 괜찮은 카페를 골라봤어요",
+];
+
+const PUB_COMMENT_TEMPLATES = [
+  "{region}에서 가볼 만한 술집을 모아봤어요",
+  "{region} 근처 술집들을 추려봤어요",
+  "{region}에서 들러볼 술집을 정리했어요",
+  "{region}에서 괜찮은 술집을 골라봤어요",
+];
+
+const STAY_COMMENT_TEMPLATES = [
+  "{region} {typeObj} 골라봤어요",
+  "{region} {typeObj} 추천해드려요",
+  "{region}에 어울리는 {type}들 찾아봤어요",
+  "{region}에서 괜찮은 {type}들 골라봤어요",
+];
+
 const buildRecommendationComment = (
   originalMessage: string,
   destination: string,
@@ -405,10 +636,25 @@ const buildRecommendationComment = (
   const region = resolveRecommendationRegion(originalMessage, destination);
 
   if (kind === "restaurant") {
-    return pickRandomTemplate(RESTAURANT_COMMENT_TEMPLATES).replace(
-      "{region}",
-      region
-    );
+    const requestedType = extractRequestedRestaurantType(originalMessage, items);
+
+    if (requestedType === "카페") {
+      return pickRandomTemplate(CAFE_COMMENT_TEMPLATES).replace(
+        "{region}",
+        region
+      );
+    }
+
+    if (requestedType === "술집") {
+      return pickRandomTemplate(PUB_COMMENT_TEMPLATES).replace(
+        "{region}",
+        region
+      );
+    }
+
+    return pickRandomTemplate(RESTAURANT_COMMENT_TEMPLATES)
+      .replace("{region}", region)
+      .replace(/\{type\}/g, requestedType || "맛집");
   }
 
   const stayType = resolveStayDisplayType(originalMessage, items);
@@ -520,7 +766,9 @@ const buildCombinedSyntheticMessage = (
     : `${region} 숙소 추천`;
 };
 
-const formatCombinedResponses = (data: ChatResponse): FormattedChatResponse[] => {
+const formatCombinedResponses = (
+  data: ChatResponse
+): FormattedChatResponse[] => {
   const combined = data.combinedRecommendation;
   const responses: FormattedChatResponse[] = [];
 
