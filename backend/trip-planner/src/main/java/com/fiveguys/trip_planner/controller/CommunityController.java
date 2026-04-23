@@ -1,12 +1,15 @@
 package com.fiveguys.trip_planner.controller;
 
+import com.fiveguys.trip_planner.dto.CommunityCommentRequest;
 import com.fiveguys.trip_planner.dto.CommunityRequest;
+import com.fiveguys.trip_planner.response.CommunityCommentResponse;
 import com.fiveguys.trip_planner.response.CommunityResponse;
 import com.fiveguys.trip_planner.service.CommunityService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -232,5 +235,61 @@ public class CommunityController {
             return ResponseEntity.internalServerError()
                     .body(Map.of("success", false, "message", "삭제 실패"));
         }
+    }
+
+    // =========================
+    // 🔹 댓글 작성
+    // =========================
+    @PostMapping("/posts/{postId}/comments") // ✅ 쿼리 파라미터 부분 삭제!
+    public ResponseEntity<?> createComment(
+            @PathVariable Long postId,
+            @RequestParam Long userId,
+            @Valid @RequestBody CommunityCommentRequest request
+    ) {
+        communityService.createComment(postId, userId, request);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+
+    // =========================
+    // 🔹 대댓글 작성
+    // =========================
+    @PostMapping("/posts/{postId}/comments/{parentId}")
+    public ResponseEntity<?> createReply(
+            @PathVariable Long postId,
+            @PathVariable Long parentId,
+            @RequestParam Long userId,
+            @Valid @RequestBody CommunityCommentRequest request
+    ) {
+        communityService.createReply(postId, parentId, userId, request);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+
+    // =========================
+    // 🔹 댓글 조회
+    // =========================
+    @GetMapping("/posts/{postId}/comments")
+    public ResponseEntity<CommunityCommentResponse> getComments(
+            @PathVariable Long postId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(
+                communityService.getComments(postId, page, size)
+        );
+    }
+
+
+    // =========================
+    // 🔹 댓글 삭제
+    // =========================
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<?> deleteComment(
+            @PathVariable Long commentId,
+            @RequestParam Long userId
+    ) {
+        communityService.deleteComment(commentId, userId);
+        return ResponseEntity.ok(Map.of("success", true));
     }
 }
