@@ -77,6 +77,7 @@ public class TripPlanService {
                 tripPlan.getSchedules().add(schedule);
             }
         }
+
         if (requestDto.getExpenses() != null) {
             for (ExpenseRequestDto expenseDto : requestDto.getExpenses()) {
                 Expense expense = new Expense();
@@ -84,9 +85,24 @@ public class TripPlanService {
                 expense.setAmount(expenseDto.getAmount());
                 expense.setCategory(expenseDto.getCategory() != null ? expenseDto.getCategory() : "ETC");
                 expense.setDescription(expenseDto.getDescription());
-                expense.setExpenseType("ESTIMATED");
+                expense.setExpenseType(expenseDto.getExpenseType() != null ? expenseDto.getExpenseType() : "ACTUAL");
                 expense.setCreatedAt(LocalDateTime.now());
                 expense.setPaidByUser(user);
+
+                // ✅ 하위 항목 처리 추가
+                if (expenseDto.getSubExpenses() != null) {
+                    for (ExpenseRequestDto subDto : expenseDto.getSubExpenses()) {
+                        Expense subExpense = new Expense();
+                        subExpense.setTripPlan(tripPlan);
+                        subExpense.setAmount(subDto.getAmount());
+                        subExpense.setCategory(subDto.getCategory() != null ? subDto.getCategory() : "ETC");
+                        subExpense.setDescription(subDto.getDescription());
+                        subExpense.setExpenseType(subDto.getExpenseType() != null ? subDto.getExpenseType() : "ACTUAL");
+                        subExpense.setCreatedAt(LocalDateTime.now());
+                        subExpense.setPaidByUser(user);
+                        expense.addSubExpense(subExpense);
+                    }
+                }
 
                 tripPlan.getExpenses().add(expense);
             }
@@ -114,7 +130,6 @@ public class TripPlanService {
         ownerMember.setUser(user);
         ownerMember.setRole("OWNER");
         tripMemberRepository.save(ownerMember);
-
 
         return new TripPlanResponseDto(savePlan);
     }
@@ -204,9 +219,24 @@ public class TripPlanService {
                 expense.setAmount(expenseDto.getAmount());
                 expense.setCategory(expenseDto.getCategory() != null ? expenseDto.getCategory() : "ETC");
                 expense.setDescription(expenseDto.getDescription());
-                expense.setExpenseType("ESTIMATED");
+                expense.setExpenseType(expenseDto.getExpenseType() != null ? expenseDto.getExpenseType() : "ACTUAL");
                 expense.setCreatedAt(LocalDateTime.now());
                 expense.setPaidByUser(user);
+
+                // ✅ 하위 항목 처리 추가
+                if (expenseDto.getSubExpenses() != null) {
+                    for (ExpenseRequestDto subDto : expenseDto.getSubExpenses()) {
+                        Expense subExpense = new Expense();
+                        subExpense.setTripPlan(tripPlan);
+                        subExpense.setAmount(subDto.getAmount());
+                        subExpense.setCategory(subDto.getCategory() != null ? subDto.getCategory() : "ETC");
+                        subExpense.setDescription(subDto.getDescription());
+                        subExpense.setExpenseType(subDto.getExpenseType() != null ? subDto.getExpenseType() : "ACTUAL");
+                        subExpense.setCreatedAt(LocalDateTime.now());
+                        subExpense.setPaidByUser(user);
+                        expense.addSubExpense(subExpense);
+                    }
+                }
 
                 tripPlan.getExpenses().add(expense);
             }

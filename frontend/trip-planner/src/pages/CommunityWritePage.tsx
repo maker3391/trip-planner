@@ -261,7 +261,7 @@ export default function CommunityWritePage() {
         e.preventDefault();
 
         if (!formData.title.trim()) {
-            toast.error("제목을 입력해주세요.");
+            toast.error("제목을 입력해주세요.", { id: "validation-title" });
             return;
         }
 
@@ -277,7 +277,7 @@ export default function CommunityWritePage() {
                 toast.success("게시글이 수정되었습니다.");
             } else {
                 await client.post("/community/posts", payload);
-                toast.success("새 게시글이 등록되었습니다.");
+                toast.success("새 게시글이 등록되었습니다.", { id: "post-create-success" });
             }
 
             // 토스트를 보여주기 위해 약간의 지연 후 이동
@@ -302,7 +302,7 @@ export default function CommunityWritePage() {
     }
     return (
         <>
-            <Toaster position="top-center" reverseOrder={false} />
+            <Toaster position="bottom-center" reverseOrder={false}/>
             <Header />
             <div className="community-page">
                 <div className="community-container">

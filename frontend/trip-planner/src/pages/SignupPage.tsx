@@ -1,6 +1,6 @@
 import { useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast, { Toaster }  from "react-hot-toast"; // Toaster는 최상위(Router)에서 한 번만 쓰기로 했으므로 삭제
 import type { SignupRequest } from "../types/auth";
 import Header from "../components/layout/Header";
 import KakaoIcon from "../assets/icons/Kakao.png";
@@ -56,7 +56,6 @@ export default function SignupPage() {
       });
     } else {
       const updatedAgreements = { ...agreements, [name]: checked };
-      // 모든 개별 항목이 체크되면 'all'도 체크, 하나라도 해제되면 'all' 해제
       updatedAgreements.all = 
         updatedAgreements.terms && updatedAgreements.privacy && updatedAgreements.marketing;
       setAgreements(updatedAgreements);
@@ -67,30 +66,33 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 유효성 검사
+    // 유효성 검사 - 공통 ID 'signup-validation' 사용
     if (!formData.email || !formData.password || !passwordConfirm || !formData.name) {
-      toast.error("필수 내용을 모두 입력해주세요. ✍️");
+      // 예시: 모든 toast 호출부에 duration 추가
+      toast.error("필수 내용을 모두 입력해주세요. ✍️", { 
+        id: "signup-validation",
+        duration: 3000 // 3초 후 삭제
+      });
       return;
     }
 
     if (passwordConfirm !== formData.password) {
-      toast.error("비밀번호가 일치하지 않습니다. 🔒");
+      toast.error("비밀번호가 일치하지 않습니다. 🔒", { id: "signup-validation" });
       return;
     }
 
     if (formData.password.length < 8) {
-      toast.error("비밀번호는 최소 8자 이상이어야 합니다.");
+      toast.error("비밀번호는 최소 8자 이상이어야 합니다.", { id: "signup-validation" });
       return;
     }
 
-    // 약관 동의 검사 (필수 항목 체크 여부)
     if (!agreements.terms || !agreements.privacy) {
-      toast.error("필수 약관에 모두 동의해주세요. ✅");
+      toast.error("필수 약관에 모두 동의해주세요. ✅", { id: "signup-validation" });
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      toast.error("올바른 이메일 형식이 아닙니다. @");
+      toast.error("올바른 이메일 형식이 아닙니다. @", { id: "signup-validation" });
       return;
     }
 
@@ -107,13 +109,15 @@ export default function SignupPage() {
 
       if (response.ok) {
         const data = await response.json();
+        // 성공 시 기존 에러 토스트들을 지움
+        toast.dismiss();
+
         if (data.accessToken && data.refreshToken) {
           localStorage.setItem("accessToken", data.accessToken);
           localStorage.setItem("refreshToken", data.refreshToken);
-          toast.success("반가워요! 회원가입 및 로그인이 완료되었습니다! 🎉");
           setTimeout(() => navigate("/"), 1500);
         } else {
-          toast.success("회원가입 성공! 로그인 해주세요. 😊");
+          toast.success("회원가입 성공! 로그인 해주세요. 😊", { id: "signup-success" });
           setTimeout(() => navigate("/login"), 1500);
         }
       } else {
@@ -122,26 +126,34 @@ export default function SignupPage() {
       }
     } catch (error) {
       console.error("네트워크 오류 발생:", error);
-      toast.error("서버와 연결할 수 없습니다. 네트워크를 확인해주세요. 🌐");
+      toast.error("서버와 연결할 수 없습니다. 네트워크를 확인해주세요. 🌐", { id: "signup-network-error" });
     }
   };
 
   const handleSignupFailure = (status: number, serverMessage?: string) => {
     if (serverMessage) {
-      toast.error(`실패: ${serverMessage}`);
+      toast.error(`실패: ${serverMessage}`, { id: "signup-fail" });
       return;
     }
     switch (status) {
-      case 400: toast.error("입력 형식이 올바르지 않습니다."); break;
-      case 409: toast.error("이미 사용 중인 이메일입니다. 📧"); break;
-      case 500: toast.error("서버 내부 문제가 발생했습니다. 잠시 후 다시 시도해주세요."); break;
-      default: toast.error("회원가입에 실패했습니다.");
+      case 400: toast.error("입력 형식이 올바르지 않습니다.", { id: "signup-fail" }); break;
+      case 409: toast.error("이미 사용 중인 이메일입니다. 📧", { id: "signup-fail" }); break;
+      case 500: toast.error("서버 내부 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", { id: "signup-fail" }); break;
+      default: toast.error("회원가입에 실패했습니다.", { id: "signup-fail" });
     }
   };
+    const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  };
+
+  const handleKakaoLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/kakao";
+  };
+
 
   return (
     <div className="signup-page">
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster position="bottom-center" reverseOrder={false} />
       <Header />
 
       <div className="signup-page-body">
@@ -160,7 +172,6 @@ export default function SignupPage() {
             <input className="signup-input" type="text" name="phone" placeholder="전화번호 (예: 010-1234-5678)" value={formData.phone} onChange={handleChange} />
           </div>
 
-          {/* 약관 동의 섹션 */}
           <div className="agreement-section">
             <div className="agreement-item all-agree">
               <label>
@@ -200,11 +211,19 @@ export default function SignupPage() {
 
           <div className="signup-divider">또는</div>
 
-          <button className="social-button" onClick={() => toast("서비스 준비 중입니다! 🛠️")}>
+          <button
+            type="button"
+            className="social-button"
+            onClick={handleKakaoLogin}
+          >
             <img src={KakaoIcon} alt="카카오 아이콘" className="social-icon" />
             <span className="social-button-text">Kakao 계정으로 진행하기</span>
           </button>
-          <button className="social-button" onClick={() => toast("서비스 준비 중입니다! 🛠️")}>
+          <button
+            type="button"
+            className="social-button"
+            onClick={handleGoogleLogin}
+          >
             <img src={GoogleIcon} alt="구글 아이콘" className="social-icon" />
             <span className="social-button-text">Google 계정으로 진행하기</span>
           </button>
@@ -215,7 +234,6 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* 약관 상세 보기 모달 분기 처리 */}
       <TermsModal 
         open={activeModal === "terms"} 
         onClose={() => setActiveModal(null)} 

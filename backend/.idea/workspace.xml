@@ -5,14 +5,33 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a6ab657d-11d1-4aa6-86cf-01bfc39e6cb7" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/RecommendationDisplayService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/CombinedRecommendationResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/CombinedRecommendationResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/RecommendationContentResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/response/RecommendationContentResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CombinedRecommendationOrchestratorService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CombinedRecommendationOrchestratorService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/KakaoPlaceRecommendationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/KakaoPlaceRecommendationService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/api/chat.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/api/chat.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/utils/chatFormatter.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/chatbot/utils/chatFormatter.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/ExpenseRequestDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/ExpenseRequestDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/ExpenseResponseDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/ExpenseResponseDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/TripPlanResponseDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/TripPlanResponseDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/entity/Expense.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/entity/Expense.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/ExpenseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/ExpenseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/TripPlanService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/TripPlanService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/hooks/useTrip.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/hooks/useTrip.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Calculator.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Calculator.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Calculator.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Calculator.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/calculator.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/calculator.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/map/MapController.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/map/MapController.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/map/SearchResultModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/map/SearchResultModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/map/SideListPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/map/SideListPanel.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/router/Router.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/router/Router.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/store/useTripStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/store/useTripStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/trip/ActionButtons.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/trip/ActionButtons.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/CommunityReadPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/CommunityReadPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/CommunityWritePage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/CommunityWritePage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/LoginPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/LoginPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/SignupPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/SignupPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/TripListPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/TripListPage.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,17 +48,54 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="3CjeiaGPYMvQOTJNkJDLHcaZTi8" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.trip-planner 빌드.executor": "Run",
-    "Spring Boot.TripPlannerApplication.executor": "Run",
-    "git-widget-placeholder": "develop"
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.Build trip-planner.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.trip-planner 빌드.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.TripPlannerApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <created>1776903535077</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1776903535077</updated>
+    </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>

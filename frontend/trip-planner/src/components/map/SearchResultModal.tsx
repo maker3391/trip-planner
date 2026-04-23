@@ -36,7 +36,7 @@ export default function SearchResultModal({
             onClick={onClose}
             aria-label="검색 결과 닫기"
           >
-            ×
+            
           </button>
         </div>
 

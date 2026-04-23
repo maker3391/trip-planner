@@ -27,7 +27,7 @@ export default function SideListPanel({
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => setShowLines(!showLines)} style={{ flex: 1, padding: '8px', fontSize: '11px', cursor: 'pointer', background: '#fff', border: '1px solid #ddd', borderRadius: '6px' }}>{showLines ? "선 숨기기" : "선 보이기"}</button>
-              <button onClick={() => setShowAllMemos(!showAllMemos)} style={{ flex: 1, padding: '8px', fontSize: '11px', cursor: 'pointer', background: '#fff', border: '1px solid #ddd', borderRadius: '6px' }}>{showAllMemos ? "메모 숨기기" : "메모 보이기"}</button>
+              
             </div>
           </div>
 
@@ -64,7 +64,7 @@ export default function SideListPanel({
               )}
             </Droppable>
           </DragDropContext>
-          <button onClick={() => { if(confirm("초기화?")) { setPath([]); setSelectedIdx(null); }}} style={{ marginTop: '15px', width: '100%', padding: '12px', borderRadius: '10px', background: '#333', color: '#fff', border: 'none', fontSize: '13px', cursor: 'pointer' }}>전체 초기화</button>
+          <button onClick={() => { if(confirm("초기화 하시겠습니까?")) { setPath([]); setSelectedIdx(null); }}} style={{ marginTop: '15px', width: '100%', padding: '12px', borderRadius: '10px', background: '#333', color: '#fff', border: 'none', fontSize: '13px', cursor: 'pointer' }}>전체 초기화</button>
         </>
       )}
     </div>

@@ -300,7 +300,7 @@ export default function CommunityReadPage() {
 
     return (
         <>
-            <Toaster position="top-center" reverseOrder={false} />
+            <Toaster position="bottom-center" reverseOrder={false}/>
             <Header />
             <div className="community-page">
                 <div className="community-container">

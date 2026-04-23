@@ -1,17 +1,14 @@
-import { AppBar, Toolbar, Button } from "@mui/material";
+import { AppBar, Toolbar, Button, IconButton, Badge, Menu, MenuItem, Box, Typography } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone"; // 종 아이콘 추가
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
-import { CalculatorService } from "./calculator";
-import Calculator from "./Calculator.tsx";
 import tplanner from "../../assets/icons/tplanner2.png";
 import GuidePopup from "../guide/GuidePopup.tsx";
 import { getMe } from "../api/auth.ts";
-
-// react-hot-toast를 사용 중이라면 임포트 (기존 alert 대체용)
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -22,9 +19,20 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // 현재 페이지가 메인 페이지인지 확인 (경로가 "/" 인 경우)
-  const isMainPage = location.pathname === "/";
+  // --- 알림(Notification) 관련 상태 추가 ---
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openNotifications = Boolean(anchorEl);
 
+  const handleNotificationClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificationClose = () => {
+    setAnchorEl(null);
+  };
+  // -------------------------------------
+
+  const isMainPage = location.pathname === "/";
   const match = location.pathname.match(/\d+/);
   const currentTripId = match ? parseInt(match[0], 10) : 1;
 
@@ -36,7 +44,6 @@ export default function Header() {
   useEffect(() => {
     const today = new Date().toLocaleDateString("sv-SE");
     const hideGuidePopupDate = localStorage.getItem("hideGuidePopupDate");
-
     if (hideGuidePopupDate !== today) {
       setOpenGuidePopup(true);
     }
@@ -44,10 +51,8 @@ export default function Header() {
 
   useEffect(() => {
     let isMounted = true;
-
     const validateLogin = async () => {
       const token = localStorage.getItem("accessToken");
-
       if (!token || token === "undefined") {
         if (isMounted) {
           setIsLoggedIn(false);
@@ -55,30 +60,19 @@ export default function Header() {
         }
         return;
       }
-
       try {
         await getMe();
-        if (isMounted) {
-          setIsLoggedIn(true);
-        }
+        if (isMounted) setIsLoggedIn(true);
       } catch (error) {
         clearAuth();
-        if (isMounted) {
-          setIsLoggedIn(false);
-        }
+        if (isMounted) setIsLoggedIn(false);
       } finally {
-        if (isMounted) {
-          setIsCheckingAuth(false);
-        }
+        if (isMounted) setIsCheckingAuth(false);
       }
     };
-
     setIsCheckingAuth(true);
     validateLogin();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -92,7 +86,6 @@ export default function Header() {
     } finally {
       clearAuth();
       setIsLoggedIn(false);
-      toast.success("로그아웃되었습니다.");
       navigate("/login");
     }
   };
@@ -100,7 +93,7 @@ export default function Header() {
   const handleTripListClick = () => {
     if (isCheckingAuth) return;
     if (!isLoggedIn) {
-      toast.error("로그인 후 이용 가능합니다.");
+      toast.error("로그인 후 이용 가능합니다.", { id: "login-required" });
       navigate("/login");
       return;
     }
@@ -110,20 +103,15 @@ export default function Header() {
   const handleCommunityClick = () => {
     if (isCheckingAuth) return;
     if (!isLoggedIn) {
-      toast.error("로그인 후 이용 가능합니다.");
+      toast.error("로그인 후 이용 가능합니다.", { id: "login-required" });
       navigate("/login");
       return;
     }
     navigate("/community");
   };
 
-  const handleCalculatorClick = () => {
-    CalculatorService.openCalculator();
-  };
-
   return (
     <>
-      <Toaster position="top-center" />
       <AppBar position="static" elevation={0} className="header">
         <Toolbar className="header-toolbar">
           <div className="header-logo" onClick={() => navigate("/")}>
@@ -138,21 +126,45 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
-            {/* 메인 페이지에서만 계산기 아이콘 노출 */}
-            {isMainPage && (
-              <span className="header-icon">
-                <button
-                  type="button"
-                  onClick={handleCalculatorClick}
-                  className="header-icon-btn"
-                >
-                  <ShoppingCartOutlinedIcon />
-                </button>
-              </span>
-            )}
-
             {!isCheckingAuth && isLoggedIn ? (
               <>
+                {/* 1. 알림 종 아이콘 (마이페이지 왼쪽) */}
+                <IconButton 
+                  onClick={handleNotificationClick}
+                  sx={{ color: '#333', marginRight: '8px' }}
+                >
+                  <Badge badgeContent={0} color="error">
+                    <NotificationsNoneIcon />
+                  </Badge>
+                </IconButton>
+
+                {/* 2. 알림 드롭다운 메뉴 */}
+                <Menu
+                  anchorEl={anchorEl}
+                  open={openNotifications}
+                  onClose={handleNotificationClose}
+                  PaperProps={{
+                    sx: {
+                      width: 280,
+                      maxHeight: 400,
+                      mt: 1.5,
+                      boxShadow: '0px 5px 15px rgba(0,0,0,0.1)',
+                      borderRadius: '10px'
+                    }
+                  }}
+                  transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                  anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                >
+                  <Box sx={{ p: 2, borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>알림</Typography>
+                  </Box>
+                  <MenuItem sx={{ py: 3, justifyContent: 'center', cursor: 'default' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      새로운 알림이 없습니다.
+                    </Typography>
+                  </MenuItem>
+                </Menu>
+
                 <Button
                   className="header-login-btn"
                   onClick={() => navigate("/mypage")}
@@ -165,16 +177,10 @@ export default function Header() {
               </>
             ) : !isCheckingAuth ? (
               <>
-                <Button
-                  className="header-login-signup-btn"
-                  onClick={() => navigate("/login")}
-                >
+                <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
                   로그인
                 </Button>
-                <Button
-                  className="header-login-signup-btn"
-                  onClick={() => navigate("/signup")}
-                >
+                <Button className="header-login-signup-btn" onClick={() => navigate("/signup")}>
                   회원가입
                 </Button>
               </>
@@ -183,18 +189,8 @@ export default function Header() {
         </Toolbar>
       </AppBar>
 
-      <GuidePopup
-        open={openGuidePopup}
-        onClose={() => setOpenGuidePopup(false)}
-      />
-
-      <TutorialModal
-        open={openTutorial}
-        onClose={() => setOpenTutorial(false)}
-      />
-
-      {/* 메인 페이지이고 tripId가 있을 때만 계산기 컴포넌트 활성화 */}
-      {isMainPage && currentTripId && <Calculator tripId={currentTripId} />}
+      <GuidePopup open={openGuidePopup} onClose={() => setOpenGuidePopup(false)} />
+      <TutorialModal open={openTutorial} onClose={() => setOpenTutorial(false)} />
     </>
   );
 }
