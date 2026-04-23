@@ -1,0 +1,292 @@
+/* ========================= */
+/* 🔥 게시판 */
+/* ========================= */
+.community-board-container {
+    border-top: 2px solid #333;
+    border-bottom: 1px solid #eee;
+    background-color: #ffffff;
+    border-radius: 4px;
+    overflow-x: hidden;
+}
+
+/* 🔥 컬럼 비율 */
+.board-header-row,
+.board-item-row {
+    display: grid;
+    grid-template-columns: 
+        80px
+        1.8fr
+        90px
+        55px
+        55px
+        55px
+        85px
+        85px;
+
+    align-items: center;
+    padding: 12px 0;
+    text-align: center;
+}
+
+.board-header-row > *,
+.board-item-row > * {
+    min-width: 0;
+}
+
+/* ========================= */
+/* 🔥 헤더 */
+/* ========================= */
+.board-header-row {
+    background-color: #f5f5f5; /* 🔥 기준 색 */
+    font-weight: 600;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #555;
+}
+
+/* ========================= */
+/* 🔥 리스트 */
+/* ========================= */
+.board-item-row {
+    border-bottom: 1px solid #f5f5f5;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+    color: #444; /* 🔥 기본 텍스트 통일 */
+}
+
+.board-item-row:hover {
+    background-color: #fafafa;
+    cursor: pointer;
+}
+
+/* 현재 글 */
+.board-item-row.active-row {
+    background-color: #f0f0f0;
+    border-left: 3px solid #999;
+    font-weight: 600;
+}
+
+.board-item-row.active-row:hover {
+    background-color: #eaeaea;
+}
+
+/* ========================= */
+/* 🔥 컬럼 디테일 */
+/* ========================= */
+.col-title {
+    text-align: left;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+}
+
+/* 제목 */
+.title-text {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 댓글 수 */
+.comment-count {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #888; /* 🔥 강조 제거 */
+    font-weight: 500;
+}
+
+/* 🔥 기타 (헤더 느낌으로 통일) */
+.col-route {
+    width: calc(100% - 16px);
+    justify-self: center;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    color: #555;                /* 🔥 헤더 텍스트 톤 */
+    background: #f5f5f5;       /* 🔥 헤더 배경과 통일 */
+    border-radius: 4px;
+    padding: 3px 6px;
+}
+
+/* 작성자 */
+.col-author {
+    font-size: 13px;
+    color: #555;
+}
+
+/* 날짜 */
+.col-date {
+    font-size: 13px;
+    color: #888;
+}
+
+/* 숫자 컬럼 */
+.col-views,
+.col-stats,
+.col-share {
+    width: 55px;
+    max-width: 55px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+
+    color: #777; /* 🔥 전부 통일 */
+}
+
+/* 공유 컬럼 (색 제거) */
+.col-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+/* ========================= */
+/* 🔥 페이지네이션 */
+/* ========================= */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 30px 0;
+}
+
+.pagination button {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #666;
+    transition: 0.2s;
+}
+
+.pagination button:hover {
+    background-color: #f5f5f5;
+    border-color: #ccc;
+}
+
+.pagination button.active-page {
+    background-color: #333; /* 🔥 포인트 컬러 하나만 유지 */
+    color: #fff;
+    font-weight: 700;
+    border-color: #333;
+}
+
+/* ========================= */
+/* 🔥 게시글 없음 */
+/* ========================= */
+.no-posts {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+}
+
+.notice-row {
+    background-color: #fff8e1;
+    font-weight: 600;
+    border-left: 3px solid #ffc107;
+}
+
+/* ========================= */
+/* 🔥 공지사항 섹션 및 로우 */
+/* ========================= */
+
+/* 공지사항 로우 전용 스타일 */
+.board-item-row.notice-row {
+    background-color: #fffbef; /* 아주 연한 노란색으로 가독성 확보 */
+    border-bottom: 1px solid #f9eebc;
+}
+
+.board-item-row.notice-row:hover {
+    background-color: #fff8e1;
+}
+
+/* 공지사항의 '최신 공지' 텍스트 강조 */
+.notice-row .col-category {
+    color: #b88600; /* 노란색 톤의 어두운 갈색 */
+    font-weight: 800;
+}
+
+/* 공지사항 제목 강조 */
+.notice-row .title-text {
+    font-weight: 700;
+    color: #222;
+}
+
+/* 공지사항이 없을 때 */
+.no-notices {
+    padding: 15px;
+    text-align: center;
+    font-size: 13px;
+    color: #bbb;
+    background-color: #fafafa;
+    border-bottom: 1px solid #eee;
+}
+
+/* ========================= */
+/* 🔥 공지사항 펼치기/접기 버튼 */
+/* ========================= */
+.notice-toggle-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    padding: 10px 0;
+    margin-bottom: 1px; /* 게시글과의 간격 */
+    
+    background-color: #fdfdfd;
+    border-bottom: 1px solid #eee;
+    
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.notice-toggle-bar:hover {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+/* 버튼 내 화살표나 아이콘 강조를 원할 경우 */
+.notice-toggle-bar::after {
+    margin-left: 8px;
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* ========================= */
+/* 🔥 게시글 섹션 구분선 */
+/* ========================= */
+.posts-section {
+    border-top: 1px solid #ddd; /* 공지 섹션과 일반 게시글 사이 구분 */
+}
+
+/* 기존 active-row(현재 읽고 있는 글)와 notice-row가 겹칠 때의 우선순위 */
+.board-item-row.notice-row.active-row {
+    background-color: #f0f0f0;
+    border-left: 3px solid #333;
+}

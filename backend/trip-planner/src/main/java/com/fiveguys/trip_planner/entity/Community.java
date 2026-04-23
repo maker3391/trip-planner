@@ -36,6 +36,10 @@ public class Community {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
+    @Builder.Default
+    @OneToMany(mappedBy = "community", cascade = CascadeType.REMOVE)
+    private List<CommunityComment> comments = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_plan_id")
     private TripPlan tripPlan;
@@ -62,6 +66,10 @@ public class Community {
     @Builder.Default
     @Column(nullable = false)
     private Long likeCount = 0L;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Long commentCount = 0L;
 
     // 🔥 리스트는 항상 초기화 (NPE 방지)
     @Builder.Default
@@ -114,6 +122,14 @@ public class Community {
         }
     }
 
+    public void incrementCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decrementCommentCount() {
+        if (this.commentCount > 0) this.commentCount--;
+    }
+
     public void incrementShareCount() {
         this.shareCount++;
     }
@@ -130,6 +146,18 @@ public class Community {
         this.images.add(image);
         if (image.getCommunity() != this) {
             image.setCommunity(this);
+        }
+    }
+
+    public void removeImage(CommunityImage image) {
+        this.images.remove(image);
+        image.setCommunity(null);
+    }
+
+    public void addComment(CommunityComment comment) {
+        this.comments.add(comment);
+        if (comment.getCommunity() != this) {
+            comment.setCommunity(this);
         }
     }
 }

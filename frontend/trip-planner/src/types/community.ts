@@ -25,15 +25,18 @@ export interface CommunityResponse {
     title: string;
     content: string;
 
-    // 🔥 분리된 작성자 정보
+    // 🔥 작성자
     authorId: number;
     authorNickname: string;
 
-    tags?: string; // 🔥 optional 추천 (null 방지)
+    tags?: string;
 
     viewCount: number;
     shareCount: number;
     likeCount: number;
+
+    // 🔥 추가
+    commentCount: number;
 
     likedByMe: boolean;
 
@@ -48,7 +51,6 @@ export interface CommunityResponse {
 
     tripPlan?: TripPlanResponse | null;
 }
-
 
 // =========================
 // 🔹 페이징 응답

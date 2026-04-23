@@ -75,3 +75,28 @@ a {
   color: #1f1f1f !important;
   font-weight: 700 !important;
 }
+
+.notification-menu-paper {
+  max-height: 300px;
+  width: 300px;
+}
+
+.notification-header {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.notification-title {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.notification-item {
+  white-space: normal !important;
+  border-bottom: 1px solid #f5f5f5 !important;
+  padding: 12px 16px !important;
+}
+
+.notification-item:hover {
+  background-color: #f9f9f9;
+}

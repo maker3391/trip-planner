@@ -6,6 +6,7 @@ import com.fiveguys.trip_planner.dto.TripPlanResponseDto;
 import com.fiveguys.trip_planner.dto.TripScheduleRequestDto;
 import com.fiveguys.trip_planner.entity.*;
 
+import com.fiveguys.trip_planner.repository.CommunityRepository;
 import com.fiveguys.trip_planner.repository.PlaceRepository;
 import com.fiveguys.trip_planner.repository.TripMemberRepository;
 import com.fiveguys.trip_planner.repository.TripPlanRepository;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,6 +28,8 @@ public class TripPlanService {
     private final TripPlanRepository tripPlanRepository;
     private final TripMemberRepository tripMemberRepository;
     private final PlaceRepository placeRepository;
+    private final NotificationService notificationService;
+    private final CommunityRepository communityRepository;
 
     @Transactional
     public TripPlanResponseDto createTripPlan(TripPlanRequestDto requestDto, User user) {
@@ -284,6 +288,15 @@ public class TripPlanService {
         newMember.setUser(user);
         newMember.setRole("MEMBER");
         tripMemberRepository.save(newMember);
+
+        String message = user.getNickname() + "님이 [" + tripPlan.getTitle() + "] 여행에 참가 신청을 하였습니다.";
+        String targetUrl = "/trip-list";
+
+        Optional<Community> communityOpt = communityRepository.findFirstByTripPlan(tripPlan);
+        if (communityOpt.isPresent()) {
+            targetUrl = "/community/" + communityOpt.get().getId();
+        }
+        notificationService.send(tripPlan.getOwner(), message, "TRIP_JOIN", targetUrl);
 
         return new TripPlanResponseDto(tripPlan);
     }

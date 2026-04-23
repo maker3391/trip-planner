@@ -1,24 +1,33 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // 🔥 다시 추가
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../components/layout/Header.tsx";
 import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
 import SearchIcon from "@mui/icons-material/Search";
-import ShareIcon from "@mui/icons-material/Share";
 import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
 import "./CommunityPage.css";
 import client from "../components/api/client.ts";
 import { CommunityResponse, CommunityPageResponse } from "../types/community.ts";
+import CommunityList from "../components/layout/CommunityList.tsx";
 
-const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판", "사진게시판"];
+const RATING_ENABLED_CATEGORIES = ["후기게시판"];
 const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
 const ADMIN_ONLY_CATEGORIES = ["공지게시판"];
 
-// 🔥 API 요청 함수
+// ✅ 재사용성을 위해 검색 타입 분리
+type SearchOption = 
+  | "title"
+  | "author"
+  | "content"
+  | "tag"
+  | "title_author"
+  | "title_content"
+  | null;
+
 export const getCommunityPosts = async (
   page = 0,
   category: string | null = null,
   region: string | null = null,
-  searchType: "title" | "author" | null = null,
+  searchType: SearchOption = null,
   keyword: string | null = null
 ) => {
   const params: any = { page };
@@ -39,14 +48,14 @@ export default function CommunityPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 🔥 이동 시 전달된 state
-  const navState = location.state as { category?: string; region?: string };
+  // ✅ null 가능성을 명시하여 안정성 확보
+  const navState = location.state as { category?: string; region?: string } | null;
 
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [posts, setPosts] = useState<CommunityResponse[]>([]);
+  const [isNoticeExpanded, setIsNoticeExpanded] = useState(false); // 🔥 공지사항 확장 상태
 
-  // 🔥 초기값 적용 (핵심)
   const [selectedCategory, setSelectedCategory] = useState(
     navState?.category || "전체보기"
   );
@@ -55,23 +64,22 @@ export default function CommunityPage() {
     navState?.region || "전체"
   );
 
-  const [searchType, setSearchType] = useState<"title" | "author">("title");
+  // ✅ TS 에러 해결: 모든 옵션을 허용하도록 타입 수정
+  const [searchType, setSearchType] = useState<SearchOption>("title");
   const [keyword, setKeyword] = useState("");
   const [activeKeyword, setActiveKeyword] = useState("");
 
-  // 🔥 이동 후 state 반영 (뒤로가기 대응)
   useEffect(() => {
     if (navState) {
       setSelectedCategory(navState.category || "전체보기");
       setSelectedRegion(navState.region || "전체");
       setPage(0);
 
-      // 🔥 중복 적용 방지
-      window.history.replaceState({}, document.title);
+      // ✅ React Router 붕괴 방지: history 직접 조작 대신 navigate의 replace 속성 사용
+      navigate(location.pathname, { replace: true, state: null });
     }
-  }, [location.key]);
+  }, [location.key, location.pathname, navigate, navState]);
 
-  // 🔥 게시글 데이터 로딩
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -98,6 +106,7 @@ export default function CommunityPage() {
 
     fetchPosts();
   }, [page, selectedCategory, selectedRegion, searchType, activeKeyword]);
+  
 
   const handleReset = () => {
     setSelectedCategory("전체보기");
@@ -151,9 +160,8 @@ export default function CommunityPage() {
     }
 
     if (post.category && ADMIN_ONLY_CATEGORIES.includes(post.category)) {
-      return " 관리자 게시글 ";
-    }
-
+      return "공지사항";
+    } 
 
     return " - ";
   };
@@ -163,7 +171,6 @@ export default function CommunityPage() {
       <Header />
       <div className="community-page">
         <div className="community-container">
-
           <CommunitySidebar
             selectedCategory={selectedCategory}
             selectedRegion={selectedRegion}
@@ -187,14 +194,18 @@ export default function CommunityPage() {
 
               <div className="community-search-bar">
                 <select
-                  value={searchType}
+                  value={searchType || "title"}
                   onChange={(e) => {
-                    setSearchType(e.target.value as "title" | "author");
+                    setSearchType(e.target.value as SearchOption);
                     setPage(0);
                   }}
                 >
                   <option value="title">제목</option>
+                  <option value="content">내용</option>
                   <option value="author">작성자</option>
+                  <option value="tag">태그</option>
+                  <option value="title_author">제목+작성자</option>
+                  <option value="title_content">제목+내용</option>
                 </select>
 
                 <div className="search-input-box">
@@ -214,59 +225,18 @@ export default function CommunityPage() {
               </div>
             </header>
 
-            <div className="community-board-container">
-              <div className="board-header-row">
-                <div className="col-id">번호</div>
-                <div className="col-route">기타</div>
-                <div className="col-title">제목</div>
-                <div className="col-author">작성자</div>
-                <div className="col-date">날짜</div>
-                <div className="col-views">조회</div>
-                <div className="col-stats">좋아요</div>
-                <div className="col-share">공유</div>
-              </div>
-
-              <div className="board-body">
-                {posts.length === 0 ? (
-                  <div className="no-posts">게시글이 없습니다</div>
-                ) : (
-                  posts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="board-item-row"
-                      onClick={() => navigate(`/community/${post.id}`)}
-                    >
-                      <div className="col-id">{post.id}</div>
-                      <div className="col-route">{renderRouteOrRating(post)}</div>
-                      <div className="col-title">{post.title}</div>
-                      <div className="col-author">{post.authorNickname}</div>
-                      <div className="col-date">{post.createdAt?.split("T")[0]}</div>
-                      <div className="col-views">{post.viewCount}</div>
-                      <div className="col-stats">{post.likeCount}</div>
-                      <div className="col-share">
-                        <ShareIcon fontSize="inherit" /> {post.shareCount}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="pagination">
-                <button onClick={() => goToPage(0)} disabled={page === 0}>{"<<"}</button>
-                <button onClick={() => goToPage(page - 1)} disabled={page === 0}>{"<"}</button>
-                {pageNumbers.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => goToPage(p)}
-                    className={page === p ? "active-page" : ""}
-                  >
-                    {p + 1}
-                  </button>
-                ))}
-                <button onClick={() => goToPage(page + 1)} disabled={page === totalPages - 1}>{">"}</button>
-                <button onClick={() => goToPage(totalPages - 1)} disabled={page === totalPages - 1}>{">>"}</button>
-              </div>
-            </div>
+            <CommunityList
+              posts={posts}
+              notices={posts?.filter((post) => post.category === "공지게시판")} // 🔥 일단 빈 배열이라도 넘겨주어야 에러가 나지 않습니다.
+              page={page}
+              totalPages={totalPages}
+              goToPage={goToPage}
+              pageNumbers={pageNumbers}
+              navigate={navigate}
+              renderRouteOrRating={renderRouteOrRating}
+              isNoticeExpanded={isNoticeExpanded}
+              setIsNoticeExpanded={setIsNoticeExpanded}
+            />
 
             <div className="community-footer">
               <button className="write-button" onClick={() => navigate("/community/write")}>
