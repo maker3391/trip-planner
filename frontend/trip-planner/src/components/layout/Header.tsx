@@ -1,5 +1,6 @@
-import { AppBar, Toolbar, Button } from "@mui/material";
+import { AppBar, Toolbar, Button, Badge, Menu, MenuItem, Typography, Box } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import TutorialModal from "../guide/TutorialModal";
@@ -9,6 +10,8 @@ import Calculator from "./Calculator.tsx";
 import tplanner from "../../assets/icons/tplanner2.png";
 import GuidePopup from "../guide/GuidePopup.tsx";
 import { getMe } from "../api/auth.ts";
+import { getUnreadNotifications, NotificationResponseDto, readNotificationApi } from "../api/Notification.ts";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 // react-hot-toast를 사용 중이라면 임포트 (기존 alert 대체용)
 import toast, { Toaster } from "react-hot-toast";
@@ -21,6 +24,10 @@ export default function Header() {
   const [openGuidePopup, setOpenGuidePopup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  const[notifications, setNotifications] = useState<NotificationResponseDto[]>([]);
+  const[anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const isNotificationOpen = Boolean(anchorEl);
 
   // 현재 페이지가 메인 페이지인지 확인 (경로가 "/" 인 경우)
   const isMainPage = location.pathname === "/";
@@ -81,6 +88,68 @@ export default function Header() {
     };
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const data = await getUnreadNotifications();
+        setNotifications(data);
+      } catch (error) {
+        console.error("알림 목록 조회 실패:", error);
+      }
+    };
+    fetchNotifications();
+
+    const token = localStorage.getItem("accessToken");
+    const abortController = new AbortController();
+
+    const connectSSE = async () => {
+      await fetchEventSource("http://localhost:8080/api/notifications/subscribe", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "text/event-stream",
+        },
+        signal: abortController.signal,
+        onmessage(ev) {
+          if (ev.data.includes("EventStream Created")) return;
+          
+          try {
+            const newNoti = JSON.parse(ev.data);
+
+            toast(newNoti.message, {icon: "🔔", duration: 3000});
+
+            setNotifications((prev) => [newNoti, ...prev]);
+          } catch (error) {
+            console.error("알림 데이터 파싱 오류:", error);
+          }
+        },
+        onerror(err) {
+          console.error("SSE 연결 에러:", err);
+          throw err;
+        },
+      });
+    };
+
+    connectSSE();
+
+    return () => abortController.abort();
+  }, [isLoggedIn]);
+
+  const handleReadNotification = async (id: number, targetUrl?: string) => {
+    try {
+      await readNotificationApi(id);
+      setNotifications((prev) => prev.filter((noti) => noti.id !== id));
+      setAnchorEl(null);
+      if (targetUrl) {
+        navigate(targetUrl);
+      }
+    } catch (error) {
+      console.error("알람 읽음 처리 실패:", error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch("http://localhost:8080/api/auth/logout", {
@@ -138,6 +207,49 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
+
+            {!isCheckingAuth && isLoggedIn && (
+              <>
+                <span className="header-icon">
+                  <button
+                    type="button"
+                    className="header-icon-btn"
+                    onClick={(e) => setAnchorEl(e.currentTarget)}
+                  >
+                    <Badge badgeContent={notifications.length} color="error">
+                      <NotificationsNoneOutlinedIcon />
+                    </Badge>
+                  </button>
+                </span>
+
+                <Menu
+                  anchorEl={anchorEl}
+                  open={isNotificationOpen}
+                  onClose={() => setAnchorEl(null)}
+                  PaperProps={{className: "notification-menu-paper"}}
+                >
+                  <div className="notification-header">
+                    <Typography className="notification-title">
+                      미확인 알림
+                    </Typography>
+                  </div>
+                  
+                  {notifications.length === 0 ? (
+                    <MenuItem disabled>새로운 알림이 없습니다.</MenuItem>
+                  ) : (
+                    notifications.map((noti) => (
+                      <MenuItem
+                        key={noti.id}
+                        onClick={() => handleReadNotification(noti.id, noti.targetUrl)}
+                        className="notification-item"
+                      >
+                        <Typography variant="body2">{noti.message}</Typography>
+                      </MenuItem>
+                    ))
+                  )}
+                </Menu>
+              </>
+            )}
             {/* 메인 페이지에서만 계산기 아이콘 노출 */}
             {isMainPage && (
               <span className="header-icon">

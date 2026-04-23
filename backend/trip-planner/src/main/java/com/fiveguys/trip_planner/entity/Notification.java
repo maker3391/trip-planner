@@ -35,11 +35,15 @@ public class Notification {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column
+    private String targetUrl;
+
     @Builder
-    public Notification(User receiver, String message, String type) {
+    public Notification(User receiver, String message, String type, String targetUrl) {
         this.receiver = receiver;
         this.message = message;
         this.type = type;
+        this.targetUrl = targetUrl;
     }
 
     public void markAsRead() {

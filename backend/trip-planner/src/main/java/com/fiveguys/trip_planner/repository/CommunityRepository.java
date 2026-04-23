@@ -1,10 +1,13 @@
 package com.fiveguys.trip_planner.repository;
 
 import com.fiveguys.trip_planner.entity.Community;
+import com.fiveguys.trip_planner.entity.TripPlan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
+
+import java.util.Optional;
 
 public interface CommunityRepository extends JpaRepository<Community, Long> {
 
@@ -76,4 +79,5 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     @Query("UPDATE Community c SET c.viewCount = c.viewCount + 1 WHERE c.id = :postId")
     void updateViewCount(@Param("postId") Long postId);
 
+    Optional<Community> findFirstByTripPlan(TripPlan tripPlan);
 }

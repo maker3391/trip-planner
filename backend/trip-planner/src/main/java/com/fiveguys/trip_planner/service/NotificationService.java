@@ -36,16 +36,17 @@ public class NotificationService {
     }
 
     @Transactional
-    public void send(User receiver, String message, String type) {
+    public void send(User receiver, String message, String type, String targetUrl) {
         Notification notification = Notification.builder()
                 .receiver(receiver)
                 .message(message)
                 .type(type)
+                .targetUrl(targetUrl)
                 .build();
         notificationRepository.save(notification);
 
         String eventId = String.valueOf(notification.getId());
-        sendToClient(receiver.getId(), Map.of("message", message, "type", type, "notificationId", eventId));
+        sendToClient(receiver.getId(), Map.of("message", message, "type", type, "notificationId", eventId, "targetUrl", targetUrl));
     }
 
     private void sendToClient(Long userId, Object data) {

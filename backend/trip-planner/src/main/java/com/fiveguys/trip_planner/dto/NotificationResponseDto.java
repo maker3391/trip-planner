@@ -27,6 +27,8 @@ public class NotificationResponseDto {
     @Schema(description = "알림 생성 시간")
     private LocalDateTime createdAt;
 
+    private String targetUrl;
+
     public static NotificationResponseDto fromEntity(Notification notification) {
         return NotificationResponseDto.builder()
                 .id(notification.getId())
@@ -34,6 +36,7 @@ public class NotificationResponseDto {
                 .type(notification.getType())
                 .isRead(notification.isRead())
                 .createdAt(notification.getCreatedAt())
+                .targetUrl(notification.getTargetUrl())
                 .build();
     }
 }
