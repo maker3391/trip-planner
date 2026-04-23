@@ -11,18 +11,19 @@ import {
     TripMemberResponse,
 } from "../components/api/tripMember.ts";
 
-import ShareIcon from "@mui/icons-material/Share";
-import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
-import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
-import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
-import StarIcon from "@mui/icons-material/Star";
+// 아이콘
+import ShareIcon from '@mui/icons-material/Share';
+import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
+import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
+import StarIcon from '@mui/icons-material/Star';
 
 import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";
 import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
-
-// react-hot-toast 임포트
 import toast, { Toaster } from "react-hot-toast";
+import CommunityList from "../components/layout/CommunityList.tsx";
+import CommunityComments from "../components/layout/CommunityComments.tsx";
 
 export const getPost = async (id: number) => {
     const res = await client.get(`/community/posts/${id}`);
@@ -51,6 +52,7 @@ export default function CommunityReadPage() {
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState("전체보기");
     const [selectedRegion, setSelectedRegion] = useState<string | null>("전체");
+    const [isNoticeExpanded, setIsNoticeExpanded] = useState(false);
 
     const renderRouteOrRating = (post: CommunityResponse) => {
         if (post.category && RATING_ENABLED_CATEGORIES.includes(post.category)) {
@@ -147,9 +149,15 @@ export default function CommunityReadPage() {
         const fetchPostDetail = async () => {
             if (!id) return;
 
+            // 1. 조회수 증가 (실패해도 앱이 터지지 않도록 예외를 격리)
             try {
                 await client.patch(`/community/posts/${id}/view`);
+            } catch (patchError) {
+                console.error("조회수 증가 실패 (백엔드 에러, 본문 로드는 계속 진행함):", patchError);
+            }
 
+            // 2. 실제 게시글 데이터 로드 (이게 핵심)
+            try {
                 const data = await getPost(Number(id));
 
                 setPost(data);
@@ -199,9 +207,7 @@ export default function CommunityReadPage() {
             const { liked: isLiked, likeCount } = res.data;
 
             setLiked(isLiked);
-
             setPost((prev) => (prev ? { ...prev, likeCount } : null));
-
             setPosts((prev) =>
                 prev.map((p) => (p.id === Number(id) ? { ...p, likeCount } : p))
             );
@@ -222,7 +228,6 @@ export default function CommunityReadPage() {
             toast.success("링크가 복사되었습니다!");
 
             setPost((prev) => (prev ? { ...prev, shareCount: newShareCount } : null));
-
             setPosts((prev) =>
                 prev.map((p) => (p.id === post.id ? { ...p, shareCount: newShareCount } : p))
             );
@@ -265,9 +270,9 @@ export default function CommunityReadPage() {
             setTimeout(() => {
                 navigate("/trip-list", { state: { joinedTrip: post.tripPlan } });
             }, 1000);
-
-        } catch (err: any) {
-            const message = err?.response?.data?.message || "참가 신청에 실패했습니다.";
+        } catch (err: unknown) {
+            const errorResponse = err as { response?: { data?: { message?: string } } };
+            const message = errorResponse?.response?.data?.message || "참가 신청에 실패했습니다.";
             toast.error(message);
         }
     };
@@ -279,8 +284,9 @@ export default function CommunityReadPage() {
             const res = await acceptTripMember(post.tripPlan.id, memberId);
             toast.success(res.message || "참가가 수락되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
-        } catch (err: any) {
-            const message = err?.response?.data?.message || "참가 수락에 실패했습니다.";
+        } catch (err: unknown) {
+            const errorResponse = err as { response?: { data?: { message?: string } } };
+            const message = errorResponse?.response?.data?.message || "참가 수락에 실패했습니다.";
             toast.error(message);
         }
     };
@@ -292,8 +298,9 @@ export default function CommunityReadPage() {
             const res = await removeTripMember(post.tripPlan.id, memberId);
             toast.success(res.message || "멤버가 삭제되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
-        } catch (err: any) {
-            const message = err?.response?.data?.message || "멤버 삭제에 실패했습니다.";
+        } catch (err: unknown) {
+            const errorResponse = err as { response?: { data?: { message?: string } } };
+            const message = errorResponse?.response?.data?.message || "멤버 삭제에 실패했습니다.";
             toast.error(message);
         }
     };
@@ -458,7 +465,7 @@ export default function CommunityReadPage() {
                                                             {approvedMembers.length}명
                                                         </div>
 
-                                                        { approvedMembers.length != 0 && (
+                                                        {approvedMembers.length !== 0 && (
                                                             approvedMembers.map((member) => (
                                                                 <div
                                                                     key={member.memberId}
@@ -579,7 +586,7 @@ export default function CommunityReadPage() {
                             </div>
 
                             <div className="footer-right">
-                                {(isAuthor) && (
+                                {isAuthor && (
                                     <>
                                         <button className="edit-button" onClick={handleUpdate}>
                                             수정하기
@@ -603,78 +610,27 @@ export default function CommunityReadPage() {
                             </div>
                         </div>
 
+                        {/* sessionStorage 대신 me?.id를 우선 활용하도록 수정 */}
+                        <CommunityComments 
+                            postId={Number(post?.id)} 
+                            currentUserId={me?.id || Number(sessionStorage.getItem("userId"))} 
+                        />
+
                         <hr />
 
-                        <div id="list-section" className="community-board-container">
-                            <div className="board-header-row">
-                                <div className="col-id">번호</div>
-                                <div className="col-route">기타</div>
-                                <div className="col-title">제목</div>
-                                <div className="col-author">작성자</div>
-                                <div className="col-views">조회</div>
-                                <div className="col-stats">좋아요</div>
-                                <div className="col-share">공유</div>
-                            </div>
-
-                            <div className="board-body">
-                                {posts.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className={`board-item-row ${
-                                            id === String(item.id) ? "active-row" : ""
-                                        }`}
-                                        onClick={() => navigate(`/community/${item.id}`)}
-                                    >
-                                        <div className="col-id">{item.id}</div>
-                                        <div className="col-route">
-                                            {renderRouteOrRating(item)}
-                                        </div>
-                                        <div className="col-title">{item.title}</div>
-                                        <div className="col-author">
-                                            {item.authorNickname || "익명"}
-                                        </div>
-                                        <div className="col-views">{item.viewCount}</div>
-                                        <div className="col-stats">{item.likeCount}</div>
-                                        <div className="col-share">
-                                            {item.shareCount || 0}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="pagination">
-                                <button onClick={() => goToPage(0)} disabled={page === 0}>
-                                    {"<<"}
-                                </button>
-                                <button
-                                    onClick={() => goToPage(page - 1)}
-                                    disabled={page === 0}
-                                >
-                                    {"<"}
-                                </button>
-                                {pageNumbers.map((p) => (
-                                    <button
-                                        key={p}
-                                        onClick={() => goToPage(p)}
-                                        className={page === p ? "active-page" : ""}
-                                    >
-                                        {p + 1}
-                                    </button>
-                                ))}
-                                <button
-                                    onClick={() => goToPage(page + 1)}
-                                    disabled={page === totalPages - 1}
-                                >
-                                    {">"}
-                                </button>
-                                <button
-                                    onClick={() => goToPage(totalPages - 1)}
-                                    disabled={page === totalPages - 1}
-                                >
-                                    {">>"}
-                                </button>
-                            </div>
-                        </div>
+                        <CommunityList
+                            posts={posts}
+                            notices={posts?.filter((p) => p.category === "공지게시판")}
+                            page={page}
+                            totalPages={totalPages}
+                            goToPage={goToPage}
+                            pageNumbers={pageNumbers}
+                            navigate={navigate}
+                            renderRouteOrRating={renderRouteOrRating}
+                            activePostId={post?.id || null}
+                            isNoticeExpanded={isNoticeExpanded}
+                            setIsNoticeExpanded={setIsNoticeExpanded}
+                        />
                     </main>
                 </div>
             </div>

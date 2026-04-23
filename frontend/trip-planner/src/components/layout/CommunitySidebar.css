@@ -3,8 +3,7 @@
 /* ========================= */
 .community-sidebar {
     width: 250px;
-    position: sticky;
-    top: 100px;
+    position: flexed; /* 플렉스 컨테이너로 변경 */
     height: fit-content;
     background: #ffffff; /* 미색 제거 후 순백색 */
     border-radius: 12px;
