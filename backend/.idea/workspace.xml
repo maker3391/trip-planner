@@ -6,6 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="a6ab657d-11d1-4aa6-86cf-01bfc39e6cb7" name="변경" comment="">
       <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/resources/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
