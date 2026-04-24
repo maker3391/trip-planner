@@ -21,7 +21,7 @@ import StarIcon from '@mui/icons-material/Star';
 import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";
 import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import CommunityList from "../components/layout/CommunityList.tsx";
 import CommunityComments from "../components/layout/CommunityComments.tsx";
 
@@ -334,7 +334,6 @@ export default function CommunityReadPage() {
 
     return (
         <>
-            <Toaster position="bottom-center" reverseOrder={false}/>
             <Header />
             <div className="community-page">
                 <div className="community-container">
