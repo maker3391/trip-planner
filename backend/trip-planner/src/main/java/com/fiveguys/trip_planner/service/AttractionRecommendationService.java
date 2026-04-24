@@ -212,9 +212,9 @@ public class AttractionRecommendationService {
     }
 
     private void validateRegionStrict(String message) {
-        if (!regionResolverService.hasExplicitTopLevelArea(message)) {
+        if (!regionResolverService.hasExplicitSearchableArea(message)) {
             throw new LlmCallException(
-                    "지역명이 모호합니다. 예: 부산 명소 추천, 경주 대표 관광지 추천, 제주 가볼만한 곳 추천"
+                    "지역명을 함께 입력해 주세요. (예: 부산 명소 추천, 경주 대표 관광지 추천, 제주 가볼만한 곳 추천, 서울 랜드마크 추천)"
             );
         }
     }

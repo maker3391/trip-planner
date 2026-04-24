@@ -25,12 +25,12 @@ public class RecommendationDisplayService {
         String normalizedDestination = normalizeDisplayDestination(destination);
 
         if ("STAY_RECOMMENDATION".equals(intent)) {
-            String displayType = resolveStayDisplayType(originalMessage, intent, items);
+            String displayType = resolveStayDisplayType(originalMessage, intent);
             String displayTitle = normalizedDestination + "에서 괜찮은 " + attachStayPluralSuffix(displayType) + "을 모아봤어요";
             return new DisplayMeta(displayType, displayTitle);
         }
 
-        String displayType = resolveRestaurantDisplayType(originalMessage, items);
+        String displayType = resolveRestaurantDisplayType(originalMessage);
         String displayTitle = normalizedDestination + "에서 가볼 만한 " + attachRestaurantPlaceSuffix(displayType) + "을 모아봤어요";
         return new DisplayMeta(displayType, displayTitle);
     }
@@ -45,8 +45,7 @@ public class RecommendationDisplayService {
         return region + "에서 괜찮은 숙소들을 모아봤어요";
     }
 
-    private String resolveRestaurantDisplayType(String originalMessage,
-                                                List<RecommendationItemResponse> items) {
+    private String resolveRestaurantDisplayType(String originalMessage) {
         String message = normalize(originalMessage);
 
         if (restaurantKeywordService.isCafeFocusedRequest(message)) {
@@ -63,22 +62,10 @@ public class RecommendationDisplayService {
             return keywords.get(0);
         }
 
-        if (containsAny(message, "맛집", "식당", "음식", "밥집", "먹거리", "restaurant", "food")) {
-            return "맛집";
-        }
-
-        String firstCategory = firstItemCategory(items);
-
-        if (StringUtils.hasText(firstCategory)) {
-            return firstCategory;
-        }
-
         return "맛집";
     }
 
-    private String resolveStayDisplayType(String originalMessage,
-                                          String intent,
-                                          List<RecommendationItemResponse> items) {
+    private String resolveStayDisplayType(String originalMessage, String intent) {
         StaySubtype subtype = staySubtypeResolver.resolve(originalMessage, intent);
 
         return switch (subtype) {
@@ -89,30 +76,8 @@ public class RecommendationDisplayService {
             case PENSION -> "펜션";
             case MOTEL -> "모텔";
             case HOTEL -> "호텔";
-            default -> {
-                String firstCategory = firstItemCategory(items);
-
-                if (StringUtils.hasText(firstCategory)) {
-                    yield firstCategory;
-                }
-
-                yield "숙소";
-            }
+            default -> "숙소";
         };
-    }
-
-    private String firstItemCategory(List<RecommendationItemResponse> items) {
-        if (items == null || items.isEmpty()) {
-            return "";
-        }
-
-        RecommendationItemResponse first = items.get(0);
-
-        if (first == null) {
-            return "";
-        }
-
-        return normalize(first.getCategory());
     }
 
     private String attachRestaurantPlaceSuffix(String displayType) {
@@ -141,56 +106,57 @@ public class RecommendationDisplayService {
 
     public DisplayMeta buildAttractionDisplayMeta(String originalMessage, String destination) {
         String message = normalize(originalMessage);
+        String region = normalizeDisplayDestination(destination);
 
         if (containsAny(message, "사진 찍기", "사진찍기", "사진", "포토존", "인생샷")) {
-            return new DisplayMeta("포토스팟", "사진 찍기 좋은 곳을 모아봤어요");
+            return new DisplayMeta("포토스팟", region + "에서 사진 찍기 좋은 곳을 모아봤어요");
         }
 
         if (containsAny(message, "핫플", "핫플레이스", "요즘", "인기", "트렌디")) {
-            return new DisplayMeta("핫플", "가볼 만한 핫플을 모아봤어요");
+            return new DisplayMeta("핫플", region + "에서 가볼 만한 핫플을 모아봤어요");
         }
 
         if (containsAny(message, "야경", "밤에", "나이트뷰")) {
-            return new DisplayMeta("야경 명소", "야경 보기 좋은 곳을 모아봤어요");
+            return new DisplayMeta("야경 명소", region + "에서 야경 보기 좋은 곳을 모아봤어요");
         }
 
         if (containsAny(message, "데이트코스", "데이트 코스", "데이트")) {
-            return new DisplayMeta("데이트코스", "데이트하기 좋은 곳을 모아봤어요");
+            return new DisplayMeta("데이트코스", region + "에서 데이트하기 좋은 곳을 모아봤어요");
         }
 
         if (containsAny(message, "산책", "산책로", "걷기", "걷기 좋은", "둘레길", "올레길")) {
-            return new DisplayMeta("산책 명소", "산책하기 좋은 곳을 모아봤어요");
+            return new DisplayMeta("산책 명소", region + "에서 산책하기 좋은 곳을 모아봤어요");
         }
 
         if (containsAny(message, "실내", "비올때", "비 올 때", "박물관", "미술관", "전시", "전시관")) {
-            return new DisplayMeta("실내 명소", "실내로 가기 좋은 곳을 모아봤어요");
+            return new DisplayMeta("실내 명소", region + "에서 실내로 가기 좋은 곳을 모아봤어요");
         }
 
         if (containsAny(message, "자연", "오름", "숲", "해변", "바다", "수목원", "휴양림", "계곡", "폭포")) {
-            return new DisplayMeta("자연 명소", "자연을 느끼기 좋은 곳을 모아봤어요");
+            return new DisplayMeta("자연 명소", region + "에서 자연을 느끼기 좋은 곳을 모아봤어요");
         }
 
         if (containsAny(message, "드라이브", "드라이브코스", "해안도로")) {
-            return new DisplayMeta("드라이브코스", "드라이브하기 좋은 곳을 모아봤어요");
+            return new DisplayMeta("드라이브코스", region + "에서 드라이브하기 좋은 곳을 모아봤어요");
         }
 
         if (containsAny(message, "놀거리", "체험", "액티비티", "테마파크", "유원지")) {
-            return new DisplayMeta("놀거리", "즐길 만한 놀거리를 모아봤어요");
+            return new DisplayMeta("놀거리", region + "에서 즐길 만한 놀거리를 모아봤어요");
         }
 
         if (containsAny(message, "랜드마크", "landmark")) {
-            return new DisplayMeta("랜드마크", "대표 랜드마크를 모아봤어요");
+            return new DisplayMeta("랜드마크", region + "에서 대표 랜드마크를 모아봤어요");
         }
 
         if (containsAny(message, "관광지", "대표 관광지", "sightseeing")) {
-            return new DisplayMeta("관광지", "둘러볼 만한 관광지를 모아봤어요");
+            return new DisplayMeta("관광지", region + "에서 둘러볼 만한 관광지를 모아봤어요");
         }
 
         if (containsAny(message, "볼거리")) {
-            return new DisplayMeta("볼거리", "둘러볼 만한 볼거리를 모아봤어요");
+            return new DisplayMeta("볼거리", region + "에서 둘러볼 만한 볼거리를 모아봤어요");
         }
 
-        return new DisplayMeta("명소", "가볼 만한 명소를 모아봤어요");
+        return new DisplayMeta("명소", region + "에서 가볼 만한 명소를 모아봤어요");
     }
 
     private boolean containsAny(String value, String... keywords) {
