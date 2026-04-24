@@ -10,9 +10,20 @@ import java.util.List;
 @Service
 public class AttractionFilterService {
 
+    private final DetailAreaParsingService detailAreaParsingService;
+
+    public AttractionFilterService(DetailAreaParsingService detailAreaParsingService) {
+        this.detailAreaParsingService = detailAreaParsingService;
+    }
+
     public boolean isAllowedAttraction(JsonNode doc) {
         String categoryGroupCode = AttractionTextHelper.clean(doc.path("category_group_code").asText());
         String categoryName = AttractionTextHelper.clean(doc.path("category_name").asText());
+        String name = AttractionTextHelper.clean(doc.path("place_name").asText());
+
+        if (isHardNoise(name, categoryName)) {
+            return false;
+        }
 
         if ("AT4".equals(categoryGroupCode)) {
             return true;
@@ -30,6 +41,12 @@ public class AttractionFilterService {
                                       String neighborhood,
                                       String district) {
         String name = AttractionTextHelper.clean(doc.path("place_name").asText());
+        String categoryName = AttractionTextHelper.clean(doc.path("category_name").asText());
+
+        if (isHardNoise(name, categoryName)) {
+            return false;
+        }
+
         String roadAddress = AttractionTextHelper.clean(doc.path("road_address_name").asText());
         String addressName = AttractionTextHelper.clean(doc.path("address_name").asText());
 
@@ -38,8 +55,14 @@ public class AttractionFilterService {
                 + (name == null ? "" : name)).toLowerCase();
 
         boolean destinationMatch = containsLooseRegion(merged, destination);
-        boolean detailMatch = !StringUtils.hasText(detailArea) || containsLooseRegion(merged, detailArea);
-        boolean neighborhoodMatch = !StringUtils.hasText(neighborhood) || containsLooseRegion(merged, neighborhood);
+        boolean detailMatch = !StringUtils.hasText(detailArea)
+                || containsLooseRegion(merged, detailArea)
+                || detailAreaParsingService.matchesNearby(detailArea, merged);
+
+        boolean neighborhoodMatch = !StringUtils.hasText(neighborhood)
+                || containsLooseRegion(merged, neighborhood)
+                || detailAreaParsingService.matchesNearby(neighborhood, merged);
+
         boolean districtMatch = !StringUtils.hasText(district)
                 || AttractionTextHelper.isCityOrCounty(district)
                 || containsLooseRegion(merged, district);
@@ -51,7 +74,7 @@ public class AttractionFilterService {
         if (StringUtils.hasText(detailArea)) {
             if (isTransportHub(detailArea)) {
                 if (StringUtils.hasText(district) && !AttractionTextHelper.isCityOrCounty(district)) {
-                    return districtMatch;
+                    return districtMatch || detailMatch;
                 }
 
                 return destinationMatch;
@@ -81,7 +104,11 @@ public class AttractionFilterService {
         }
 
         if (AttractionTextHelper.containsKeyword(category,
-                "숙박", "음식점", "카페", "주점", "유흥", "노래방")) {
+                "숙박", "음식점", "카페", "주점", "유흥", "노래방",
+                "부동산", "공인중개", "중개", "주거시설", "아파트", "오피스텔",
+                "도시형생활주택", "빌라", "주택", "건설", "건설기계",
+                "사무소", "사무실", "기업", "회사", "제조업", "산업",
+                "정비", "수리", "판매", "대리점")) {
             return true;
         }
 
@@ -91,7 +118,12 @@ public class AttractionFilterService {
                 "주차장", "관리사무소", "관리소", "안내소",
                 "행정복지센터", "주민센터",
                 "인증대", "중간인증대", "종점인증대",
-                "매표소", "화장실", "출입구");
+                "매표소", "화장실", "출입구",
+                "아파트", "오피스텔", "레지던스", "빌라", "주택",
+                "부동산", "공인중개", "중개사", "공인중개사",
+                "사무소", "사무실", "회사", "기업",
+                "건설", "건설기계", "정비", "수리", "대리점",
+                "스카이뷰", "센텀스카이", "케이스카이");
     }
 
     public boolean isTransportHub(String value) {
@@ -215,5 +247,19 @@ public class AttractionFilterService {
         }
 
         return aliases.stream().distinct().toList();
+    }
+
+    private boolean isHardNoise(String name, String category) {
+        return AttractionTextHelper.containsKeyword(category,
+                "부동산", "공인중개", "중개", "주거시설", "아파트", "오피스텔",
+                "도시형생활주택", "빌라", "주택", "건설", "건설기계",
+                "사무소", "사무실", "기업", "회사", "제조업", "산업",
+                "정비", "수리", "판매", "대리점")
+                || AttractionTextHelper.containsKeyword(name,
+                "아파트", "오피스텔", "레지던스", "빌라", "주택",
+                "부동산", "공인중개", "중개사", "공인중개사",
+                "사무소", "사무실", "회사", "기업",
+                "건설", "건설기계", "정비", "수리", "대리점",
+                "스카이뷰", "센텀스카이", "케이스카이");
     }
 }
