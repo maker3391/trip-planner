@@ -8,7 +8,7 @@ import Header from "../components/layout/Header.tsx";
 import { UserMeResponse } from "../components/api/auth.ts";
 
 // react-hot-toast 임포트
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 type TripPlanItem = {
     id: number;
@@ -315,7 +315,6 @@ export default function CommunityWritePage() {
     }
     return (
         <>
-            <Toaster position="bottom-center" reverseOrder={false}/>
             <Header />
             <div className="community-page">
                 <div className="community-container">

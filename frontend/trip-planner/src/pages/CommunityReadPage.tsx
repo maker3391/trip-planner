@@ -21,7 +21,7 @@ import StarIcon from '@mui/icons-material/Star';
 import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";
 import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import CommunityList from "../components/layout/CommunityList.tsx";
 import CommunityComments from "../components/layout/CommunityComments.tsx";
 
@@ -334,7 +334,6 @@ export default function CommunityReadPage() {
 
     return (
         <>
-            <Toaster position="bottom-center" reverseOrder={false}/>
             <Header />
             <div className="community-page">
                 <div className="community-container">
@@ -612,9 +611,8 @@ export default function CommunityReadPage() {
 
                         {/* sessionStorage 대신 me?.id를 우선 활용하도록 수정 */}
                         <CommunityComments 
-                            postId={Number(post?.id)} 
-                            currentUserId={me?.id || Number(sessionStorage.getItem("userId"))} 
-                        />
+                            postId={Number(post?.id)}
+                            currentUserId={me?.id || Number(sessionStorage.getItem("userId"))} currentUserRole={String(me?.role)}                        />
 
                         <hr />
 

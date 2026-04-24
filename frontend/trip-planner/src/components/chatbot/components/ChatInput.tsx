@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 
 interface ChatInputProps {
   value: string;
@@ -13,8 +13,16 @@ export default function ChatInput({
   onChange,
   onSend,
 }: ChatInputProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!isLoading) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading]);
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing && !isLoading) {
       onSend();
     }
   };
@@ -22,8 +30,9 @@ export default function ChatInput({
   return (
     <div className="chatbot-input-area">
       <input
+        ref={inputRef}
         type="text"
-        placeholder="여행에 대해 물어보세요"
+        placeholder="원하는 지역과 내용을 입력하세요"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}

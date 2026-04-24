@@ -1,6 +1,6 @@
 import { useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster }  from "react-hot-toast"; // Toaster는 최상위(Router)에서 한 번만 쓰기로 했으므로 삭제
+import toast from "react-hot-toast"; // Toaster는 최상위(Router)에서 한 번만 쓰기로 했으므로 삭제
 import type { SignupRequest } from "../types/auth";
 import Header from "../components/layout/Header";
 import KakaoIcon from "../assets/icons/Kakao.png";
@@ -153,7 +153,6 @@ export default function SignupPage() {
 
   return (
     <div className="signup-page">
-      <Toaster position="bottom-center" reverseOrder={false} />
       <Header />
 
       <div className="signup-page-body">

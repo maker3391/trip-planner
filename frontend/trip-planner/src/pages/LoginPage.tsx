@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import type { LoginRequest } from "../types/auth";
 import Header from "../components/layout/Header";
 import KakaoIcon from "../assets/icons/Kakao.png";
@@ -7,7 +7,8 @@ import LogoIcon from "../assets/icons/logo.png";
 import "./LoginPage.css";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../components/api/auth.ts";
-import toast, {Toaster} from "react-hot-toast"; // Toaster는 전역(Router)에서 관리하므로 삭제
+import toast from "react-hot-toast";
+import axios from "axios";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginRequest>({
@@ -16,6 +17,27 @@ export default function LoginPage() {
   });
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const oauthError = params.get("error");
+    const oauthMessage = params.get("message");
+
+    if (oauthError || oauthMessage) {
+      toast.error(
+        decodeURIComponent(
+          oauthMessage || "소셜 로그인에 실패했습니다."
+        ),
+        {
+          id: "oauth-login-error",
+          duration: 7000,
+        }
+      );
+
+      window.history.replaceState({}, "", "/login");
+    }
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -42,29 +64,26 @@ export default function LoginPage() {
         message = "로그인에 실패했습니다. 다시 시도해주세요.";
     }
 
-    toast.error(message, { id: "login-error" });
+    toast.error(message, { id: "login-error", duration: 5000 });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
-      // 1. API 호출
       const data = await loginApi(formData);
 
-      // 2. 토큰 저장
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
 
-      // 3. 성공 알림 및 페이지 이동
-      toast.dismiss(); // 기존 에러 메시지 제거
-      
-      // 즉시 메인 페이지로 이동 (Header의 로그인 상태가 반영됨)
+      toast.dismiss();
       navigate("/");
-
-    } catch (error: any) {
-      console.error("로그인 실패:", error);
-      handleLoginFailure(error?.response?.status);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        handleLoginFailure(error.response?.status);
+      } else {
+        handleLoginFailure();
+      }
     }
   };
 
@@ -78,7 +97,6 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <Toaster position="bottom-center" reverseOrder={false}/>
       <Header />
 
       <div className="login-page-body">
@@ -117,7 +135,7 @@ export default function LoginPage() {
           </form>
 
           <span
-            className="login-forgot" // 오타 수정 (login=forgot -> login-forgot)
+            className="login-forgot"
             onClick={() => navigate("/forgot-password")}
             style={{ cursor: "pointer" }}
           >
@@ -146,9 +164,13 @@ export default function LoginPage() {
 
           <p className="login-signup">
             계정이 없으신가요?{" "}
-            <span 
-              onClick={() => navigate("/signup")} 
-              style={{ cursor: "pointer", color: "#007bff", textDecoration: "underline" }}
+            <span
+              onClick={() => navigate("/signup")}
+              style={{
+                cursor: "pointer",
+                color: "#007bff",
+                textDecoration: "underline",
+              }}
             >
               지금 가입하세요
             </span>
