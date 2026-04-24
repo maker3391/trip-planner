@@ -408,10 +408,11 @@ public class CommunityService {
         Community community = communityRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글 없음"));
 
+        // 🔥 descending()을 ascending()으로 변경하여 일반 댓글을 오래된 순으로 정렬합니다.
         Page<CommunityComment> parents =
                 communityCommentRepository.findByCommunityAndParentIsNull(
                         community,
-                        PageRequest.of(page, size, Sort.by("createdAt").descending())
+                        PageRequest.of(page, size, Sort.by("createdAt").ascending())
                 );
 
         List<CommunityComment> children =

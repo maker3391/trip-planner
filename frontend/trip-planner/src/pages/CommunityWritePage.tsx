@@ -68,7 +68,7 @@ export default function CommunityWritePage() {
 
     const [formData, setFormData] = useState({
         category: "자유게시판",
-        region: "서울",
+        region: "미정",
         title: "",
         content: "",
         departure: "",
@@ -143,7 +143,7 @@ export default function CommunityWritePage() {
 
                 setFormData({
                     category: data.category || "자유게시판",
-                    region: data.region || "서울",
+                    region: data.region || "미정",
                     title: data.title || "",
                     content: data.content || "",
                     departure: data.departure || "",

@@ -35,8 +35,8 @@ export const getMe = async () => {
     return res.data;
 };
 
-const RATING_ENABLED_CATEGORIES = ["맛집게시판", "사진게시판", "후기게시판"];
-const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유", "당일치기 친구 찾기"];
+const RATING_ENABLED_CATEGORIES = ["후기게시판"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
 
 export default function CommunityReadPage() {
     const { id } = useParams<{ id: string }>();
@@ -332,10 +332,12 @@ export default function CommunityReadPage() {
                                     <label>분류</label>
                                     <div>{post?.category}</div>
                                 </div>
-                                <div className="form-group">
-                                    <label>지역</label>
-                                    <div>{post?.region}</div>
-                                </div>
+                                {PLAN_SHARE_ENABLED_CATEGORIES.includes(post?.category || "") && (
+                                    <div className="form-group">
+                                        <label>지역</label>
+                                        <div>{post?.region}</div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="post-extra-info">
@@ -562,14 +564,13 @@ export default function CommunityReadPage() {
                                             <ThumbUpOffAltIcon
                                                 style={{ color: liked ? "#1976d2" : "#aaa" }}
                                             />
-                                        </button>
                                         {post?.likeCount}
+                                        </button>
                                     </div>
                                     <div className="footer-item">
                                         <button onClick={handleShare} className="icon-btn">
-                                            <ShareIcon />
+                                            <ShareIcon /> 공유하기
                                         </button>
-                                        공유
                                     </div>
                                 </div>
                             </div>
