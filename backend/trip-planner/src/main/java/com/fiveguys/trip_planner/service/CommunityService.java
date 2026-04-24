@@ -434,6 +434,29 @@ public class CommunityService {
     }
 
     // =========================
+    // 🔹 댓글 수정 (✅ 새로 추가된 부분)
+    // =========================
+    @Transactional
+    public void updateComment(Long commentId, Long userId, CommunityCommentRequest request) {
+
+        CommunityComment comment = communityCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
+
+        // 논리적 삭제가 된 상태라면 수정 불가 처리
+        if (comment.isDeleted()) {
+            throw new IllegalArgumentException("삭제된 댓글은 수정할 수 없습니다.");
+        }
+
+        // 본인 확인
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("댓글 수정 권한이 없습니다.");
+        }
+
+        // JPA Dirty Checking으로 트랜잭션 종료 시 자동 반영됨
+        comment.updateComment(request.getComment());
+    }
+
+    // =========================
     // 🔹 댓글 삭제
     // =========================
     public void deleteComment(Long commentId, Long userId) {

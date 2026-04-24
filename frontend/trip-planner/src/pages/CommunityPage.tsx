@@ -48,13 +48,16 @@ export default function CommunityPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ null 가능성을 명시하여 안정성 확보
   const navState = location.state as { category?: string; region?: string } | null;
 
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  
+  // 상태 분리: 공지사항과 일반 게시글을 따로 관리합니다.
+  const [notices, setNotices] = useState<CommunityResponse[]>([]);
   const [posts, setPosts] = useState<CommunityResponse[]>([]);
-  const [isNoticeExpanded, setIsNoticeExpanded] = useState(false); // 🔥 공지사항 확장 상태
+  
+  const [isNoticeExpanded, setIsNoticeExpanded] = useState(false);
 
   const [selectedCategory, setSelectedCategory] = useState(
     navState?.category || "전체보기"
@@ -64,7 +67,6 @@ export default function CommunityPage() {
     navState?.region || "전체"
   );
 
-  // ✅ TS 에러 해결: 모든 옵션을 허용하도록 타입 수정
   const [searchType, setSearchType] = useState<SearchOption>("title");
   const [keyword, setKeyword] = useState("");
   const [activeKeyword, setActiveKeyword] = useState("");
@@ -74,12 +76,31 @@ export default function CommunityPage() {
       setSelectedCategory(navState.category || "전체보기");
       setSelectedRegion(navState.region || "전체");
       setPage(0);
-
-      // ✅ React Router 붕괴 방지: history 직접 조작 대신 navigate의 replace 속성 사용
       navigate(location.pathname, { replace: true, state: null });
     }
   }, [location.key, location.pathname, navigate, navState]);
 
+  // ✅ 1. 공지사항 전용 Fetch (상단 고정용)
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const data: CommunityPageResponse = await getCommunityPosts(0, "공지게시판", null, null, null);
+        
+        const noticesWithAuthor = (data?.content || []).map((notice) => ({
+          ...notice,
+          authorNickname: notice.authorNickname || "관리자", 
+        }));
+
+        setNotices(noticesWithAuthor);
+      } catch (error) {
+        console.error("공지사항 불러오기 실패:", error);
+      }
+    };
+
+    fetchNotices();
+  }, []);
+
+  // ✅ 2. 일반 게시글 전용 Fetch (하단 리스트용)
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -91,6 +112,8 @@ export default function CommunityPage() {
           activeKeyword || null
         );
 
+        // 🔥 수정됨: 기존의 .filter() 로직을 제거하여 서버에서 온 10개의 데이터를 그대로 출력합니다.
+        // 이렇게 하면 페이징 크기가 일정하게 유지되어 UI가 깨지지 않습니다.
         const postsWithAuthor = (data?.content || []).map((post) => ({
           ...post,
           authorNickname: post.authorNickname || "익명",
@@ -106,7 +129,6 @@ export default function CommunityPage() {
 
     fetchPosts();
   }, [page, selectedCategory, selectedRegion, searchType, activeKeyword]);
-  
 
   const handleReset = () => {
     setSelectedCategory("전체보기");
@@ -227,7 +249,7 @@ export default function CommunityPage() {
 
             <CommunityList
               posts={posts}
-              notices={posts?.filter((post) => post.category === "공지게시판")} // 🔥 일단 빈 배열이라도 넘겨주어야 에러가 나지 않습니다.
+              notices={notices}
               page={page}
               totalPages={totalPages}
               goToPage={goToPage}

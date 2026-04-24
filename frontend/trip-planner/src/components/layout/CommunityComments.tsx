@@ -9,7 +9,7 @@ interface CommentItem {
   user_id?: number; 
   authorId?: number;
   nickname?: string;
-  userName?: string;     // ✅ 백엔드 엔티티에 만들어둔 userName 대응
+  userName?: string; 
   authorNickname?: string;
   comment?: string;
   content?: string;
@@ -35,6 +35,9 @@ export default function CommunityComments({ postId, currentUserId }: Props) {
     const [newComment, setNewComment] = useState("");
     const [replyingTo, setReplyingTo] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editContent, setEditContent] = useState("");
 
     // 1. 댓글 조회
     const fetchComments = async () => {
@@ -89,14 +92,32 @@ export default function CommunityComments({ postId, currentUserId }: Props) {
         }
     };
 
-    // 3. 삭제
+    // 3. 삭제 (🔥 백엔드 컨트롤러에 맞춰 URL 수정됨!)
     const handleDelete = async (commentId: number) => {
         if (!window.confirm("정말 삭제하시겠습니까?")) return;
         try {
-            await client.delete(`/community/posts/${postId}/comments/${commentId}?userId=${currentUserId}`);
+            // 수정된 URL: /community/comments/${commentId}?userId=${currentUserId}
+            await client.delete(`/community/comments/${commentId}?userId=${currentUserId}`);
             await fetchComments();
         } catch (error) {
             alert("삭제 권한이 없거나 오류가 발생했습니다.");
+        }
+    };
+
+    // 3-1. 수정 완료 처리 (🔥 백엔드에 PUT/PATCH 엔드포인트가 추가되어야 정상 작동함)
+    const handleEditSubmit = async (commentId: number) => {
+        if (!editContent.trim()) return;
+        try {
+            // 주의: 백엔드 CommunityController에는 아직 댓글 수정 API(@PutMapping 등)가 없습니다.
+            // 백엔드 구현 형태에 따라 아래 URL은 변경되어야 합니다.
+            await client.put(`/community/comments/${commentId}?userId=${currentUserId}`, {
+                comment: editContent
+            });
+            setEditingId(null);
+            setEditContent("");
+            await fetchComments();
+        } catch (error) {
+            alert("수정 권한이 없거나 오류가 발생했습니다.");
         }
     };
     
@@ -112,11 +133,10 @@ export default function CommunityComments({ postId, currentUserId }: Props) {
         }
 
         const displayUserId = item.userId || item.user_id || item.authorId;
-        
-        // ✅ 닉네임 우선 탐색 (없으면 "사용자"로 고정)
         const displayName = item.nickname || item.userName || item.authorNickname || "사용자";
-        
         const displayContent = item.comment || item.content || "내용이 없습니다.";
+        
+        const isEditing = editingId === item.id;
 
         return (
             <div 
@@ -127,14 +147,35 @@ export default function CommunityComments({ postId, currentUserId }: Props) {
                     <span className="author">{displayName}</span>
                     <span className="date">{new Date(item.createdAt).toLocaleString()}</span>
                 </div>
-                <p className="content">{displayContent}</p>
+                
+                {isEditing ? (
+                    <div className="edit-input-group">
+                        <textarea 
+                            value={editContent} 
+                            onChange={(e) => setEditContent(e.target.value)} 
+                            style={{ width: "100%", minHeight: "60px", marginBottom: "10px" }}
+                        />
+                        <div style={{ display: "flex", gap: "5px" }}>
+                            <button onClick={() => handleEditSubmit(item.id)}>저장</button>
+                            <button onClick={() => { setEditingId(null); setEditContent(""); }}>취소</button>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="content">{displayContent}</p>
+                )}
                 
                 <div className="comment-actions">
-                    {!isReply && (
+                    {!isReply && !isEditing && (
                         <button onClick={() => setReplyingTo(item.id)}>답글달기</button>
                     )}
-                    {displayUserId === currentUserId && (
-                        <button onClick={() => handleDelete(item.id)} className="delete-btn">삭제</button>
+                    {displayUserId === currentUserId && !isEditing && (
+                        <>
+                            <button onClick={() => { 
+                                setEditingId(item.id); 
+                                setEditContent(displayContent); 
+                            }}>수정</button>
+                            <button onClick={() => handleDelete(item.id)} className="delete-btn">삭제</button>
+                        </>
                     )}
                 </div>
             </div>

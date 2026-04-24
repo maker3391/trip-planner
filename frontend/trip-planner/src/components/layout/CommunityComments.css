@@ -76,7 +76,7 @@ button:disabled {
     white-space: pre-wrap; /* 줄바꿈 유지 */
 }
 
-/* 댓글 액션 버튼들 (답글달기, 삭제 등) */
+/* 댓글 액션 버튼들 (답글달기, 수정, 삭제 등) */
 .comment-actions {
     display: flex;
     gap: 12px;
@@ -101,6 +101,73 @@ button:disabled {
 .comment-actions .delete-btn:hover {
     color: #e03131; /* 삭제 버튼은 빨간색 */
 }
+
+/* =========================================
+   🔥 신규 추가: 댓글 수정 모드 UI 스타일
+   ========================================= */
+.edit-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.edit-input-group textarea {
+    box-sizing: border-box; /* 패딩 포함 크기 계산 */
+    width: 100%;
+    min-height: 70px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.edit-input-group textarea:focus {
+    outline: none;
+    border-color: #ffc107;
+}
+
+.edit-input-group > div {
+    display: flex;
+    justify-content: flex-end; /* 오른쪽 정렬 */
+    gap: 8px;
+}
+
+.edit-input-group > div > button {
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* 수정 저장 버튼 */
+.edit-input-group > div > button:first-child {
+    background-color: #ffc107;
+    color: #fff;
+    border: none;
+}
+
+.edit-input-group > div > button:first-child:hover {
+    background-color: #e6af06;
+}
+
+/* 수정 취소 버튼 */
+.edit-input-group > div > button:last-child {
+    background-color: #f1f3f5;
+    color: #444;
+    border: 1px solid #ddd;
+}
+
+.edit-input-group > div > button:last-child:hover {
+    background-color: #e2e6ea;
+}
+/* ========================================= */
 
 /* --- 댓글 입력 영역 --- */
 .comment-form {
@@ -139,14 +206,16 @@ button:disabled {
 }
 
 .comment-form textarea {
-    width: 96%;
+    box-sizing: border-box;
+    width: 100%; /* 기존 96%에서 100%로 변경 후 box-sizing 적용 */
     min-height: 80px;
     padding: 15px;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 14px;
-    resize: none;
+    resize: vertical; /* 세로 크기 조절만 허용 */
     transition: border-color 0.2s;
+    font-family: inherit;
 }
 
 .comment-form textarea:focus {

@@ -240,7 +240,7 @@ public class CommunityController {
     // =========================
     // 🔹 댓글 작성
     // =========================
-    @PostMapping("/posts/{postId}/comments") // ✅ 쿼리 파라미터 부분 삭제!
+    @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<?> createComment(
             @PathVariable Long postId,
             @RequestParam Long userId,
@@ -280,6 +280,22 @@ public class CommunityController {
         );
     }
 
+    // =========================
+    // 🔹 댓글 수정 (✅ 새로 추가된 부분)
+    // =========================
+    @Operation(summary = "댓글 수정", description = "기존 댓글의 내용을 수정합니다.")
+    @PutMapping("/comments/{commentId}")
+    public ResponseEntity<?> updateComment(
+            @PathVariable Long commentId,
+            @RequestParam Long userId,
+            @Valid @RequestBody CommunityCommentRequest request
+    ) {
+        communityService.updateComment(commentId, userId, request);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "댓글이 성공적으로 수정되었습니다."
+        ));
+    }
 
     // =========================
     // 🔹 댓글 삭제

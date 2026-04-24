@@ -9,20 +9,21 @@ type Props = {
     totalPages: number;
     goToPage: (p: number) => void;
     pageNumbers: number[];
-    navigate: (path: string) => void;
+    navigate: (path: string, state?: any) => void;
     renderRouteOrRating: (post: CommunityResponse) => React.ReactNode;
     activePostId?: number | null;
     isNoticeExpanded: boolean;
     setIsNoticeExpanded: (v: boolean) => void;
     };
 
-    export default function CommunityList({
+export default function CommunityList({
     posts, notices, page, totalPages, goToPage, pageNumbers,
     navigate, renderRouteOrRating, activePostId, isNoticeExpanded, setIsNoticeExpanded
     }: Props) {
 
     // 노출 개수 결정 (기본 3개 / 확장 시 전체)
-    const noticeMaxCount = isNoticeExpanded ? notices.length : 3;
+    const MAX_NOTICE_LIMIT = 7;
+    const noticeMaxCount = isNoticeExpanded ? MAX_NOTICE_LIMIT : 3;
 
     const truncateTitle = (title: string, maxLength = 30) => {
         if (!title) return "";
@@ -35,7 +36,7 @@ type Props = {
         <div
         key={post.id}
         className={`board-item-row ${activePostId === post.id ? "active-row" : ""} ${isNotice ? "notice-row" : ""}`}
-        onClick={() => navigate(`/community/${post.id}`)}
+        onClick={() => navigate(`/community/${post.id}`, { state: { fromPage: page } })}
         >
         <div className="col-category">{isNotice ? "최신 공지" : post.category}</div>
         <div className="col-title">
@@ -57,7 +58,7 @@ type Props = {
                 <div className="col-category">분류</div><div className="col-title">제목</div>
                 <div className="col-author">작성자</div><div className="col-views">조회</div>
                 <div className="col-stats">좋아요</div><div className="col-share">공유</div>
-                <div className="col-date">날짜</div><div className="col-route">기타</div>
+                <div className="col-date">날짜</div><div className="col-route">비고</div>
             </div>
 
             <div className="board-body">
@@ -71,7 +72,14 @@ type Props = {
 
                 {notices.length > 3 && (
                 <div className="notice-toggle-bar" onClick={() => setIsNoticeExpanded(!isNoticeExpanded)}>
-                    {isNoticeExpanded ? "접기 ▲" : `공지 더보기 (전체 ${notices.length}건) ▼`}
+                    {notices.length > 3 && (
+                        <div onClick={() => setIsNoticeExpanded(!isNoticeExpanded)}>
+                            {isNoticeExpanded 
+                                ? "접기 ▲" 
+                                : `공지 더보기 (감춰진 공지 ${Math.min(notices.length, MAX_NOTICE_LIMIT) - 3}건) ▼`
+                            }
+                        </div>
+                    )}
                 </div>
                 )}
 
