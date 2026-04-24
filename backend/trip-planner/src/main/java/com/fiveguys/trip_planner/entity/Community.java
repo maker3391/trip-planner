@@ -2,6 +2,7 @@ package com.fiveguys.trip_planner.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,8 +22,9 @@ public class Community {
     @Column(nullable = false)
     private String category;
 
+    @Builder.Default
     @Column(nullable = false)
-    private String region;
+    private String region = "전체"; // ✅ 객체 생성 시 기본값 할당
 
     @Column(nullable = false)
     private String title;
