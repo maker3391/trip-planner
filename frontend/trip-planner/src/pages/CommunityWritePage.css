@@ -330,3 +330,14 @@
     border: 1px solid #f1df9a;
     line-height: 1.7;
 }
+
+/* 🔥 제출 중일 때 버튼 완벽 비활성화 */
+.write-button:disabled {
+    background-color: #cccccc !important;
+    color: #666666 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important; /* 마우스 클릭 이벤트를 브라우저 단에서 강제 무시 */
+    opacity: 0.7;
+    transform: none !important;
+    box-shadow: none !important;
+}

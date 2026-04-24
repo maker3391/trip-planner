@@ -27,8 +27,8 @@ export const getMe = async () => {
 // =========================
 // 카테고리 조건
 // =========================
-const RATING_ENABLED_CATEGORIES = ["맛집게시판", "후기게시판", "사진게시판"];
-const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
+const RATING_ENABLED_CATEGORIES = ["후기게시판"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜"];
 
 // =========================
 // Quill 설정 (폰트 사이즈)
@@ -39,6 +39,7 @@ Quill.register(Size, true);
 
 export default function CommunityWritePage() {
     const [tripPlans, setTripPlans] = useState<TripPlanItem[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [tripLoading, setTripLoading] = useState(false);
     const navigate = useNavigate();
     
@@ -67,7 +68,7 @@ export default function CommunityWritePage() {
 
     const [formData, setFormData] = useState({
         category: "자유게시판",
-        region: "서울",
+        region: "미정",
         title: "",
         content: "",
         departure: "",
@@ -79,30 +80,35 @@ export default function CommunityWritePage() {
 
     const categories_user = [
         "자유게시판",
-        "질문게시판",
-        "여행플랜 공유",
-        "맛집게시판",
-        "후기게시판",
-        "사진게시판"
+        "여행플랜",
+        "후기게시판"
     ];
 
     const categories_admin = [
         "자유게시판",
-        "질문게시판",
-        "여행플랜 공유",
-        "맛집게시판",
+        "여행플랜",
         "후기게시판",
-        "사진게시판",
         "공지게시판"
     ];
 
     const categories = isAdmin ? categories_admin : categories_user;
 
     const regions = [
-        "서울", "경기", "인천", "강원",
-        "충북", "충남", "전북", "전남",
-        "경북", "경남", "제주"
-    ];
+        "서울특별시",
+        "부산광역시",
+        "대구광역시",
+        "인천광역시",
+        "광주광역시",
+        "대전광역시",
+        "울산광역시",
+        "세종특별자치시",
+        "경기도",
+        "강원특별자치도",
+        "충청도",
+        "전라도",
+        "경상도",
+        "제주특별자치도"
+        ];
 
     // =========================
     // 로그인 유저 가져오기
@@ -137,7 +143,7 @@ export default function CommunityWritePage() {
 
                 setFormData({
                     category: data.category || "자유게시판",
-                    region: data.region || "서울",
+                    region: data.region || "미정",
                     title: data.title || "",
                     content: data.content || "",
                     departure: data.departure || "",
@@ -258,12 +264,18 @@ export default function CommunityWritePage() {
     // submit (수정/등록 분기 처리)
     // =========================
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+        e.preventDefault(); // 1. 폼의 기본 새로고침 동작을 가장 먼저 막습니다.
 
+        if (isSubmitting) return; // 2. 이미 통신 중이면 함수 실행을 강제 종료
+
+        // 3. 상태 변경 전에 유효성 검사 먼저!
         if (!formData.title.trim()) {
-            toast.error("제목을 입력해주세요.");
+            toast.error("제목을 입력해주세요.", { id: "validation-title" });
             return;
         }
+
+        // 4. 모든 검증이 끝나고 통신 시작 직전에 비활성화
+        setIsSubmitting(true);
 
         try {
             const payload = {
@@ -277,7 +289,7 @@ export default function CommunityWritePage() {
                 toast.success("게시글이 수정되었습니다.");
             } else {
                 await client.post("/community/posts", payload);
-                toast.success("새 게시글이 등록되었습니다.");
+                toast.success("새 게시글이 등록되었습니다.", { id: "post-create-success" });
             }
 
             // 토스트를 보여주기 위해 약간의 지연 후 이동
@@ -287,6 +299,7 @@ export default function CommunityWritePage() {
         } catch (err) {
             console.error(err);
             toast.error("저장에 실패했습니다.");
+            setIsSubmitting(false); // 🔥 실패 시에만 버튼 다시 활성화 (성공 시엔 페이지 이동하므로 안 풀어도 됨)
         }
     };
 
@@ -302,7 +315,7 @@ export default function CommunityWritePage() {
     }
     return (
         <>
-            <Toaster position="top-center" reverseOrder={false} />
+            <Toaster position="bottom-center" reverseOrder={false}/>
             <Header />
             <div className="community-page">
                 <div className="community-container">
@@ -317,12 +330,14 @@ export default function CommunityWritePage() {
                                     </select>
                                 </div>
 
-                                <div className="form-group">
-                                    <label>지역</label>
-                                    <select name="region" value={formData.region} onChange={handleChange}>
-                                        {regions.map(r => <option key={r}>{r}</option>)}
-                                    </select>
-                                </div>
+                                {(formData.category == "여행플랜" || formData.category == "후기게시판") && (
+                                    <div className="form-group">
+                                        <label>지역</label>
+                                        <select name="region" value={formData.region} onChange={handleChange}>
+                                            {regions.map(r => <option key={r}>{r}</option>)}
+                                        </select>
+                                    </div>
+                                )}
                             </div>
 
                             {PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && (
@@ -419,7 +434,7 @@ export default function CommunityWritePage() {
                                     name="tags" 
                                     value={formData.tags}
                                     onChange={handleChange}
-                                    placeholder="#태그를 입력하세요 (예: 서울,맛집)"
+                                    placeholder="#태그를 입력하세요 (,으로 구분)"
                                 />
                             </div>
 
@@ -427,8 +442,15 @@ export default function CommunityWritePage() {
                                 <button type="button" className="cancel-button" onClick={() => navigate(-1)}>
                                     취소
                                 </button>
-                                <button type="submit" className="write-button">
-                                    {isEditMode ? "수정 완료" : "게시하기"}
+                                <button
+                                    type="submit"
+                                    className="write-button"
+                                    disabled={isSubmitting} // 이미 잘 작성하신 부분!
+                                >
+                                    {/* 🔥 isSubmitting 상태에 따라 텍스트를 다르게 보여줍니다 */}
+                                    {isSubmitting
+                                        ? "처리 중..."
+                                        : (isEditMode ? "수정 완료" : "게시하기")}
                                 </button>
                             </div>
 

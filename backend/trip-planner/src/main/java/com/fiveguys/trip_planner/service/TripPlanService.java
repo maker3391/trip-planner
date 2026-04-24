@@ -6,6 +6,7 @@ import com.fiveguys.trip_planner.dto.TripPlanResponseDto;
 import com.fiveguys.trip_planner.dto.TripScheduleRequestDto;
 import com.fiveguys.trip_planner.entity.*;
 
+import com.fiveguys.trip_planner.repository.CommunityRepository;
 import com.fiveguys.trip_planner.repository.PlaceRepository;
 import com.fiveguys.trip_planner.repository.TripMemberRepository;
 import com.fiveguys.trip_planner.repository.TripPlanRepository;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,6 +28,8 @@ public class TripPlanService {
     private final TripPlanRepository tripPlanRepository;
     private final TripMemberRepository tripMemberRepository;
     private final PlaceRepository placeRepository;
+    private final NotificationService notificationService;
+    private final CommunityRepository communityRepository;
 
     @Transactional
     public TripPlanResponseDto createTripPlan(TripPlanRequestDto requestDto, User user) {
@@ -77,6 +81,7 @@ public class TripPlanService {
                 tripPlan.getSchedules().add(schedule);
             }
         }
+
         if (requestDto.getExpenses() != null) {
             for (ExpenseRequestDto expenseDto : requestDto.getExpenses()) {
                 Expense expense = new Expense();
@@ -84,9 +89,24 @@ public class TripPlanService {
                 expense.setAmount(expenseDto.getAmount());
                 expense.setCategory(expenseDto.getCategory() != null ? expenseDto.getCategory() : "ETC");
                 expense.setDescription(expenseDto.getDescription());
-                expense.setExpenseType("ESTIMATED");
+                expense.setExpenseType(expenseDto.getExpenseType() != null ? expenseDto.getExpenseType() : "ACTUAL");
                 expense.setCreatedAt(LocalDateTime.now());
                 expense.setPaidByUser(user);
+
+                // ✅ 하위 항목 처리 추가
+                if (expenseDto.getSubExpenses() != null) {
+                    for (ExpenseRequestDto subDto : expenseDto.getSubExpenses()) {
+                        Expense subExpense = new Expense();
+                        subExpense.setTripPlan(tripPlan);
+                        subExpense.setAmount(subDto.getAmount());
+                        subExpense.setCategory(subDto.getCategory() != null ? subDto.getCategory() : "ETC");
+                        subExpense.setDescription(subDto.getDescription());
+                        subExpense.setExpenseType(subDto.getExpenseType() != null ? subDto.getExpenseType() : "ACTUAL");
+                        subExpense.setCreatedAt(LocalDateTime.now());
+                        subExpense.setPaidByUser(user);
+                        expense.addSubExpense(subExpense);
+                    }
+                }
 
                 tripPlan.getExpenses().add(expense);
             }
@@ -114,7 +134,6 @@ public class TripPlanService {
         ownerMember.setUser(user);
         ownerMember.setRole("OWNER");
         tripMemberRepository.save(ownerMember);
-
 
         return new TripPlanResponseDto(savePlan);
     }
@@ -204,9 +223,24 @@ public class TripPlanService {
                 expense.setAmount(expenseDto.getAmount());
                 expense.setCategory(expenseDto.getCategory() != null ? expenseDto.getCategory() : "ETC");
                 expense.setDescription(expenseDto.getDescription());
-                expense.setExpenseType("ESTIMATED");
+                expense.setExpenseType(expenseDto.getExpenseType() != null ? expenseDto.getExpenseType() : "ACTUAL");
                 expense.setCreatedAt(LocalDateTime.now());
                 expense.setPaidByUser(user);
+
+                // ✅ 하위 항목 처리 추가
+                if (expenseDto.getSubExpenses() != null) {
+                    for (ExpenseRequestDto subDto : expenseDto.getSubExpenses()) {
+                        Expense subExpense = new Expense();
+                        subExpense.setTripPlan(tripPlan);
+                        subExpense.setAmount(subDto.getAmount());
+                        subExpense.setCategory(subDto.getCategory() != null ? subDto.getCategory() : "ETC");
+                        subExpense.setDescription(subDto.getDescription());
+                        subExpense.setExpenseType(subDto.getExpenseType() != null ? subDto.getExpenseType() : "ACTUAL");
+                        subExpense.setCreatedAt(LocalDateTime.now());
+                        subExpense.setPaidByUser(user);
+                        expense.addSubExpense(subExpense);
+                    }
+                }
 
                 tripPlan.getExpenses().add(expense);
             }
@@ -254,6 +288,15 @@ public class TripPlanService {
         newMember.setUser(user);
         newMember.setRole("MEMBER");
         tripMemberRepository.save(newMember);
+
+        String message = user.getNickname() + "님이 [" + tripPlan.getTitle() + "] 여행에 참가 신청을 하였습니다.";
+        String targetUrl = "/trip-list";
+
+        Optional<Community> communityOpt = communityRepository.findFirstByTripPlan(tripPlan);
+        if (communityOpt.isPresent()) {
+            targetUrl = "/community/" + communityOpt.get().getId();
+        }
+        notificationService.send(tripPlan.getOwner(), message, "TRIP_JOIN", targetUrl);
 
         return new TripPlanResponseDto(tripPlan);
     }

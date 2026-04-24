@@ -1,6 +1,7 @@
 package com.fiveguys.trip_planner.service;
 
 import com.fiveguys.trip_planner.dto.TripMemberResponse;
+import com.fiveguys.trip_planner.entity.Community;
 import com.fiveguys.trip_planner.entity.TripMember;
 import com.fiveguys.trip_planner.entity.TripPlan;
 import com.fiveguys.trip_planner.entity.User;
@@ -11,8 +12,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fiveguys.trip_planner.dto.TripPlanResponseDto;
+import com.fiveguys.trip_planner.repository.CommunityRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +25,8 @@ public class TripMemberService {
 
     private final TripPlanRepository tripPlanRepository;
     private final TripMemberRepository tripMemberRepository;
+    private final NotificationService notificationService;
+    private final CommunityRepository communityRepository;
 
     @Transactional
     public void requestJoin(Long tripPlanId) {
@@ -42,6 +47,17 @@ public class TripMemberService {
         tripMember.setRole("PENDING");
 
         tripMemberRepository.save(tripMember);
+
+        String message = currentUser.getNickname() + "님이 [" + tripPlan.getTitle() + "] 여행에 참가 신청을 하였습니다.";
+
+        String targetUrl = "/trip-list";
+
+        Optional<Community> communityOpt = communityRepository.findFirstByTripPlan(tripPlan);
+        if (communityOpt.isPresent()) {
+            targetUrl = "/community/" + communityOpt.get().getId();
+        }
+
+        notificationService.send(tripPlan.getOwner(), message, "TRIP_JOIN_REQUEST", targetUrl);
     }
 
     public List<TripMemberResponse> getMembers(Long tripPlanId) {
@@ -129,7 +145,7 @@ public class TripMemberService {
         User currentUser = getCurrentUser();
 
         return tripMemberRepository
-                .findAllByUserAndRoleIn(currentUser, List.of("MEMBER", "PENDING"))
+                .findAllByUserAndRoleIn(currentUser, List.of("MEMBER"))
                 .stream()
                 .map(tm -> TripPlanResponseDto.from(tm.getTripPlan()))
                 .collect(Collectors.toList());

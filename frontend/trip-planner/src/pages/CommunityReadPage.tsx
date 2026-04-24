@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom"; // 🔥 useLocation 추가
 import Header from "../components/layout/Header.tsx";
 import client from "../components/api/client.ts";
 import { CommunityResponse, CommunityPageResponse } from "../types/community.ts";
@@ -11,18 +11,19 @@ import {
     TripMemberResponse,
 } from "../components/api/tripMember.ts";
 
-import ShareIcon from "@mui/icons-material/Share";
-import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
-import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
-import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
-import StarIcon from "@mui/icons-material/Star";
+// 아이콘
+import ShareIcon from '@mui/icons-material/Share';
+import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
+import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
+import StarIcon from '@mui/icons-material/Star';
 
 import "./CommunityReadPage.css";
 import { getCommunityPosts } from "./CommunityPage.tsx";
 import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
-
-// react-hot-toast 임포트
 import toast, { Toaster } from "react-hot-toast";
+import CommunityList from "../components/layout/CommunityList.tsx";
+import CommunityComments from "../components/layout/CommunityComments.tsx";
 
 export const getPost = async (id: number) => {
     const res = await client.get(`/community/posts/${id}`);
@@ -34,16 +35,24 @@ export const getMe = async () => {
     return res.data;
 };
 
-const RATING_ENABLED_CATEGORIES = ["맛집게시판", "사진게시판", "후기게시판"];
-const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유", "당일치기 친구 찾기"];
+const RATING_ENABLED_CATEGORIES = ["후기게시판"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
+
 
 export default function CommunityReadPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation(); // 🔥 location 객체 가져오기
 
     const [post, setPost] = useState<CommunityResponse | null>(null);
     const [posts, setPosts] = useState<CommunityResponse[]>([]);
-    const [page, setPage] = useState(0);
+
+    // 🔥 공지사항 전용 상태
+    const [notices, setNotices] = useState<CommunityResponse[]>([]);
+
+    // 🔥 수정: location.state에 fromPage가 있으면 그 값을, 없으면 0을 초기값으로 세팅
+    const [page, setPage] = useState<number>(location.state?.fromPage || 0);
+
     const [totalPages, setTotalPages] = useState(0);
     const [liked, setLiked] = useState(false);
     const [me, setMe] = useState<{ id: number; role?: string } | null>(null);
@@ -51,6 +60,8 @@ export default function CommunityReadPage() {
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState("전체보기");
     const [selectedRegion, setSelectedRegion] = useState<string | null>("전체");
+    const [isNoticeExpanded, setIsNoticeExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const renderRouteOrRating = (post: CommunityResponse) => {
         if (post.category && RATING_ENABLED_CATEGORIES.includes(post.category)) {
@@ -97,6 +108,24 @@ export default function CommunityReadPage() {
         };
 
         fetchMe();
+    }, []);
+
+    // 공지사항 전용 Fetch (마운트 시 1회 실행)
+    useEffect(() => {
+        const fetchNotices = async () => {
+            try {
+                const data: CommunityPageResponse = await getCommunityPosts(0, "공지게시판", null, null, null);
+                const noticesWithAuthor = (data?.content || []).map((notice) => ({
+                    ...notice,
+                    authorNickname: notice.authorNickname || "관리자",
+                }));
+                setNotices(noticesWithAuthor);
+            } catch (error) {
+                console.error("공지사항 불러오기 실패:", error);
+            }
+        };
+
+        fetchNotices();
     }, []);
 
     const isAuthor = post?.authorId === me?.id;
@@ -147,9 +176,15 @@ export default function CommunityReadPage() {
         const fetchPostDetail = async () => {
             if (!id) return;
 
+            // 1. 조회수 증가 (실패해도 앱이 터지지 않도록 예외를 격리)
             try {
                 await client.patch(`/community/posts/${id}/view`);
+            } catch (patchError) {
+                console.error("조회수 증가 실패 (백엔드 에러, 본문 로드는 계속 진행함):", patchError);
+            }
 
+            // 2. 실제 게시글 데이터 로드
+            try {
                 const data = await getPost(Number(id));
 
                 setPost(data);
@@ -199,9 +234,7 @@ export default function CommunityReadPage() {
             const { liked: isLiked, likeCount } = res.data;
 
             setLiked(isLiked);
-
             setPost((prev) => (prev ? { ...prev, likeCount } : null));
-
             setPosts((prev) =>
                 prev.map((p) => (p.id === Number(id) ? { ...p, likeCount } : p))
             );
@@ -222,7 +255,6 @@ export default function CommunityReadPage() {
             toast.success("링크가 복사되었습니다!");
 
             setPost((prev) => (prev ? { ...prev, shareCount: newShareCount } : null));
-
             setPosts((prev) =>
                 prev.map((p) => (p.id === post.id ? { ...p, shareCount: newShareCount } : p))
             );
@@ -265,9 +297,9 @@ export default function CommunityReadPage() {
             setTimeout(() => {
                 navigate("/trip-list", { state: { joinedTrip: post.tripPlan } });
             }, 1000);
-
-        } catch (err: any) {
-            const message = err?.response?.data?.message || "참가 신청에 실패했습니다.";
+        } catch (err: unknown) {
+            const errorResponse = err as { response?: { data?: { message?: string } } };
+            const message = errorResponse?.response?.data?.message || "참가 신청에 실패했습니다.";
             toast.error(message);
         }
     };
@@ -279,8 +311,9 @@ export default function CommunityReadPage() {
             const res = await acceptTripMember(post.tripPlan.id, memberId);
             toast.success(res.message || "참가가 수락되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
-        } catch (err: any) {
-            const message = err?.response?.data?.message || "참가 수락에 실패했습니다.";
+        } catch (err: unknown) {
+            const errorResponse = err as { response?: { data?: { message?: string } } };
+            const message = errorResponse?.response?.data?.message || "참가 수락에 실패했습니다.";
             toast.error(message);
         }
     };
@@ -292,15 +325,16 @@ export default function CommunityReadPage() {
             const res = await removeTripMember(post.tripPlan.id, memberId);
             toast.success(res.message || "멤버가 삭제되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
-        } catch (err: any) {
-            const message = err?.response?.data?.message || "멤버 삭제에 실패했습니다.";
+        } catch (err: unknown) {
+            const errorResponse = err as { response?: { data?: { message?: string } } };
+            const message = errorResponse?.response?.data?.message || "멤버 삭제에 실패했습니다.";
             toast.error(message);
         }
     };
 
     return (
         <>
-            <Toaster position="top-center" reverseOrder={false} />
+            <Toaster position="bottom-center" reverseOrder={false}/>
             <Header />
             <div className="community-page">
                 <div className="community-container">
@@ -325,10 +359,12 @@ export default function CommunityReadPage() {
                                     <label>분류</label>
                                     <div>{post?.category}</div>
                                 </div>
-                                <div className="form-group">
-                                    <label>지역</label>
-                                    <div>{post?.region}</div>
-                                </div>
+                                {PLAN_SHARE_ENABLED_CATEGORIES.includes(post?.category || "") && (
+                                    <div className="form-group">
+                                        <label>지역</label>
+                                        <div>{post?.region}</div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="post-extra-info">
@@ -361,6 +397,7 @@ export default function CommunityReadPage() {
                             </div>
 
                             <div className="form-main-area">
+                                {/* 1. 헤더 영역 */}
                                 <div className="PostHeader">
                                     <h1 className="PostTitle">{post?.title}</h1>
                                     <div className="PostMeta">
@@ -371,181 +408,152 @@ export default function CommunityReadPage() {
                                     </div>
                                 </div>
 
+                                {/* 2. 본문 영역 (위로 올림) */}
+                                <div className="PostContent">
+                                    <div
+                                    className="ql-editor"
+                                    dangerouslySetInnerHTML={{
+                                        __html: post?.content || "",
+                                    }}
+                                    />
+                                    {post?.tags && (
+                                    <div className="tags">
+                                        {post.tags.split(",").map((tag, idx) => (
+                                        <span key={idx} className="tag">
+                                            #{tag.trim().replace("#", "")}
+                                        </span>
+                                        ))}
+                                    </div>
+                                    )}
+                                </div>
+
+                                {/* 3. 첨부된 여행 계획 (본문 밑으로 이동) */}
                                 {post?.tripPlan && (
-                                    <div className="attached-trip-box">
-                                        <h3>첨부된 여행 계획</h3>
+                                    <div className="attached-trip-box" style={{ position: 'relative' }}>
+                                        {/* 헤더 - 항상 보임 */}
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <h3 style={{ margin: 0 }}>첨부된 여행 계획</h3>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsExpanded(!isExpanded)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: '1px solid #ddd',
+                                                    borderRadius: '4px',
+                                                    padding: '5px 10px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.8rem'
+                                                }}
+                                            >
+                                                {isExpanded ? "접기 ▲" : "펼치기 ▼"}
+                                            </button>
+                                        </div>
 
-                                        <div>
-                                            <strong>여행 제목:</strong> {post.tripPlan.title}
-                                        </div>
-                                        <div>
-                                            <strong>여행지:</strong> {post.tripPlan.destination}
-                                        </div>
-                                        <div>
-                                            <strong>기간:</strong> {post.tripPlan.startDate} ~{" "}
-                                            {post.tripPlan.endDate}
-                                        </div>
-                                        <div>
-                                            <strong>일정 개수:</strong>{" "}
-                                            {post.tripPlan.schedules?.length ?? 0}개
-                                        </div>
+                                        {/* 접히는 내용 */}
+                                        {isExpanded && (
+                                            <div>
+                                                <div><strong>여행 제목:</strong> {post.tripPlan.title}</div>
+                                                <div><strong>여행지:</strong> {post.tripPlan.destination}</div>
+                                                <div><strong>기간:</strong> {post.tripPlan.startDate} ~ {post.tripPlan.endDate}</div>
+                                                <div><strong>일정 개수:</strong> {post.tripPlan.schedules?.length ?? 0}개</div>
 
-                                        {post.tripPlan.schedules &&
-                                            post.tripPlan.schedules.length > 0 && (
-                                                <div className="attached-trip-schedule-list">
-                                                    {post.tripPlan.schedules
-                                                        .slice(0, 5)
-                                                        .map((schedule) => (
-                                                            <div
-                                                                key={schedule.id}
-                                                                className="attached-trip-schedule-item"
-                                                            >
+                                                {post.tripPlan.schedules && post.tripPlan.schedules.length > 0 && (
+                                                    <div className="attached-trip-schedule-list">
+                                                        {post.tripPlan.schedules.slice(0, 5).map((schedule) => (
+                                                            <div key={schedule.id} className="attached-trip-schedule-item">
                                                                 <div>
-                                                                    <strong>{schedule.dayNumber}일차</strong> ·{" "}
-                                                                    {schedule.title}
+                                                                    <strong>{schedule.dayNumber}일차</strong> · {schedule.title}
                                                                 </div>
-                                                                {(schedule.startTime ||
-                                                                    schedule.endTime) && (
+                                                                {(schedule.startTime || schedule.endTime) && (
                                                                     <div className="schedule-time">
-                                                                        {schedule.startTime || "--:--"} ~{" "}
-                                                                        {schedule.endTime || "--:--"}
+                                                                        {schedule.startTime || "--:--"} ~ {schedule.endTime || "--:--"}
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         ))}
+                                                    </div>
+                                                )}
+
+                                                <div className="trip-button-group">
+                                                    <button
+                                                        type="button"
+                                                        className="load-trip-button"
+                                                        onClick={() => navigate("/", { state: { tripId: post.tripPlan?.id } })}
+                                                    >
+                                                        이 여행 계획 불러오기
+                                                    </button>
+
+                                                    {!isAuthor && (
+                                                        <button
+                                                            type="button"
+                                                            className="join-trip-button"
+                                                            onClick={handleJoinTrip}
+                                                            disabled={isJoined}
+                                                        >
+                                                            {isPending
+                                                                ? "참가 신청 완료"
+                                                                : isMemberApproved
+                                                                ? "이미 참가 중"
+                                                                : "참가 신청"}
+                                                        </button>
+                                                    )}
                                                 </div>
-                                            )}
 
-                                        <div className="trip-button-group">
-                                            <button
-                                                type="button"
-                                                className="load-trip-button"
-                                                onClick={() =>
-                                                    navigate("/", {
-                                                        state: { tripId: post.tripPlan?.id },
-                                                    })
-                                                }
-                                            >
-                                                이 여행 계획 불러오기
-                                            </button>
-
-                                            {!isAuthor && (
-                                                <button
-                                                    type="button"
-                                                    className="join-trip-button"
-                                                    onClick={handleJoinTrip}
-                                                    disabled={isJoined}
-                                                >
-                                                    {isPending
-                                                        ? "참가 신청 완료"
-                                                        : isMemberApproved
-                                                        ? "이미 참가 중"
-                                                        : "참가 신청"}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {isAuthor && post?.tripPlan && (
-                                            <div className="trip-member-manage-box">
-                                                <h3>참가 신청 관리</h3>
-
-                                                {loadingMembers ? (
-                                                    <div>멤버 목록 불러오는 중...</div>
-                                                ) : (
-                                                    <>
-                                                        <div className="member-count-row">
-                                                            <strong>참가 중:</strong>{" "}
-                                                            {approvedMembers.length}명
-                                                        </div>
-
-                                                        { approvedMembers.length != 0 && (
-                                                            approvedMembers.map((member) => (
-                                                                <div
-                                                                    key={member.memberId}
-                                                                    className="member-manage-row"
-                                                                >
-                                                                    <div>
-                                                                        <strong>
-                                                                            {member.nickname}
-                                                                        </strong>{" "}
-                                                                        ({member.name})
-                                                                    </div>
-                                                                </div>
-                                                            ))
-                                                        )}
-
-                                                        <div className="member-count-row">
-                                                            <strong>대기 중:</strong>{" "}
-                                                            {pendingMembers.length}명
-                                                        </div>
-
-                                                        {pendingMembers.length === 0 ? (
-                                                            <div>
-                                                                대기 중인 신청자가 없습니다.
-                                                            </div>
+                                                {isAuthor && (
+                                                    <div className="trip-member-manage-box">
+                                                        <h3>참가 신청 관리</h3>
+                                                        {loadingMembers ? (
+                                                            <div>멤버 목록 불러오는 중...</div>
                                                         ) : (
-                                                            pendingMembers.map((member) => (
-                                                                <div
-                                                                    key={member.memberId}
-                                                                    className="member-manage-row"
-                                                                >
-                                                                    <div>
-                                                                        <strong>
-                                                                            {member.nickname}
-                                                                        </strong>{" "}
-                                                                        ({member.name})
-                                                                    </div>
-
-                                                                    <div className="member-action-buttons">
-                                                                        <button
-                                                                            className="accept-button"
-                                                                            onClick={() =>
-                                                                                handleAcceptMember(
-                                                                                    member.memberId
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            수락
-                                                                        </button>
-                                                                        <button
-                                                                            className="reject-button"
-                                                                            onClick={() =>
-                                                                                handleRemoveMember(
-                                                                                    member.memberId
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            거절
-                                                                        </button>
-                                                                    </div>
+                                                            <div>
+                                                                <div className="member-count-row">
+                                                                    <strong>참가 중:</strong> {approvedMembers.length}명
                                                                 </div>
-                                                            ))
+                                                                {approvedMembers.map((member) => (
+                                                                    <div key={member.memberId} className="member-manage-row">
+                                                                        <div>
+                                                                            <strong>{member.nickname}</strong> ({member.name})
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                <div className="member-count-row">
+                                                                    <strong>대기 중:</strong> {pendingMembers.length}명
+                                                                </div>
+                                                                {pendingMembers.length === 0 ? (
+                                                                    <div>대기 중인 신청자가 없습니다.</div>
+                                                                ) : (
+                                                                    pendingMembers.map((member) => (
+                                                                        <div key={member.memberId} className="member-manage-row">
+                                                                            <div>
+                                                                                <strong>{member.nickname}</strong> ({member.name})
+                                                                            </div>
+                                                                            <div className="member-action-buttons">
+                                                                                <button
+                                                                                    className="accept-button"
+                                                                                    onClick={() => handleAcceptMember(member.memberId)}
+                                                                                >
+                                                                                    수락
+                                                                                </button>
+                                                                                <button
+                                                                                    className="reject-button"
+                                                                                    onClick={() => handleRemoveMember(member.memberId)}
+                                                                                >
+                                                                                    거절
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))
+                                                                )}
+                                                            </div>
                                                         )}
-                                                    </>
+                                                    </div>
                                                 )}
                                             </div>
                                         )}
                                     </div>
                                 )}
 
-                                <div className="PostContent">
-                                    <div
-                                        className="ql-editor"
-                                        dangerouslySetInnerHTML={{
-                                            __html: post?.content || "",
-                                        }}
-                                    />
-                                    {post?.tags && (
-                                        <div className="tags">
-                                            {post.tags.split(",").map((tag, idx) => (
-                                                <span key={idx} className="tag">
-                                                    #{tag.trim().replace("#", "")}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
+                                {/* 4. 푸터 영역 (좋아요, 공유 등) */}
                                 <div className="PostFooter">
                                     <div className="footer-item">
                                         <RemoveRedEyeIcon /> {post?.viewCount}
@@ -555,14 +563,13 @@ export default function CommunityReadPage() {
                                             <ThumbUpOffAltIcon
                                                 style={{ color: liked ? "#1976d2" : "#aaa" }}
                                             />
-                                        </button>
                                         {post?.likeCount}
+                                        </button>
                                     </div>
                                     <div className="footer-item">
                                         <button onClick={handleShare} className="icon-btn">
-                                            <ShareIcon />
+                                            <ShareIcon /> 공유하기
                                         </button>
-                                        공유
                                     </div>
                                 </div>
                             </div>
@@ -579,7 +586,7 @@ export default function CommunityReadPage() {
                             </div>
 
                             <div className="footer-right">
-                                {(isAuthor) && (
+                                {isAuthor && (
                                     <>
                                         <button className="edit-button" onClick={handleUpdate}>
                                             수정하기
@@ -603,77 +610,29 @@ export default function CommunityReadPage() {
                             </div>
                         </div>
 
+                        {/* sessionStorage 대신 me?.id를 우선 활용하도록 수정 */}
+                        <CommunityComments 
+                            postId={Number(post?.id)} 
+                            currentUserId={me?.id || Number(sessionStorage.getItem("userId"))} 
+                        />
+
                         <hr />
 
-                        <div id="list-section" className="community-board-container">
-                            <div className="board-header-row">
-                                <div className="col-id">번호</div>
-                                <div className="col-route">기타</div>
-                                <div className="col-title">제목</div>
-                                <div className="col-author">작성자</div>
-                                <div className="col-views">조회</div>
-                                <div className="col-stats">좋아요</div>
-                                <div className="col-share">공유</div>
-                            </div>
-
-                            <div className="board-body">
-                                {posts.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className={`board-item-row ${
-                                            id === String(item.id) ? "active-row" : ""
-                                        }`}
-                                        onClick={() => navigate(`/community/${item.id}`)}
-                                    >
-                                        <div className="col-id">{item.id}</div>
-                                        <div className="col-route">
-                                            {renderRouteOrRating(item)}
-                                        </div>
-                                        <div className="col-title">{item.title}</div>
-                                        <div className="col-author">
-                                            {item.authorNickname || "익명"}
-                                        </div>
-                                        <div className="col-views">{item.viewCount}</div>
-                                        <div className="col-stats">{item.likeCount}</div>
-                                        <div className="col-share">
-                                            {item.shareCount || 0}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="pagination">
-                                <button onClick={() => goToPage(0)} disabled={page === 0}>
-                                    {"<<"}
-                                </button>
-                                <button
-                                    onClick={() => goToPage(page - 1)}
-                                    disabled={page === 0}
-                                >
-                                    {"<"}
-                                </button>
-                                {pageNumbers.map((p) => (
-                                    <button
-                                        key={p}
-                                        onClick={() => goToPage(p)}
-                                        className={page === p ? "active-page" : ""}
-                                    >
-                                        {p + 1}
-                                    </button>
-                                ))}
-                                <button
-                                    onClick={() => goToPage(page + 1)}
-                                    disabled={page === totalPages - 1}
-                                >
-                                    {">"}
-                                </button>
-                                <button
-                                    onClick={() => goToPage(totalPages - 1)}
-                                    disabled={page === totalPages - 1}
-                                >
-                                    {">>"}
-                                </button>
-                            </div>
+                        <div id="list-section">
+                            {/* 독립적인 notices 상태를 전달 */}
+                            <CommunityList
+                                posts={posts}
+                                notices={notices}
+                                page={page}
+                                totalPages={totalPages}
+                                goToPage={goToPage}
+                                pageNumbers={pageNumbers}
+                                navigate={navigate}
+                                renderRouteOrRating={renderRouteOrRating}
+                                activePostId={post?.id || null}
+                                isNoticeExpanded={isNoticeExpanded}
+                                setIsNoticeExpanded={setIsNoticeExpanded}
+                            />
                         </div>
                     </main>
                 </div>

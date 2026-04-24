@@ -25,9 +25,13 @@ public class RegionResolverService {
 
         String broadProvinceAlias = resolveBroadProvinceAlias(tokens);
 
+        RegionRecord explicitProvince = StringUtils.hasText(broadProvinceAlias)
+                ? null
+                : findExplicitProvince(tokens, normalizedMessage);
+
         RegionRecord province = StringUtils.hasText(broadProvinceAlias)
                 ? null
-                : findBestProvince(normalizedMessage, tokens);
+                : (explicitProvince != null ? explicitProvince : findBestProvince(normalizedMessage, tokens));
 
         String provinceName = StringUtils.hasText(broadProvinceAlias)
                 ? broadProvinceAlias
@@ -78,6 +82,7 @@ public class RegionResolverService {
         String detailName = StringUtils.hasText(resolvedNeighborhood) ? resolvedNeighborhood : resolvedDistrict;
 
         return new ResolvedRegion(
+                provinceName,
                 resolvedCity,
                 resolvedDistrict,
                 resolvedNeighborhood,
@@ -106,27 +111,65 @@ public class RegionResolverService {
         return false;
     }
 
+    private RegionRecord findExplicitProvince(List<String> tokens, String normalizedMessage) {
+        for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
+            if (!"CTPRVN".equals(region.getLevel())) {
+                continue;
+            }
+
+            String name = normalize(region.getName());
+            String fullName = normalize(region.getFullName());
+
+            if (StringUtils.hasText(fullName)) {
+                if (tokens.contains(fullName) || isExactPhraseHit(normalizedMessage, fullName)) {
+                    return region;
+                }
+            }
+
+            if ("경기".equals(name) && (tokens.contains("경기도") || isExactPhraseHit(normalizedMessage, "경기도"))) {
+                return region;
+            }
+            if ("강원".equals(name) && (tokens.contains("강원도") || isExactPhraseHit(normalizedMessage, "강원도"))) {
+                return region;
+            }
+            if ("제주".equals(name) && (tokens.contains("제주도") || isExactPhraseHit(normalizedMessage, "제주도"))) {
+                return region;
+            }
+            if ("충청북".equals(name) && (tokens.contains("충청북도") || isExactPhraseHit(normalizedMessage, "충청북도") || tokens.contains("충북"))) {
+                return region;
+            }
+            if ("충청남".equals(name) && (tokens.contains("충청남도") || isExactPhraseHit(normalizedMessage, "충청남도") || tokens.contains("충남"))) {
+                return region;
+            }
+            if ("전라북".equals(name) && (tokens.contains("전라북도") || isExactPhraseHit(normalizedMessage, "전라북도") || tokens.contains("전북"))) {
+                return region;
+            }
+            if ("전라남".equals(name) && (tokens.contains("전라남도") || isExactPhraseHit(normalizedMessage, "전라남도") || tokens.contains("전남"))) {
+                return region;
+            }
+            if ("경상북".equals(name) && (tokens.contains("경상북도") || isExactPhraseHit(normalizedMessage, "경상북도") || tokens.contains("경북"))) {
+                return region;
+            }
+            if ("경상남".equals(name) && (tokens.contains("경상남도") || isExactPhraseHit(normalizedMessage, "경상남도") || tokens.contains("경남"))) {
+                return region;
+            }
+            if ("광주".equals(name) && (tokens.contains("광주광역시") || isExactPhraseHit(normalizedMessage, "광주광역시"))) {
+                return region;
+            }
+        }
+
+        return null;
+    }
+
     private String resolveBroadProvinceAlias(List<String> tokens) {
-        if (tokens.contains("전라도")) {
-            return "전라도";
-        }
-        if (tokens.contains("경상도")) {
-            return "경상도";
-        }
-        if (tokens.contains("충청도")) {
-            return "충청도";
-        }
+        if (tokens.contains("전라도")) return "전라도";
+        if (tokens.contains("경상도")) return "경상도";
+        if (tokens.contains("충청도")) return "충청도";
         return "";
     }
 
     private boolean isBroadProvinceAlias(String value) {
-        if (!StringUtils.hasText(value)) {
-            return false;
-        }
-
-        return "전라도".equals(value)
-                || "경상도".equals(value)
-                || "충청도".equals(value);
+        return "전라도".equals(value) || "경상도".equals(value) || "충청도".equals(value);
     }
 
     private boolean matchesTopLevel(List<String> tokens, String normalizedMessage, RegionRecord region) {
@@ -134,16 +177,13 @@ public class RegionResolverService {
             if (!StringUtils.hasText(candidate)) {
                 continue;
             }
-
             if (tokens.contains(candidate)) {
                 return true;
             }
-
             if (isExactPhraseHit(normalizedMessage, candidate)) {
                 return true;
             }
         }
-
         return false;
     }
 
@@ -182,14 +222,12 @@ public class RegionResolverService {
     }
 
     private RegionRecord findBestDistrict(String normalizedMessage, List<String> tokens, String provinceName) {
-        RegionRecord byProvince = null;
-
         if (StringUtils.hasText(provinceName) && !isBroadProvinceAlias(provinceName)) {
-            byProvince = findBestMatch(normalizedMessage, tokens, "SIG", provinceName, null);
-        }
-
-        if (byProvince != null) {
-            return byProvince;
+            RegionRecord byProvince = findBestMatch(normalizedMessage, tokens, "SIG", provinceName, null);
+            if (byProvince != null) {
+                return byProvince;
+            }
+            return null;
         }
 
         return findBestMatch(normalizedMessage, tokens, "SIG", null, null);
@@ -328,11 +366,11 @@ public class RegionResolverService {
             }
 
             if (tokens.contains(candidate)) {
-                score += 100;
+                score += 100 + candidate.length();
             }
 
             if (isExactPhraseHit(normalizedMessage, candidate)) {
-                score += 20;
+                score += 20 + candidate.length();
             }
         }
 
@@ -345,9 +383,9 @@ public class RegionResolverService {
             String strippedCity = stripSuffix(normalizedCity);
 
             if (tokens.contains(normalizedCity)) {
-                score += 10;
+                score += 10 + normalizedCity.length();
             } else if (StringUtils.hasText(strippedCity) && tokens.contains(strippedCity)) {
-                score += 8;
+                score += 8 + strippedCity.length();
             }
         }
 
@@ -412,55 +450,45 @@ public class RegionResolverService {
             candidates.add(normalize("서울특별시"));
             return;
         }
-
         if ("부산".equals(trimmed)) {
             candidates.add(normalize("부산시"));
             candidates.add(normalize("부산광역시"));
             return;
         }
-
         if ("대구".equals(trimmed)) {
             candidates.add(normalize("대구시"));
             candidates.add(normalize("대구광역시"));
             return;
         }
-
         if ("인천".equals(trimmed)) {
             candidates.add(normalize("인천시"));
             candidates.add(normalize("인천광역시"));
             return;
         }
-
         if ("광주".equals(trimmed)) {
-            candidates.add(normalize("광주시"));
             candidates.add(normalize("광주광역시"));
             return;
         }
-
         if ("대전".equals(trimmed)) {
             candidates.add(normalize("대전시"));
             candidates.add(normalize("대전광역시"));
             return;
         }
-
         if ("울산".equals(trimmed)) {
             candidates.add(normalize("울산시"));
             candidates.add(normalize("울산광역시"));
             return;
         }
-
         if ("세종".equals(trimmed)) {
             candidates.add(normalize("세종시"));
             candidates.add(normalize("세종특별자치시"));
             return;
         }
-
         if ("제주".equals(trimmed)) {
             candidates.add(normalize("제주도"));
             candidates.add(normalize("제주특별자치도"));
             return;
         }
-
         if ("강원".equals(trimmed)) {
             candidates.add(normalize("강원도"));
             candidates.add(normalize("강원특별자치도"));
@@ -473,32 +501,26 @@ public class RegionResolverService {
             candidates.add(normalize("충북"));
             candidates.add(normalize("충청북도"));
         }
-
         if ("충청남".equals(trimmed)) {
             candidates.add(normalize("충남"));
             candidates.add(normalize("충청남도"));
         }
-
         if ("전라북".equals(trimmed)) {
             candidates.add(normalize("전북"));
             candidates.add(normalize("전라북도"));
         }
-
         if ("전라남".equals(trimmed)) {
             candidates.add(normalize("전남"));
             candidates.add(normalize("전라남도"));
         }
-
         if ("경상북".equals(trimmed)) {
             candidates.add(normalize("경북"));
             candidates.add(normalize("경상북도"));
         }
-
         if ("경상남".equals(trimmed)) {
             candidates.add(normalize("경남"));
             candidates.add(normalize("경상남도"));
         }
-
         if ("경기".equals(trimmed)) {
             candidates.add(normalize("경기도"));
         }
@@ -601,12 +623,29 @@ public class RegionResolverService {
         }
 
         List<String> result = new ArrayList<>();
+
         for (String token : normalized.split("\\s+")) {
-            if (StringUtils.hasText(token)) {
-                result.add(token);
+            if (!StringUtils.hasText(token)) {
+                continue;
+            }
+
+            result.add(token);
+
+            String stripped = stripKoreanParticle(token);
+            if (StringUtils.hasText(stripped) && !result.contains(stripped)) {
+                result.add(stripped);
             }
         }
+
         return result;
+    }
+
+    private String stripKoreanParticle(String token) {
+        if (!StringUtils.hasText(token)) {
+            return "";
+        }
+
+        return token.replaceAll("(에서|으로|로|에게서|에게|한테서|한테|부터|까지|에|을|를|은|는|이|가|와|과|랑|하고|도)$", "").trim();
     }
 
     private boolean looksLikeBroadAmbiguousArea(String value) {
@@ -640,24 +679,37 @@ public class RegionResolverService {
             return "";
         }
 
-        return Normalizer.normalize(value, Normalizer.Form.NFKC)
-                .toLowerCase(Locale.ROOT)
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFKC)
+                .toLowerCase()
                 .replaceAll("[^가-힣a-z0-9\\s]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
+
+        normalized = normalized
+                .replaceAll("(공항|국제공항)", " 공항")
+                .replaceAll("(터미널)", " 터미널")
+                .replaceAll("(역)", " 역");
+
+        return normalized.replaceAll("\\s+", " ").trim();
     }
 
     public static class ResolvedRegion {
+        private final String province;
         private final String city;
         private final String district;
         private final String neighborhood;
         private final String detailName;
 
-        public ResolvedRegion(String city, String district, String neighborhood, String detailName) {
+        public ResolvedRegion(String province, String city, String district, String neighborhood, String detailName) {
+            this.province = province;
             this.city = city;
             this.district = district;
             this.neighborhood = neighborhood;
             this.detailName = detailName;
+        }
+
+        public String getProvince() {
+            return province;
         }
 
         public String getCity() {

@@ -79,6 +79,7 @@ public class TripPlanResponseDto {
 
         if (tripPlan.getExpenses() != null) {
             this.expenses = tripPlan.getExpenses().stream()
+                    .filter(e -> e.getParent() == null)
                     .map(ExpenseResponseDto::new)
                     .collect(Collectors.toList());
         }

@@ -3,19 +3,18 @@
 /* 1. 플로팅 팝업 컨테이너 */
 .calc-popup-container {
   position: fixed;
-  bottom: 40px;
-  right: 40px;
-  width: 380px; /* 조금 더 여유 있는 너비 */
+  bottom: 120px; 
+  left: 20px;    /* ActionButtons와 동일한 left값 */
+  width: 380px;
   background-color: #ffffff;
-  border-radius: 16px; /* 더 둥글게 */
-  /* 더 부드러운 고급 그림자 효과 */
+  border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   z-index: 9999;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: 'Pretendard', -apple-system, sans-serif; /* 가독성 좋은 폰트 */
-  transition: all 0.3s ease; /* 팝업 등장 시 부드럽게 */
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  transition: all 0.3s ease;
 }
 
 /* 2. 헤더 영역 */
@@ -52,7 +51,7 @@
 /* 3. 바디 영역 (리스트) */
 .calc-body {
   padding: 24px 20px; /* 여백을 충분히 */
-  max-height: 320px;
+  max-height: 500px;
   overflow-y: auto;
 }
 
@@ -168,6 +167,20 @@
   transform: translateY(-1px); /* 살짝 떠오르는 효과 */
 }
 
+.sub-add-btn {
+  width: 15%;
+  padding: 14px;
+  background-color: #ffca28;
+  border: none;
+  border-radius: 10px; /* 더 둥글게 */
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  color: #333;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(255, 202, 40, 0.2); /* 은은한 그림자 */
+}
+
 /* 6. 푸터 영역 (예산 및 합계) */
 .calc-footer {
   padding: 24px 20px;
@@ -261,4 +274,34 @@
 .calc-btn-reset:hover {
   background-color: #e2e2e2;
   color: #555;
+}
+
+/* 상위 카테고리 컨테이너 */
+.calc-group-container {
+  margin-bottom: 15px;
+  list-style: none;
+}
+
+/* 하위 리스트 전체를 오른쪽으로 밀기 */
+.sub-calc-list {
+  margin-left: 30px; /* 이 수치가 들여쓰기를 결정합니다 */
+  margin-top: 5px;
+  border-left: 2px solid #eee; /* 왼쪽에 연한 선을 그어 계층 표시 */
+  padding-left: 10px;
+  list-style: none;
+}
+
+/* 하위 항목 개별 스타일 */
+.sub-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+/* └ 모양 아이콘 스타일 */
+.indent-icon {
+  color: #ccc;
+  font-size: 12px;
+  margin-right: 5px;
 }

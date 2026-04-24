@@ -12,7 +12,9 @@ export default function RecommendationBubbleRenderer({
   const emptyText =
     kind === "restaurant"
       ? "추천할 맛집 정보를 찾지 못했습니다."
-      : "추천할 숙소 정보를 찾지 못했습니다.";
+      : kind === "stay"
+      ? "추천할 숙소 정보를 찾지 못했습니다."
+      : "추천할 명소 정보를 찾지 못했습니다.";
 
   return (
     <div className="recommendation-card">
@@ -32,11 +34,12 @@ export default function RecommendationBubbleRenderer({
                   <p className="recommendation-item__name">{item.title}</p>
 
                   <div className="recommendation-item__actions">
-                    {kind === "restaurant" && item.category && (
-                      <span className="recommendation-item__category">
-                        {item.category}
-                      </span>
-                    )}
+                    {(kind === "restaurant" || kind === "stay" || kind === "attraction") &&
+                      item.category && (
+                        <span className={`recommendation-item__category ${kind}`}>
+                          {item.category}
+                        </span>
+                      )}
 
                     {item.link && (
                       <a

@@ -50,6 +50,14 @@ export const extractChatErrorMessage = (error: unknown): string => {
 
   const axiosError = error as AxiosError<ErrorResponse>;
 
+  if (axiosError?.code === "ECONNABORTED") {
+    return "응답 시간이 오래 걸리고 있습니다.\n잠시 후 다시 시도해주세요.";
+  }
+
+  if (axiosError?.message?.toLowerCase().includes("network error")) {
+    return "서버에 연결하지 못했습니다.\n백엔드 실행 상태를 확인해주세요.";
+  }
+
   if (axiosError?.response?.data?.message) {
     return normalizeErrorMessage(axiosError.response.data.message);
   }
@@ -59,4 +67,4 @@ export const extractChatErrorMessage = (error: unknown): string => {
   }
 
   return defaultMessage;
-}; 
+};

@@ -43,5 +43,8 @@
 export const CalculatorService = {
   openCalculator: () => {
     window.dispatchEvent(new CustomEvent('OPEN_CALCULATOR'));
+  },
+  closeCalculator: () => {
+    window.dispatchEvent(new CustomEvent('CLOSE_CALCULATOR'));
   }
 };

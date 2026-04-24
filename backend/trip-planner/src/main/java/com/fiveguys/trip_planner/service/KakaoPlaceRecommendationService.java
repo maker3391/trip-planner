@@ -12,16 +12,12 @@ import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class KakaoPlaceRecommendationService {
 
     private static final int MAX_ITEMS = 5;
-    private static final int MAX_COLLECT_SIZE = 20;
 
     private static final String STAY_SUBTYPE_GENERIC = "generic";
     private static final String STAY_SUBTYPE_HOTEL = "hotel";
@@ -39,6 +35,10 @@ public class KakaoPlaceRecommendationService {
     private final RawAreaHintExtractorService rawAreaHintExtractorService;
     private final RecommendationCacheService recommendationCacheService;
     private final RecommendationCacheKeyGenerator cacheKeyGenerator;
+    private final KakaoPlaceQueryBuilder kakaoPlaceQueryBuilder;
+    private final KakaoPlaceMapper kakaoPlaceMapper;
+    private final KakaoPlaceScoringService kakaoPlaceScoringService;
+    private final RecommendationDisplayService recommendationDisplayService;
 
     public KakaoPlaceRecommendationService(KakaoLocalClient kakaoLocalClient,
                                            RecommendationIntentResolverService intentResolverService,
@@ -46,7 +46,10 @@ public class KakaoPlaceRecommendationService {
                                            RegionAliasResolverService regionAliasResolverService,
                                            RawAreaHintExtractorService rawAreaHintExtractorService,
                                            RecommendationCacheService recommendationCacheService,
-                                           RecommendationCacheKeyGenerator cacheKeyGenerator) {
+                                           RecommendationCacheKeyGenerator cacheKeyGenerator,
+                                           KakaoPlaceQueryBuilder kakaoPlaceQueryBuilder,
+                                           KakaoPlaceMapper kakaoPlaceMapper,
+                                           KakaoPlaceScoringService kakaoPlaceScoringService, RecommendationDisplayService recommendationDisplayService) {
         this.kakaoLocalClient = kakaoLocalClient;
         this.intentResolverService = intentResolverService;
         this.regionResolverService = regionResolverService;
@@ -54,6 +57,10 @@ public class KakaoPlaceRecommendationService {
         this.rawAreaHintExtractorService = rawAreaHintExtractorService;
         this.recommendationCacheService = recommendationCacheService;
         this.cacheKeyGenerator = cacheKeyGenerator;
+        this.kakaoPlaceQueryBuilder = kakaoPlaceQueryBuilder;
+        this.kakaoPlaceMapper = kakaoPlaceMapper;
+        this.kakaoPlaceScoringService = kakaoPlaceScoringService;
+        this.recommendationDisplayService = recommendationDisplayService;
     }
 
     public ChatResponse recommend(ChatRequest request) {
@@ -66,6 +73,7 @@ public class KakaoPlaceRecommendationService {
 
         RegionResolverService.ResolvedRegion resolvedRegion = regionResolverService.resolve(message);
 
+        String province = resolvedRegion.getProvince();
         String destination = resolvedRegion.getCity();
         String district = resolvedRegion.getDistrict();
         String neighborhood = resolvedRegion.getNeighborhood();
@@ -73,8 +81,21 @@ public class KakaoPlaceRecommendationService {
 
         String queryDestination = resolveEffectiveDestination(destination, district);
 
-        RegionAliasResolverService.ResolvedAlias alias =
-                regionAliasResolverService.resolve(message, StringUtils.hasText(queryDestination) ? queryDestination : destination);
+        boolean skipAlias = shouldSkipAliasForExplicitGwangju(
+                message,
+                province,
+                destination,
+                district,
+                neighborhood,
+                detailArea
+        );
+
+        RegionAliasResolverService.ResolvedAlias alias = skipAlias
+                ? null
+                : regionAliasResolverService.resolve(
+                message,
+                StringUtils.hasText(queryDestination) ? queryDestination : destination
+        );
 
         String aliasQueryHint = "";
         String aliasTargetName = "";
@@ -86,15 +107,14 @@ public class KakaoPlaceRecommendationService {
             String normalizedAliasTargetName = normalizeDisplayArea(alias.getTargetName());
             String normalizedAliasTargetParent = normalizeDisplayArea(alias.getTargetParent());
 
-            boolean currentAlreadySpecific =
-                    StringUtils.hasText(detailArea)
-                            && !normalizeAreaName(detailArea).equals(normalizeAreaName(destination));
+            boolean hasResolvedSpecificArea =
+                    StringUtils.hasText(detailArea) || StringUtils.hasText(district) || StringUtils.hasText(neighborhood);
 
             boolean aliasIsMoreSpecific =
                     StringUtils.hasText(normalizedAliasTargetName)
                             && !normalizeAreaName(normalizedAliasTargetName).equals(normalizeAreaName(normalizedAliasCity));
 
-            if (!currentAlreadySpecific || aliasIsMoreSpecific) {
+            if ((!hasResolvedSpecificArea) || aliasIsMoreSpecific) {
                 if (StringUtils.hasText(normalizedAliasCity)) {
                     destination = normalizedAliasCity;
                     queryDestination = normalizedAliasCity;
@@ -120,6 +140,7 @@ public class KakaoPlaceRecommendationService {
         }
 
         queryDestination = normalizeDisplayArea(queryDestination);
+        province = normalizeDisplayArea(province);
         destination = normalizeDisplayArea(destination);
         district = normalizeDisplayArea(district);
         neighborhood = normalizeDisplayArea(neighborhood);
@@ -146,7 +167,7 @@ public class KakaoPlaceRecommendationService {
             return cached;
         }
 
-        List<String> queryCandidates = buildQueryCandidates(
+        List<String> queryCandidates = kakaoPlaceQueryBuilder.buildQueryCandidates(
                 intent,
                 staySubtype,
                 queryDestination,
@@ -169,10 +190,6 @@ public class KakaoPlaceRecommendationService {
             if (!docs.isEmpty()) {
                 collectedDocs.addAll(docs);
             }
-
-            if (collectedDocs.size() >= MAX_COLLECT_SIZE) {
-                break;
-            }
         }
 
         if (collectedDocs.isEmpty()) {
@@ -180,31 +197,59 @@ public class KakaoPlaceRecommendationService {
                     + buildDisplayDestination(queryDestination, detailArea, neighborhood, district, aliasQueryHint));
         }
 
-        List<RecommendationItemResponse> items = filterScoreSortAndMap(
+        List<KakaoPlaceScoringService.RecommendationCandidate> ranked = kakaoPlaceScoringService.filterAndRank(
                 collectedDocs,
                 intent,
                 staySubtype,
+                province,
                 queryDestination,
                 detailArea,
                 neighborhood,
                 district,
                 aliasQueryHint,
-                aliasTargetParent
+                aliasTargetParent,
+                message
         );
 
-        if (items.isEmpty()) {
+        if (ranked.isEmpty()) {
             throw new LlmCallException("추천 가능한 결과가 없습니다: "
                     + buildDisplayDestination(queryDestination, detailArea, neighborhood, district, aliasQueryHint));
         }
 
+        List<RecommendationItemResponse> items = new ArrayList<>();
+        for (KakaoPlaceScoringService.RecommendationCandidate candidate : ranked) {
+            if (items.size() >= MAX_ITEMS) {
+                break;
+            }
+            items.add(kakaoPlaceMapper.toRecommendationItemResponse(intent, candidate.doc()));
+        }
+
+        String displayDestination = buildDisplayDestination(
+                queryDestination,
+                detailArea,
+                neighborhood,
+                district,
+                aliasQueryHint
+        );
+
+        RecommendationDisplayService.DisplayMeta displayMeta =
+                recommendationDisplayService.buildPlaceDisplayMeta(
+                        intent,
+                        message,
+                        displayDestination,
+                        items
+                );
+
         ChatResponse response = new ChatResponse(
                 message,
                 intent,
-                buildDisplayDestination(queryDestination, detailArea, neighborhood, district, aliasQueryHint),
+                displayDestination,
                 null,
                 new RecommendationContentResponse(
                         new ArrayList<>(),
-                        items
+                        items,
+                        displayMeta.displayType(),
+                        displayMeta.displayTitle()
                 )
         );
 
@@ -297,264 +342,6 @@ public class KakaoPlaceRecommendationService {
         return STAY_SUBTYPE_GENERIC;
     }
 
-    private List<String> buildQueryCandidates(String intent,
-                                              String staySubtype,
-                                              String destination,
-                                              String detailArea,
-                                              String neighborhood,
-                                              String district,
-                                              String aliasQueryHint,
-                                              String aliasTargetName,
-                                              String aliasTargetParent,
-                                              String rawAreaHint,
-                                              String message) {
-        LinkedHashSet<String> queries = new LinkedHashSet<>();
-
-        List<String> locationBases = buildLocationBases(
-                destination,
-                detailArea,
-                neighborhood,
-                district,
-                aliasQueryHint,
-                aliasTargetName,
-                aliasTargetParent,
-                rawAreaHint
-        );
-
-        List<String> keywords = buildIntentKeywords(intent, staySubtype, message);
-
-        for (String base : locationBases) {
-            for (String keyword : keywords) {
-                queries.add(base + " " + keyword);
-            }
-        }
-
-        return new ArrayList<>(queries);
-    }
-
-    private List<String> buildLocationBases(String destination,
-                                            String detailArea,
-                                            String neighborhood,
-                                            String district,
-                                            String aliasQueryHint,
-                                            String aliasTargetName,
-                                            String aliasTargetParent,
-                                            String rawAreaHint) {
-        LinkedHashSet<String> bases = new LinkedHashSet<>();
-
-        addExpandedArea(bases, detailArea);
-        addExpandedArea(bases, neighborhood);
-        addExpandedArea(bases, aliasTargetName);
-        addExpandedArea(bases, rawAreaHint);
-        addExpandedArea(bases, district);
-        addExpandedArea(bases, aliasTargetParent);
-        addExpandedArea(bases, aliasQueryHint);
-        addExpandedArea(bases, destination);
-
-        return new ArrayList<>(bases);
-    }
-
-    private void addExpandedArea(Set<String> bases, String area) {
-        if (!StringUtils.hasText(area)) {
-            return;
-        }
-
-        for (String variant : expandAreaVariants(normalizeDisplayArea(area))) {
-            if (StringUtils.hasText(variant)) {
-                bases.add(variant);
-            }
-        }
-    }
-
-    private List<String> expandAreaVariants(String area) {
-        LinkedHashSet<String> result = new LinkedHashSet<>();
-
-        if (!StringUtils.hasText(area)) {
-            return new ArrayList<>();
-        }
-
-        String value = area.trim();
-        result.add(value);
-
-        switch (value) {
-            case "경상북":
-                result.add("경북");
-                result.add("경상북도");
-                break;
-            case "경상남":
-                result.add("경남");
-                result.add("경상남도");
-                break;
-            case "전라북":
-                result.add("전북");
-                result.add("전라북도");
-                break;
-            case "전라남":
-                result.add("전남");
-                result.add("전라남도");
-                break;
-            case "충청북":
-                result.add("충북");
-                result.add("충청북도");
-                break;
-            case "충청남":
-                result.add("충남");
-                result.add("충청남도");
-                break;
-            case "강원":
-            case "강원도":
-                result.add("강원");
-                result.add("강원도");
-                result.add("강원특별자치도");
-                break;
-            case "제주":
-            case "제주도":
-                result.add("제주");
-                result.add("제주도");
-                result.add("제주특별자치도");
-                break;
-            case "경기":
-            case "경기도":
-                result.add("경기");
-                result.add("경기도");
-                break;
-            case "서울":
-            case "서울시":
-                result.add("서울");
-                result.add("서울특별시");
-                break;
-            case "부산":
-            case "부산시":
-                result.add("부산");
-                result.add("부산광역시");
-                break;
-            case "대구":
-            case "대구시":
-                result.add("대구");
-                result.add("대구광역시");
-                break;
-            case "인천":
-            case "인천시":
-                result.add("인천");
-                result.add("인천광역시");
-                break;
-            case "광주":
-                result.add("광주");
-                result.add("광주광역시");
-                break;
-
-            case "광주시":
-                result.add("광주시");
-                break;
-            case "대전":
-            case "대전시":
-                result.add("대전");
-                result.add("대전광역시");
-                break;
-            case "울산":
-            case "울산시":
-                result.add("울산");
-                result.add("울산광역시");
-                break;
-            case "세종":
-            case "세종시":
-                result.add("세종");
-                result.add("세종특별자치시");
-                break;
-
-            case "전라도":
-                result.add("전남");
-                result.add("전라남도");
-                result.add("전북");
-                result.add("전라북도");
-                break;
-
-            case "경상도":
-                result.add("경남");
-                result.add("경상남도");
-                result.add("경북");
-                result.add("경상북도");
-                break;
-
-            case "충청도":
-                result.add("충남");
-                result.add("충청남도");
-                result.add("충북");
-                result.add("충청북도");
-                break;
-
-            default:
-                break;
-        }
-
-        return new ArrayList<>(result);
-    }
-
-    private List<String> buildIntentKeywords(String intent, String staySubtype, String message) {
-        LinkedHashSet<String> keywords = new LinkedHashSet<>();
-        String normalizedMessage = message == null ? "" : message.toLowerCase();
-
-        if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
-            keywords.add("맛집");
-            keywords.add("식당");
-            keywords.add("밥집");
-            keywords.add("한식");
-
-            if (normalizedMessage.contains("카페")) {
-                keywords.add("카페");
-            }
-            if (normalizedMessage.contains("술집") || normalizedMessage.contains("주점")) {
-                keywords.add("술집");
-                keywords.add("주점");
-            }
-            return new ArrayList<>(keywords);
-        }
-
-        switch (staySubtype) {
-            case STAY_SUBTYPE_MOTEL:
-                keywords.add("모텔");
-                keywords.add("무인텔");
-                keywords.add("숙박");
-                break;
-            case STAY_SUBTYPE_HOTEL:
-                keywords.add("호텔");
-                keywords.add("숙소");
-                break;
-            case STAY_SUBTYPE_PENSION:
-                keywords.add("펜션");
-                keywords.add("숙소");
-                break;
-            case STAY_SUBTYPE_RESORT:
-                keywords.add("리조트");
-                keywords.add("숙소");
-                break;
-            case STAY_SUBTYPE_GUEST_HOUSE:
-                keywords.add("게스트하우스");
-                keywords.add("숙소");
-                break;
-            case STAY_SUBTYPE_HANOK:
-                keywords.add("한옥스테이");
-                keywords.add("한옥 숙소");
-                keywords.add("숙소");
-                break;
-            case STAY_SUBTYPE_POOL_VILLA:
-                keywords.add("풀빌라");
-                keywords.add("리조트");
-                keywords.add("숙소");
-                break;
-            default:
-                keywords.add("숙소");
-                keywords.add("숙박");
-                keywords.add("호텔");
-                keywords.add("모텔");
-                keywords.add("펜션");
-                keywords.add("게스트하우스");
-                break;
-        }
-
-        return new ArrayList<>(keywords);
-    }
-
     private List<JsonNode> extractDocuments(JsonNode root) {
         List<JsonNode> result = new ArrayList<>();
 
@@ -569,290 +356,47 @@ public class KakaoPlaceRecommendationService {
         return result;
     }
 
-    private List<RecommendationItemResponse> filterScoreSortAndMap(List<JsonNode> docs,
-                                                                   String intent,
-                                                                   String staySubtype,
-                                                                   String destination,
-                                                                   String detailArea,
-                                                                   String neighborhood,
-                                                                   String district,
-                                                                   String aliasQueryHint,
-                                                                   String aliasTargetParent) {
-        LinkedHashSet<String> seen = new LinkedHashSet<>();
-        List<ScoredPlace> scored = new ArrayList<>();
+    private boolean shouldSkipAliasForExplicitGwangju(String message,
+                                                      String province,
+                                                      String destination,
+                                                      String district,
+                                                      String neighborhood,
+                                                      String detailArea) {
+        String normalizedMessage = normalizeAreaName(message);
+        String normalizedProvince = normalizeAreaName(province);
+        String normalizedDestination = normalizeAreaName(destination);
+        String normalizedDistrict = normalizeAreaName(district);
+        String normalizedNeighborhood = normalizeAreaName(neighborhood);
+        String normalizedDetailArea = normalizeAreaName(detailArea);
 
-        for (JsonNode doc : docs) {
-            if (!matchesRequestedType(doc, intent, staySubtype)) {
-                continue;
-            }
-
-            int score = scorePlace(doc, intent, staySubtype, destination, detailArea, neighborhood, district, aliasQueryHint, aliasTargetParent);
-            if (score <= 0) {
-                continue;
-            }
-
-            String name = text(doc, "place_name");
-            String address = resolveAddress(doc);
-            String key = (name + "|" + address).trim();
-
-            if (!seen.add(key)) {
-                continue;
-            }
-
-            scored.add(new ScoredPlace(doc, score));
-        }
-
-        scored.sort(Comparator.comparingInt(ScoredPlace::score).reversed());
-
-        List<RecommendationItemResponse> result = new ArrayList<>();
-        for (ScoredPlace place : scored) {
-            if (result.size() >= MAX_ITEMS) {
-                break;
-            }
-
-            JsonNode doc = place.doc();
-            result.add(new RecommendationItemResponse(
-                    text(doc, "place_name"),
-                    resolveAddress(doc),
-                    text(doc, "place_url"),
-                    resolveCategory(intent, doc)
-            ));
-        }
-
-        return result;
-    }
-
-    private boolean matchesRequestedType(JsonNode doc, String intent, String staySubtype) {
-        if (!"STAY_RECOMMENDATION".equals(intent)) {
+        if ("광주".equals(normalizedProvince) || normalizedMessage.contains("광주광역시")) {
             return true;
         }
 
-        if (STAY_SUBTYPE_GENERIC.equals(staySubtype)) {
-            return isAnyStayPlace(doc);
+        if ("경기".equals(normalizedProvince)
+                && ("광주시".equals(normalizedDestination)
+                || "광주시".equals(normalizedDistrict)
+                || "광주시".equals(normalizedDetailArea)
+                || "광주시".equals(normalizedNeighborhood))) {
+            return true;
         }
 
-        return matchesStaySubtype(doc, staySubtype);
-    }
-
-    private boolean isAnyStayPlace(JsonNode doc) {
-        String haystack = normalizeAreaName(text(doc, "place_name") + " " + text(doc, "category_name"));
-        return haystack.contains("숙박")
-                || haystack.contains("호텔")
-                || haystack.contains("모텔")
-                || haystack.contains("무인텔")
-                || haystack.contains("펜션")
-                || haystack.contains("리조트")
-                || haystack.contains("게스트하우스")
-                || haystack.contains("한옥")
-                || haystack.contains("풀빌라");
-    }
-
-    private boolean matchesStaySubtype(JsonNode doc, String staySubtype) {
-        String haystack = normalizeAreaName(text(doc, "place_name") + " " + text(doc, "category_name"));
-
-        switch (staySubtype) {
-            case STAY_SUBTYPE_MOTEL:
-                return haystack.contains("모텔") || haystack.contains("무인텔");
-            case STAY_SUBTYPE_HOTEL:
-                return haystack.contains("호텔");
-            case STAY_SUBTYPE_PENSION:
-                return haystack.contains("펜션");
-            case STAY_SUBTYPE_RESORT:
-                return haystack.contains("리조트");
-            case STAY_SUBTYPE_GUEST_HOUSE:
-                return haystack.contains("게스트하우스");
-            case STAY_SUBTYPE_HANOK:
-                return haystack.contains("한옥");
-            case STAY_SUBTYPE_POOL_VILLA:
-                return haystack.contains("풀빌라");
-            default:
-                return isAnyStayPlace(doc);
-        }
-    }
-
-    private int scorePlace(JsonNode doc,
-                           String intent,
-                           String staySubtype,
-                           String destination,
-                           String detailArea,
-                           String neighborhood,
-                           String district,
-                           String aliasQueryHint,
-                           String aliasTargetParent) {
-        int score = 0;
-
-        String placeName = normalizeAreaName(text(doc, "place_name"));
-        String address = normalizeAreaName(resolveAddress(doc));
-        String category = normalizeAreaName(text(doc, "category_name"));
-
-        if (StringUtils.hasText(detailArea) && containsArea(address, placeName, detailArea)) {
-            score += 50;
+        if (normalizedMessage.contains("경기도광주")
+                || normalizedMessage.contains("경기광주")
+                || normalizedMessage.contains("경기도광주시")
+                || normalizedMessage.contains("경기광주시")) {
+            return true;
         }
 
-        if (StringUtils.hasText(neighborhood) && containsArea(address, placeName, neighborhood)) {
-            score += 40;
+        if (normalizedMessage.startsWith("광주")
+                || normalizedMessage.contains("광주맛집")
+                || normalizedMessage.contains("광주숙소")
+                || normalizedMessage.contains("광주식당")
+                || normalizedMessage.contains("광주밥집")) {
+            return true;
         }
 
-        if (StringUtils.hasText(district) && containsArea(address, placeName, district)) {
-            score += 35;
-        }
-
-        if (StringUtils.hasText(aliasTargetParent) && containsArea(address, placeName, aliasTargetParent)) {
-            score += 30;
-        }
-
-        if (StringUtils.hasText(aliasQueryHint) && containsArea(address, placeName, aliasQueryHint)) {
-            score += 25;
-        }
-
-        if (StringUtils.hasText(destination) && containsArea(address, placeName, destination)) {
-            score += 20;
-        }
-
-        if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
-            if (category.contains("음식점")) score += 30;
-            if (category.contains("한식")) score += 20;
-            if (category.contains("중식")) score += 20;
-            if (category.contains("일식")) score += 20;
-            if (category.contains("양식")) score += 20;
-            if (category.contains("카페")) score += 15;
-            if (category.contains("주점")) score += 15;
-        } else {
-            if (category.contains("숙박")) score += 35;
-
-            switch (staySubtype) {
-                case STAY_SUBTYPE_MOTEL:
-                    if (category.contains("모텔")) score += 45;
-                    if (placeName.contains("모텔") || placeName.contains("무인텔")) score += 35;
-                    break;
-                case STAY_SUBTYPE_HOTEL:
-                    if (category.contains("호텔")) score += 45;
-                    if (placeName.contains("호텔")) score += 35;
-                    break;
-                case STAY_SUBTYPE_PENSION:
-                    if (category.contains("펜션")) score += 45;
-                    if (placeName.contains("펜션")) score += 35;
-                    break;
-                case STAY_SUBTYPE_RESORT:
-                    if (category.contains("리조트")) score += 45;
-                    if (placeName.contains("리조트")) score += 35;
-                    break;
-                case STAY_SUBTYPE_GUEST_HOUSE:
-                    if (category.contains("게스트하우스")) score += 45;
-                    if (placeName.contains("게스트하우스")) score += 35;
-                    break;
-                case STAY_SUBTYPE_HANOK:
-                    if (placeName.contains("한옥") || category.contains("한옥")) score += 45;
-                    break;
-                case STAY_SUBTYPE_POOL_VILLA:
-                    if (placeName.contains("풀빌라") || category.contains("풀빌라")) score += 45;
-                    break;
-                default:
-                    if (category.contains("호텔")) score += 25;
-                    if (category.contains("모텔")) score += 25;
-                    if (category.contains("펜션")) score += 25;
-                    if (category.contains("리조트")) score += 25;
-                    if (category.contains("게스트하우스")) score += 25;
-                    break;
-            }
-        }
-
-        if (StringUtils.hasText(text(doc, "road_address_name"))) {
-            score += 5;
-        }
-
-        if (StringUtils.hasText(text(doc, "phone"))) {
-            score += 3;
-        }
-
-        return score;
-    }
-
-    private boolean containsArea(String address, String placeName, String area) {
-        String normalized = normalizeAreaName(area);
-        return address.contains(normalized) || placeName.contains(normalized);
-    }
-
-    private String resolveCategory(String intent, JsonNode doc) {
-        String category = text(doc, "category_name");
-        String normalized = normalizeAreaName(category + " " + text(doc, "place_name"));
-
-        if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
-            return resolveRestaurantCategory(category);
-        }
-
-        if (normalized.contains("모텔") || normalized.contains("무인텔")) {
-            return "모텔";
-        }
-        if (normalized.contains("호텔")) {
-            return "호텔";
-        }
-        if (normalized.contains("펜션")) {
-            return "펜션";
-        }
-        if (normalized.contains("리조트")) {
-            return "리조트";
-        }
-        if (normalized.contains("게스트하우스")) {
-            return "게스트하우스";
-        }
-        if (normalized.contains("한옥")) {
-            return "한옥스테이";
-        }
-        if (normalized.contains("풀빌라")) {
-            return "풀빌라";
-        }
-
-        return "숙소";
-    }
-
-    private String resolveRestaurantCategory(String categoryName) {
-        if (!StringUtils.hasText(categoryName)) {
-            return "맛집";
-        }
-
-        String[] parts = categoryName.split(">");
-        for (int i = parts.length - 1; i >= 0; i--) {
-            String part = parts[i].trim();
-
-            if (!StringUtils.hasText(part)) {
-                continue;
-            }
-
-            if (isGenericRestaurantCategory(part)) {
-                continue;
-            }
-
-            if (part.contains("주점")) {
-                return "술집";
-            }
-
-            return part;
-        }
-
-        if (categoryName.contains("카페")) {
-            return "카페";
-        }
-        if (categoryName.contains("주점")) {
-            return "술집";
-        }
-
-        return "맛집";
-    }
-
-    private boolean isGenericRestaurantCategory(String value) {
-        return "음식점".equals(value)
-                || "식당".equals(value)
-                || "레스토랑".equals(value)
-                || "맛집".equals(value);
-    }
-
-    private String resolveAddress(JsonNode doc) {
-        String road = text(doc, "road_address_name");
-        if (StringUtils.hasText(road)) {
-            return road;
-        }
-        return text(doc, "address_name");
+        return false;
     }
 
     private String buildDisplayDestination(String destination,
@@ -902,15 +446,5 @@ public class KakaoPlaceRecommendationService {
                 .replace("특별자치시", "")
                 .replace("광역시", "")
                 .replace("특별시", "");
-    }
-
-    private String text(JsonNode node, String fieldName) {
-        if (node == null || !node.has(fieldName) || node.get(fieldName).isNull()) {
-            return "";
-        }
-        return node.get(fieldName).asText("");
-    }
-
-    private record ScoredPlace(JsonNode doc, int score) {
     }
 }

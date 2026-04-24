@@ -15,17 +15,29 @@ import ChatBotModal from "../chatbot/ChatBotModal";
 import CommunityReadPage from "../../pages/CommunityReadPage";
 import ForgotPasswordPage from "../../pages/ForgotPasswordPage";
 import ResetPasswordPage from "../../pages/ResetPasswordPage";
+import toast ,{ Toaster } from "react-hot-toast";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function Router() {
   const [openChatBot, setOpenChatBot] = useState(false);
+  const { pathname } = useLocation(); // 현재 경로 감지
+
+  // 페이지 경로(URL)가 바뀔 때마다 모든 토스트를 지움
+  useEffect(() => {
+    toast.dismiss(); 
+  }, [pathname]);
 
   return (
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
+    <>
+      <Toaster 
+        position="bottom-center" 
+        reverseOrder={false} 
+        toastOptions={{
+          // 여러 번 클릭해도 중복 방지를 위한 기본 세팅
+          duration: 3000,
+        }}
+      />
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -61,6 +73,6 @@ export default function Router() {
         open={openChatBot}
         onClose={() => setOpenChatBot(false)}
       />
-    </BrowserRouter>
+    </>
   );
 }

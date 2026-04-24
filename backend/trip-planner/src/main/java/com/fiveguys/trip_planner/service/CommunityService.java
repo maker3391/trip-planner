@@ -1,8 +1,10 @@
 package com.fiveguys.trip_planner.service;
 
+import com.fiveguys.trip_planner.dto.CommunityCommentRequest;
 import com.fiveguys.trip_planner.dto.CommunityRequest;
 import com.fiveguys.trip_planner.entity.*;
 import com.fiveguys.trip_planner.repository.*;
+import com.fiveguys.trip_planner.response.CommunityCommentResponse;
 import com.fiveguys.trip_planner.response.CommunityResponse;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -14,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +35,7 @@ public class CommunityService {
     private final UserRepository userRepository;
     private final CommunityImageRepository communityImageRepository;
     private final CommunityLikeRepository communityLikeRepository;
+    private final CommunityCommentRepository communityCommentRepository;
     private final TripPlanRepository tripPlanRepository;
 
     // =========================
@@ -99,11 +105,17 @@ public class CommunityService {
                 : keyword.trim();
 
         String validSearchType =
-                ("title".equals(searchType) || "author".equals(searchType))
+                (
+                        "title".equals(searchType) ||
+                                "author".equals(searchType) ||
+                                "content".equals(searchType) ||
+                                "tag".equals(searchType) ||
+                                "title_author".equals(searchType) ||
+                                "title_content".equals(searchType)
+                )
                         ? searchType
                         : null;
 
-        // keyword 없으면 searchType 무효화
         if (cleanKeyword == null) {
             validSearchType = null;
         }
@@ -346,6 +358,120 @@ public class CommunityService {
                     community.incrementLikeCount();
                     return true;
                 });
+    }
+
+    // =========================
+    // 🔹 댓글 작성
+    // =========================
+    public void createComment(Long postId, Long userId, CommunityCommentRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
+
+        Community community = communityRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글 없음"));
+
+        CommunityComment comment =
+                CommunityComment.create(user, community, request.getComment());
+
+        communityCommentRepository.save(comment);
+        community.incrementCommentCount(); // ⭐ 중요
+    }
+
+    // =========================
+    // 🔹 대댓글 작성
+    // =========================
+    public void createReply(Long postId, Long parentId, Long userId, CommunityCommentRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
+
+        Community community = communityRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글 없음"));
+
+        CommunityComment parent = communityCommentRepository.findById(parentId)
+                .orElseThrow(() -> new IllegalArgumentException("부모 댓글 없음"));
+
+        CommunityComment reply =
+                CommunityComment.createReply(user, community, request.getComment(), parent);
+
+        communityCommentRepository.save(reply);
+        community.incrementCommentCount();
+    }
+
+    // =========================
+    // 🔹 댓글 조회
+    // =========================
+    @Transactional(readOnly = true)
+    public CommunityCommentResponse getComments(Long postId, int page, int size) {
+
+        Community community = communityRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글 없음"));
+
+        // 🔥 descending()을 ascending()으로 변경하여 일반 댓글을 오래된 순으로 정렬합니다.
+        Page<CommunityComment> parents =
+                communityCommentRepository.findByCommunityAndParentIsNull(
+                        community,
+                        PageRequest.of(page, size, Sort.by("createdAt").ascending())
+                );
+
+        List<CommunityComment> children =
+                communityCommentRepository.findByParentIn(parents.getContent());
+
+        Map<Long, List<CommunityComment>> childMap =
+                children.stream()
+                        .collect(Collectors.groupingBy(c -> c.getParent().getId()));
+
+        List<CommunityCommentResponse.CommentDto> result =
+                parents.getContent().stream()
+                        .map(parent -> new CommunityCommentResponse.CommentDto(
+                                parent,
+                                childMap.getOrDefault(parent.getId(), List.of())
+                        ))
+                        .toList();
+
+        return new CommunityCommentResponse(result, parents.getTotalPages());
+    }
+
+    // =========================
+    // 🔹 댓글 수정 (✅ 새로 추가된 부분)
+    // =========================
+    @Transactional
+    public void updateComment(Long commentId, Long userId, CommunityCommentRequest request) {
+
+        CommunityComment comment = communityCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
+
+        // 논리적 삭제가 된 상태라면 수정 불가 처리
+        if (comment.isDeleted()) {
+            throw new IllegalArgumentException("삭제된 댓글은 수정할 수 없습니다.");
+        }
+
+        // 본인 확인
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("댓글 수정 권한이 없습니다.");
+        }
+
+        // JPA Dirty Checking으로 트랜잭션 종료 시 자동 반영됨
+        comment.updateComment(request.getComment());
+    }
+
+    // =========================
+    // 🔹 댓글 삭제
+    // =========================
+    public void deleteComment(Long commentId, Long userId) {
+
+        CommunityComment comment = communityCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글 없음"));
+
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("삭제 권한 없음");
+        }
+
+        Community community = comment.getCommunity();
+
+        communityCommentRepository.delete(comment);
+        community.decrementCommentCount();
     }
 
     public Long getLikeCount(Long communityId) {

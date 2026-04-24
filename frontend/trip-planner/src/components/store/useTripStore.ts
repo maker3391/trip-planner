@@ -1,10 +1,17 @@
 import { create } from "zustand";
 
+interface SubExpense {
+  id: number;
+  description: string;
+  amount: number;
+}
+
 interface ExpenseItem {
   id: number;
   amount: number;
   category: string;
   description: string;
+  subExpenses: SubExpense[];
 }
 
 interface TripState {
@@ -25,6 +32,16 @@ interface TripState {
   updateExpense: (id: number, field: string, value: any) => void;
   deleteExpense: (id: number) => void;
 
+  // 하위 항목 액션
+  addSubExpense: (parentId: number) => void;
+  updateSubExpense: (
+    parentId: number,
+    subId: number,
+    field: "description" | "amount",
+    value: string | number
+  ) => void;
+  deleteSubSubExpense: (parentId: number, subId: number) => void;
+
   loadInitialData: (form: any, budget: number, expenses: ExpenseItem[]) => void;
 
   clearTripData: () => void;
@@ -38,7 +55,13 @@ export const useTripStore = create<TripState>((set) => ({
   setBudget: (budget) => set({ budget: Number(budget) || 0 }),
 
   expenses: [],
-  setExpenses: (expenses) => set({ expenses }),
+  setExpenses: (expenses) =>
+    set({
+      expenses: expenses.map((e) => ({
+        ...e,
+        subExpenses: e.subExpenses ?? [],
+      })),
+    }),
 
   addExpense: () =>
     set((state) => ({
@@ -49,6 +72,7 @@ export const useTripStore = create<TripState>((set) => ({
           amount: 0,
           category: "ETC",
           description: "",
+          subExpenses: [],
         },
       ],
     })),
@@ -65,11 +89,76 @@ export const useTripStore = create<TripState>((set) => ({
       expenses: state.expenses.filter((item) => item.id !== id),
     })),
 
+  // 하위 항목 추가
+  addSubExpense: (parentId) =>
+    set((state) => ({
+      expenses: state.expenses.map((item) =>
+        item.id === parentId
+          ? {
+              ...item,
+              subExpenses: [
+                ...(item.subExpenses ?? []),
+                { id: -Date.now(), description: "", amount: 0 },
+              ],
+            }
+          : item
+      ),
+    })),
+
+  // 하위 항목 수정 → 상위 amount 자동 합산
+  updateSubExpense: (parentId, subId, field, value) =>
+    set((state) => ({
+      expenses: state.expenses.map((item) => {
+        if (item.id !== parentId) return item;
+
+        const updatedSubs = (item.subExpenses ?? []).map((sub) =>
+          sub.id === subId ? { ...sub, [field]: value } : sub
+        );
+
+        const totalAmount = updatedSubs.reduce(
+          (sum, sub) => sum + (sub.amount || 0),
+          0
+        );
+
+        return {
+          ...item,
+          subExpenses: updatedSubs,
+          amount: totalAmount,
+        };
+      }),
+    })),
+
+  // 하위 항목 삭제 → 상위 amount 재계산
+  deleteSubSubExpense: (parentId, subId) =>
+    set((state) => ({
+      expenses: state.expenses.map((item) => {
+        if (item.id !== parentId) return item;
+
+        const filteredSubs = (item.subExpenses ?? []).filter(
+          (sub) => sub.id !== subId
+        );
+
+        const totalAmount = filteredSubs.reduce(
+          (sum, sub) => sum + (sub.amount || 0),
+          0
+        );
+
+        return {
+          ...item,
+          subExpenses: filteredSubs,
+          amount: totalAmount,
+        };
+      }),
+    })),
+
   loadInitialData: (form, budget, expenses) =>
     set({
       tripForm: form,
       budget: Number(budget) || 0,
-      expenses,
+      expenses: expenses.map((e) => ({
+        ...e,
+        subExpenses: (e as any).subExpenses ?? [],
+      })),
     }),
 
   clearTripData: () =>

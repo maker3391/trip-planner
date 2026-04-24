@@ -7,9 +7,7 @@ import LogoIcon from "../assets/icons/logo.png";
 import "./LoginPage.css";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../components/api/auth.ts";
-
-// react-hot-toast 라이브러리 추가
-import toast, { Toaster } from "react-hot-toast";
+import toast, {Toaster} from "react-hot-toast"; // Toaster는 전역(Router)에서 관리하므로 삭제
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginRequest>({
@@ -44,26 +42,26 @@ export default function LoginPage() {
         message = "로그인에 실패했습니다. 다시 시도해주세요.";
     }
 
-    // 기존 alert 대신 toast.error 사용
-    toast.error(message);
+    toast.error(message, { id: "login-error" });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
+      // 1. API 호출
       const data = await loginApi(formData);
 
+      // 2. 토큰 저장
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
 
-      // 성공 시 성공 토스트 표시
-      toast.success("로그인에 성공했습니다! 환영합니다.");
+      // 3. 성공 알림 및 페이지 이동
+      toast.dismiss(); // 기존 에러 메시지 제거
+      
+      // 즉시 메인 페이지로 이동 (Header의 로그인 상태가 반영됨)
+      navigate("/");
 
-      // 토스트가 보일 시간을 주기 위해 1초 후 페이지 이동
-      setTimeout(() => {
-        navigate("/");
-      }, 1000);
     } catch (error: any) {
       console.error("로그인 실패:", error);
       handleLoginFailure(error?.response?.status);
@@ -80,9 +78,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      {/* 알림 메시지가 화면에 뜰 위치를 지정하는 컴포넌트 */}
-      <Toaster position="top-center" reverseOrder={false} />
-      
+      <Toaster position="bottom-center" reverseOrder={false}/>
       <Header />
 
       <div className="login-page-body">
@@ -121,9 +117,9 @@ export default function LoginPage() {
           </form>
 
           <span
-            className="login=forgot"
+            className="login-forgot" // 오타 수정 (login=forgot -> login-forgot)
             onClick={() => navigate("/forgot-password")}
-            style={{cursor: "pointer"}}
+            style={{ cursor: "pointer" }}
           >
             비밀번호를 잊으셨나요?
           </span>

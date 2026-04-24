@@ -2,6 +2,7 @@ package com.fiveguys.trip_planner.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,8 +22,9 @@ public class Community {
     @Column(nullable = false)
     private String category;
 
+    @Builder.Default
     @Column(nullable = false)
-    private String region;
+    private String region = "전체"; // ✅ 객체 생성 시 기본값 할당
 
     @Column(nullable = false)
     private String title;
@@ -35,6 +37,10 @@ public class Community {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "community", cascade = CascadeType.REMOVE)
+    private List<CommunityComment> comments = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_plan_id")
@@ -62,6 +68,10 @@ public class Community {
     @Builder.Default
     @Column(nullable = false)
     private Long likeCount = 0L;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Long commentCount = 0L;
 
     // 🔥 리스트는 항상 초기화 (NPE 방지)
     @Builder.Default
@@ -114,6 +124,14 @@ public class Community {
         }
     }
 
+    public void incrementCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decrementCommentCount() {
+        if (this.commentCount > 0) this.commentCount--;
+    }
+
     public void incrementShareCount() {
         this.shareCount++;
     }
@@ -130,6 +148,18 @@ public class Community {
         this.images.add(image);
         if (image.getCommunity() != this) {
             image.setCommunity(this);
+        }
+    }
+
+    public void removeImage(CommunityImage image) {
+        this.images.remove(image);
+        image.setCommunity(null);
+    }
+
+    public void addComment(CommunityComment comment) {
+        this.comments.add(comment);
+        if (comment.getCommunity() != this) {
+            comment.setCommunity(this);
         }
     }
 }

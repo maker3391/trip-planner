@@ -25,13 +25,11 @@ export const useCreateTrip = () => {
     },
 
     onSuccess: () => {
-      toast.success("여행 계획이 저장되었습니다! 💾"); // alert -> toast
       queryClient.invalidateQueries({ queryKey: ["trips"] });
     },
 
     onError: (error) => {
       console.error("저장 실패.", error);
-      toast.error("여행 계획 저장이 실패하였습니다. ❌"); // alert -> toast
     },
   });
 };

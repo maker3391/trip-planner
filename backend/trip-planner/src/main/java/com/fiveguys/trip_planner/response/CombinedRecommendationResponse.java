@@ -17,6 +17,12 @@ public class CombinedRecommendationResponse {
     @Schema(description = "숙소 추천 결과")
     private List<RecommendationItemResponse> stays = new ArrayList<>();
 
+    @Schema(description = "복합 추천에서 맛집 카드 제목")
+    private String restaurantDisplayTitle;
+
+    @Schema(description = "복합 추천에서 숙소 카드 제목")
+    private String stayDisplayTitle;
+
     public CombinedRecommendationResponse() {
     }
 
@@ -26,6 +32,18 @@ public class CombinedRecommendationResponse {
         this.itinerary = itinerary;
         this.restaurants = restaurants;
         this.stays = stays;
+    }
+
+    public CombinedRecommendationResponse(RecommendationContentResponse itinerary,
+                                          List<RecommendationItemResponse> restaurants,
+                                          List<RecommendationItemResponse> stays,
+                                          String restaurantDisplayTitle,
+                                          String stayDisplayTitle) {
+        this.itinerary = itinerary;
+        this.restaurants = restaurants;
+        this.stays = stays;
+        this.restaurantDisplayTitle = restaurantDisplayTitle;
+        this.stayDisplayTitle = stayDisplayTitle;
     }
 
     public RecommendationContentResponse getItinerary() {
@@ -50,5 +68,21 @@ public class CombinedRecommendationResponse {
 
     public void setStays(List<RecommendationItemResponse> stays) {
         this.stays = stays;
+    }
+
+    public String getRestaurantDisplayTitle() {
+        return restaurantDisplayTitle;
+    }
+
+    public void setRestaurantDisplayTitle(String restaurantDisplayTitle) {
+        this.restaurantDisplayTitle = restaurantDisplayTitle;
+    }
+
+    public String getStayDisplayTitle() {
+        return stayDisplayTitle;
+    }
+
+    public void setStayDisplayTitle(String stayDisplayTitle) {
+        this.stayDisplayTitle = stayDisplayTitle;
     }
 }

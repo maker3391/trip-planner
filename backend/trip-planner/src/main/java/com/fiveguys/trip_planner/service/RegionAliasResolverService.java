@@ -196,12 +196,28 @@ public class RegionAliasResolverService {
             return true;
         }
 
+        boolean aliasEndsWithSig = endsWithSigUnit(aliasCity);
+        boolean resolvedEndsWithSig = endsWithSigUnit(resolvedCity);
+
+        if (aliasEndsWithSig != resolvedEndsWithSig) {
+            return false;
+        }
+
         String strippedAliasCity = stripSuffix(normalizedAliasCity);
         String strippedResolvedCity = stripSuffix(normalizedResolvedCity);
 
         return StringUtils.hasText(strippedAliasCity)
                 && StringUtils.hasText(strippedResolvedCity)
                 && strippedAliasCity.equals(strippedResolvedCity);
+    }
+
+    private boolean endsWithSigUnit(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.endsWith("시") || trimmed.endsWith("군") || trimmed.endsWith("구");
     }
 
     private List<String> tokenize(String value) {

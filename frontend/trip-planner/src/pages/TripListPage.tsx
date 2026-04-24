@@ -110,7 +110,6 @@ export default function TripListPage() {
 
   return (
     <div className="trip-list-page">
-      <Toaster position="top-center" />
       <Header />
       <main className="trip-list-body">
         <section className="trip-list-intro">

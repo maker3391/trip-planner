@@ -1,5 +1,7 @@
 application-secrets.properties
 
+.idea/
+
 HELP.md
 .gradle
 build/
@@ -37,3 +39,11 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# JetBrains IDE (IntelliJ, etc.)
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db

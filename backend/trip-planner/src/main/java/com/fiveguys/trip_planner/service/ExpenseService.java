@@ -1,12 +1,11 @@
 package com.fiveguys.trip_planner.service;
 
-
 import com.fiveguys.trip_planner.dto.ExpenseRequestDto;
 import com.fiveguys.trip_planner.dto.ExpenseResponseDto;
 import com.fiveguys.trip_planner.response.ExpenseSummaryResponse;
 import com.fiveguys.trip_planner.entity.*;
 import com.fiveguys.trip_planner.repository.*;
-import lombok.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,27 +30,31 @@ public class ExpenseService {
         return calculateAnalysis(expenses, budget);
     }
 
+    /**
+     * 통계 분석 로직: 하위 항목이 상위에 합산된 구조이므로,
+     * 중복 합산을 방지하기 위해 parent가 null인(최상위) 항목들만 계산에 사용합니다.
+     */
     public ExpenseSummaryResponse calculateAnalysis(List<Expense> expenses, Budget budget) {
         BigDecimal totalBudget = (budget != null) ? budget.getTotalBudget() : BigDecimal.ZERO;
 
-        // 1. 타입별 합산 (Stream 활용)
-        // expenseType이 "ESTIMATED"인 것들의 합
-        BigDecimal totalPlanned = expenses.stream()
+        // 최상위 항목만 필터링 (하위 항목 금액은 이미 상위에 합산되어 있음)
+        List<Expense> mainExpenses = expenses.stream()
+                .filter(e -> e.getParent() == null)
+                .collect(Collectors.toList());
+
+        BigDecimal totalPlanned = mainExpenses.stream()
                 .filter(e -> "ESTIMATED".equals(e.getExpenseType()))
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // expenseType이 "ACTUAL"인 것들의 합
-        BigDecimal totalActual = expenses.stream()
+        BigDecimal totalActual = mainExpenses.stream()
                 .filter(e -> "ACTUAL".equals(e.getExpenseType()))
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 2. 결과 계산
         BigDecimal remainingBudget = totalBudget.subtract(totalActual);
         BigDecimal planVsActualGap = totalPlanned.subtract(totalActual);
 
-        // 3. 비율 계산
         double usagePercentage = 0;
         if (totalBudget.compareTo(BigDecimal.ZERO) > 0) {
             usagePercentage = totalActual.divide(totalBudget, 4, RoundingMode.HALF_UP)
@@ -69,10 +72,13 @@ public class ExpenseService {
                 .build();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ExpenseResponseDto> getExpensesByTripId(Long tripId) {
+        // 모든 리스트를 가져온 뒤, 최상위 부모 항목만 DTO로 변환합니다.
+        // DTO 생성자 내부에서 자식들을 재귀적으로 변환하여 트리 구조를 형성합니다.
         List<Expense> expenses = expenseRepository.findByTripPlanId(tripId);
         return expenses.stream()
+                .filter(e -> e.getParent() == null)
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -82,14 +88,30 @@ public class ExpenseService {
         TripPlan tripPlan = tripPlanRepository.findById(tripId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 여행 계획을 찾을 수 없습니다."));
 
-        Expense expense = Expense.builder()
+        // 1. 상위 항목 생성
+        Expense parentExpense = Expense.builder()
                 .tripPlan(tripPlan)
                 .amount(requestDto.getAmount())
                 .category(requestDto.getCategory())
                 .description(requestDto.getDescription())
+                .expenseType(requestDto.getExpenseType() != null ? requestDto.getExpenseType() : "ACTUAL")
                 .build();
 
-        Expense savedExpense = expenseRepository.save(expense);
+        // 2. 하위 항목들이 있다면 부모에 연결 (CascadeType.ALL에 의해 함께 저장됨)
+        if (requestDto.getSubExpenses() != null) {
+            for (ExpenseRequestDto subDto : requestDto.getSubExpenses()) {
+                Expense subExpense = Expense.builder()
+                        .tripPlan(tripPlan)
+                        .amount(subDto.getAmount())
+                        .category(subDto.getCategory())
+                        .description(subDto.getDescription())
+                        .expenseType(subDto.getExpenseType() != null ? subDto.getExpenseType() : "ACTUAL")
+                        .build();
+                parentExpense.addSubExpense(subExpense);
+            }
+        }
+
+        Expense savedExpense = expenseRepository.save(parentExpense);
         return convertToDto(savedExpense);
     }
 
@@ -98,11 +120,28 @@ public class ExpenseService {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 경비 내역을 찾을 수 없습니다."));
 
+        // 1. 상위 정보 업데이트
         expense.update(
                 requestDto.getAmount(),
                 requestDto.getCategory(),
                 requestDto.getDescription()
         );
+
+        // 2. 기존 하위 항목들 교체 (orphanRemoval = true 설정으로 인해 삭제 처리됨)
+        expense.getSubExpenses().clear();
+
+        if (requestDto.getSubExpenses() != null) {
+            for (ExpenseRequestDto subDto : requestDto.getSubExpenses()) {
+                Expense subExpense = Expense.builder()
+                        .tripPlan(expense.getTripPlan())
+                        .amount(subDto.getAmount())
+                        .category(subDto.getCategory())
+                        .description(subDto.getDescription())
+                        .expenseType(subDto.getExpenseType() != null ? subDto.getExpenseType() : "ACTUAL")
+                        .build();
+                expense.addSubExpense(subExpense);
+            }
+        }
 
         return convertToDto(expense);
     }
@@ -111,6 +150,7 @@ public class ExpenseService {
     public void deleteExpense(Long expenseId) {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 경비 내역을 찾을 수 없습니다."));
+        // CascadeType.ALL에 의해 하위 항목도 자동 삭제
         expenseRepository.delete(expense);
     }
 

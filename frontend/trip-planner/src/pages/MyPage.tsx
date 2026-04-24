@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import { getMe, updateMe, withdrawApi } from "../components/api/auth.ts";
 import "./MyPage.css";
-
+import toast from "react-hot-toast"; // toast 임포트 추가
 
 interface UserInfo {
   id: number;
@@ -29,6 +29,14 @@ interface PasswordForm {
   newPasswordConfirm: string;
 }
 
+interface NotificationHistory {
+  id: number;
+  message: string;
+  targetUrl?: string;
+  receivedAt: string;
+}
+
+
 export default function MyPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -48,6 +56,7 @@ export default function MyPage() {
   const [isSavingBasic, setIsSavingBasic] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [notiHistory, setNotiHistory] = useState<NotificationHistory[]>([]);
 
   const clearAuthAndMoveLogin = () => {
     localStorage.removeItem("accessToken");
@@ -84,9 +93,32 @@ export default function MyPage() {
     fetchUser();
   }, []);
 
+  useEffect(() => {
+  // 로컬 스토리지에서 데이터를 읽어와 상태를 업데이트하는 함수
+    const syncNotiHistory = () => {
+      const stored = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
+      setNotiHistory(stored);
+    };
+
+    // 마이페이지 진입 시 최초 실행
+    syncNotiHistory();
+
+    // 방법 1: 다른 탭/창에서 변경 시 감지 (storage 이벤트)
+    window.addEventListener("storage", (e) => {
+      if (e.key === "notificationHistory") syncNotiHistory();
+    });
+
+    // 방법 2: 같은 창(Header -> MyPage) 실시간 반영을 위한 인터벌
+    // Header가 SSE로 알림을 넣으면 0.5초 안에 감지해서 화면에 뿌려줌
+    const interval = setInterval(syncNotiHistory, 500);
+
+    return () => {
+      window.removeEventListener("storage", syncNotiHistory);
+      clearInterval(interval);
+    };
+  }, []);
   const handleBasicChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
     setBasicForm((prev) => ({
       ...prev,
       [name]: value,
@@ -95,7 +127,6 @@ export default function MyPage() {
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
     setPasswordForm((prev) => ({
       ...prev,
       [name]: value,
@@ -110,12 +141,12 @@ export default function MyPage() {
     const trimmedPhone = basicForm.phone.trim();
 
     if (!trimmedName) {
-      alert("이름을 입력해주세요.");
+      toast.error("이름을 입력해주세요.", { id: "basic-info-error" });
       return;
     }
 
     if (!trimmedNickname) {
-      alert("닉네임을 입력해주세요.");
+      toast.error("닉네임을 입력해주세요.", { id: "basic-info-error" });
       return;
     }
 
@@ -129,19 +160,19 @@ export default function MyPage() {
       });
 
       await fetchUser();
-      alert("기본 정보가 수정되었습니다.");
+      toast.success("기본 정보가 수정되었습니다.", { id: "basic-info-success" });
     } catch (error: any) {
       console.error("기본 정보 수정 실패:", error);
 
       if (error?.response?.status === 401 || error?.response?.status === 403) {
-        alert("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
+        toast.error("로그인 정보가 만료되었습니다. 다시 로그인해주세요.", { id: "auth-expire" });
         clearAuthAndMoveLogin();
         return;
       }
 
-      alert(
-        error?.response?.data?.message ||
-          "기본 정보 수정 중 오류가 발생했습니다."
+      toast.error(
+        error?.response?.data?.message || "기본 정보 수정 중 오류가 발생했습니다.",
+        { id: "basic-info-error" }
       );
     } finally {
       setIsSavingBasic(false);
@@ -152,22 +183,22 @@ export default function MyPage() {
     if (!user || isSavingPassword) return;
 
     if (!passwordForm.currentPassword) {
-      alert("현재 비밀번호를 입력해주세요.");
+      toast.error("현재 비밀번호를 입력해주세요.", { id: "password-error" });
       return;
     }
 
     if (!passwordForm.newPassword) {
-      alert("새 비밀번호를 입력해주세요.");
+      toast.error("새 비밀번호를 입력해주세요.", { id: "password-error" });
       return;
     }
 
     if (!passwordForm.newPasswordConfirm) {
-      alert("새 비밀번호 확인을 입력해주세요.");
+      toast.error("새 비밀번호 확인을 입력해주세요.", { id: "password-error" });
       return;
     }
 
     if (passwordForm.newPassword !== passwordForm.newPasswordConfirm) {
-      alert("새 비밀번호 확인이 일치하지 않습니다.");
+      toast.error("새 비밀번호 확인이 일치하지 않습니다.", { id: "password-error" });
       return;
     }
 
@@ -190,28 +221,30 @@ export default function MyPage() {
         newPasswordConfirm: "",
       });
 
-      alert("비밀번호가 변경되었습니다.");
+      toast.success("비밀번호가 변경되었습니다.", { id: "password-success" });
     } catch (error: any) {
       console.error("비밀번호 변경 실패:", error);
 
       if (error?.response?.status === 401 || error?.response?.status === 403) {
-        alert("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
+        toast.error("로그인 정보가 만료되었습니다. 다시 로그인해주세요.", { id: "auth-expire" });
         clearAuthAndMoveLogin();
         return;
       }
 
-      alert(
-        error?.response?.data?.message ||
-          "비밀번호 변경 중 오류가 발생했습니다."
+      toast.error(
+        error?.response?.data?.message || "비밀번호 변경 중 오류가 발생했습니다.",
+        { id: "password-error" }
       );
     } finally {
       setIsSavingPassword(false);
     }
   };
+  
 
   const handleWithdraw = async () => {
     if (!user || isWithdrawing) return;
 
+    // 브라우저의 confirm 창은 그대로 유지하거나 커스텀 모달을 써야 함 (단순 알림이 아니기 때문)
     const confirmed = window.confirm(
       "정말 회원을 탈퇴 하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다."
     );
@@ -223,30 +256,44 @@ export default function MyPage() {
 
       const response = await withdrawApi();
 
-      alert(response.message || "회원탈퇴가 완료되었습니다.");
+      toast.success(response.message || "회원탈퇴가 완료되었습니다.", { id: "withdraw-success" });
 
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("isLoggedIn");
       setUser(null);
 
-      navigate("/", {replace: true});
+      navigate("/", { replace: true });
     } catch (error: any) {
       console.error("회원탈퇴 실패:", error);
 
       if (error?.response?.status === 401 || error?.response?.status === 403) {
-        alert("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
+        toast.error("로그인 정보가 만료되었습니다. 다시 로그인해주세요.", { id: "auth-expire" });
         clearAuthAndMoveLogin();
         return;
       }
 
-      alert(
-        error?.response?.data?.message || "회원탈퇴 중 오류가 발생했습니다."
+      toast.error(
+        error?.response?.data?.message || "회원탈퇴 중 오류가 발생했습니다.",
+        { id: "withdraw-error" }
       );
     } finally {
       setIsWithdrawing(false);
     }
   };
+  // 개별 삭제 핸들러
+  const handleDeleteNoti = (id: number) => {
+    const updated = notiHistory.filter((n) => n.id !== id);
+    setNotiHistory(updated);
+    localStorage.setItem("notificationHistory", JSON.stringify(updated));
+  };
+
+  // 전체 삭제 핸들러
+  const handleDeleteAllNoti = () => {
+    setNotiHistory([]);
+    localStorage.removeItem("notificationHistory");
+  };
+
 
   const displayName =
     user?.nickname?.trim() ||
@@ -257,8 +304,8 @@ export default function MyPage() {
   return (
     <div className="mypage">
       <Header />
-
       <main className="mypage-body">
+        {/* ... 섹션 구조 동일 ... */}
         <section className="mypage-intro-card">
           <span className="mypage-badge">MY PAGE</span>
           <h1 className="mypage-title">내 정보</h1>
@@ -269,25 +316,70 @@ export default function MyPage() {
           </p>
         </section>
 
+        <section className="mypage-edit-card">
+          <div className="mypage-noti-header">
+            <h2 className="mypage-section-title">받은 알림</h2>
+            {notiHistory.length > 0 && (
+              <button
+                type="button"
+                className="mypage-noti-clear-btn"
+                onClick={handleDeleteAllNoti}
+              >
+                전체 삭제
+              </button>
+            )}
+          </div>
+
+          {notiHistory.length === 0 ? (
+            <p className="mypage-noti-empty">받은 알림이 없습니다.</p>
+          ) : (
+            <ul className="mypage-noti-list">
+              {notiHistory.map((noti) => (
+                <li
+                  key={`${noti.id}-${noti.receivedAt}`}
+                  className="mypage-noti-item"
+                  onClick={() => {
+                    if (noti.targetUrl) navigate(noti.targetUrl);
+                  }}
+                  style={{ cursor: noti.targetUrl ? "pointer" : "default" }}
+                >
+                  <div className="mypage-noti-content">
+                    <span className="mypage-noti-msg">{noti.message}</span>
+                    <span className="mypage-noti-time">
+                      {new Date(noti.receivedAt).toLocaleString("ko-KR")}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="mypage-noti-delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteNoti(noti.id);
+                    }}
+                  >
+                    삭제
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         <section className="mypage-view-card">
           <h2 className="mypage-section-title">기본 정보</h2>
-
           <div className="mypage-info-grid">
             <div className="mypage-info-item full">
               <span className="mypage-info-label">이메일</span>
               <div className="mypage-info-value">{user?.email || "-"}</div>
             </div>
-
             <div className="mypage-info-item">
               <span className="mypage-info-label">이름</span>
               <div className="mypage-info-value">{user?.name || "-"}</div>
             </div>
-
             <div className="mypage-info-item">
               <span className="mypage-info-label">닉네임</span>
               <div className="mypage-info-value">{user?.nickname || "-"}</div>
             </div>
-
             <div className="mypage-info-item full">
               <span className="mypage-info-label">전화번호</span>
               <div className="mypage-info-value">{user?.phone || "-"}</div>
@@ -297,7 +389,6 @@ export default function MyPage() {
 
         <section className="mypage-edit-card">
           <h2 className="mypage-section-title">기본 정보 수정</h2>
-
           <div className="mypage-edit-grid">
             <div className="mypage-form-group">
               <label htmlFor="name">이름</label>
@@ -310,7 +401,6 @@ export default function MyPage() {
                 placeholder="이름을 입력하세요"
               />
             </div>
-
             <div className="mypage-form-group">
               <label htmlFor="nickname">닉네임</label>
               <input
@@ -322,7 +412,6 @@ export default function MyPage() {
                 placeholder="닉네임을 입력하세요"
               />
             </div>
-
             <div className="mypage-form-group full">
               <label htmlFor="phone">전화번호</label>
               <input
@@ -335,7 +424,6 @@ export default function MyPage() {
               />
             </div>
           </div>
-
           <div className="mypage-edit-actions">
             <button
               type="button"
@@ -350,7 +438,6 @@ export default function MyPage() {
 
         <section className="mypage-edit-card password-card">
           <h2 className="mypage-section-title">비밀번호 변경</h2>
-
           <div className="mypage-edit-grid">
             <div className="mypage-form-group full">
               <label htmlFor="currentPassword">현재 비밀번호</label>
@@ -363,7 +450,6 @@ export default function MyPage() {
                 placeholder="현재 비밀번호를 입력하세요"
               />
             </div>
-
             <div className="mypage-form-group">
               <label htmlFor="newPassword">새 비밀번호</label>
               <input
@@ -375,7 +461,6 @@ export default function MyPage() {
                 placeholder="새 비밀번호를 입력하세요"
               />
             </div>
-
             <div className="mypage-form-group">
               <label htmlFor="newPasswordConfirm">새 비밀번호 확인</label>
               <input
@@ -388,7 +473,6 @@ export default function MyPage() {
               />
             </div>
           </div>
-
           <div className="mypage-edit-actions">
             <button
               type="button"
@@ -406,7 +490,6 @@ export default function MyPage() {
           <p className="mypage-danger-text">
             회원탈퇴 시 계정 정보는 복구할 수 없습니다.
           </p>
-
           <div className="mypage-edit-actions">
             <button
               type="button"

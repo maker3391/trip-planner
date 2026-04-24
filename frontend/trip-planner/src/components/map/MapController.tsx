@@ -4,9 +4,7 @@ import {
   useMapsLibrary,
   Marker,
   Polyline,
-  InfoWindow,
 } from "@vis.gl/react-google-maps";
-import LocalMemoEditor from "./LocalMemoEditor";
 import { PlacePoint } from "../../types/map";
 import { SearchPlace } from "../../types/searchPlace.ts";
 
@@ -275,68 +273,6 @@ export default function MapController({
             onClick={() => onSelect(i)}
           />
 
-          {showAllMemos && (
-            <InfoWindow
-              position={{ lat: point.lat, lng: point.lng }}
-              headerDisabled={true}
-              pixelOffset={new google.maps.Size(0, -35)}
-              disableAutoPan={true}
-              shouldFocus={false}
-            >
-              <div
-                style={{
-                  padding: "8px 5px",
-                  width: point.isMemoOpen ? "180px" : "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {point.name}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMemo(i);
-                    }}
-                    style={{
-                      background: "#f0f0f0",
-                      border: "1px solid #ccc",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      padding: "1px 4px",
-                      fontSize: "10px",
-                    }}
-                  >
-                    {point.isMemoOpen ? "▼" : "▲"}
-                  </button>
-                </div>
-
-                {point.isMemoOpen && (
-                  <LocalMemoEditor
-                    initialMemo={point.memo || ""}
-                    onSave={(val) => onMemoChange(i, val)}
-                  />
-                )}
-              </div>
-            </InfoWindow>
-          )}
         </React.Fragment>
       ))}
 

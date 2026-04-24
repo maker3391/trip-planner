@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import Sidebar from "../components/layout/Sidebar";
 import MyMapApp from "./MyMapApp";
@@ -13,23 +13,29 @@ import {
   useGetTrip,
   useUpdateTrip,
 } from "../components/hooks/useTrip";
-import { useNavigate } from "react-router-dom";
+
+// 계산기 관련 임포트
+import { CalculatorService } from "../components/layout/calculator";
+import Calculator from "../components/layout/Calculator.tsx";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+
 import "./MainPage.css";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function MainPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<SearchPlace[]>([]);
-  const [selectedSearchPlace, setSelectedSearchPlace] =
-    useState<SearchPlace | null>(null);
+  const [selectedSearchPlace, setSelectedSearchPlace] = useState<SearchPlace | null>(null);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const [path, setPath] = useState<PlacePoint[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [targetTripId, setTargetTripId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const [tripForm, setTripForm] = useState({
     title: "",
     destination: "",
@@ -107,6 +113,12 @@ export default function MainPage() {
   }, [tripData]);
 
   useEffect(() => {
+    if (tripData) {
+      console.log("tripData.expenses:", JSON.stringify(tripData.expenses, null, 2));
+    }
+  }, [tripData]);
+
+  useEffect(() => {
     const handleCalcSync = (e: any) => {
       setCalcData({
         expenses: e.detail?.expenses || [],
@@ -141,7 +153,9 @@ export default function MainPage() {
   );
 
   const handleSaveToBackend = () => {
-    if (!tripForm.title) return toast.error("제목을 입력해주세요.");
+    if (!tripForm.title) {
+      return toast.error("제목을 입력해주세요. ✍️", { id: "trip-save-validation" });
+    }
 
     const schedules = path.map((p, index) => ({
       dayNumber: p.dayNumber ?? 1,
@@ -162,10 +176,21 @@ export default function MainPage() {
     }));
 
     const expenses = calcData.expenses.map((item: any) => ({
+      id: item.id > 0 ? item.id : undefined, // ✅ 양수일 때만 id 전송 (음수는 신규)
       amount: Number(item.amount) || 0,
       category: item.category || "ETC",
       description: item.description || "",
+      expenseType: item.expenseType || "ACTUAL",
+      subExpenses: (item.subExpenses ?? []).map((sub: any) => ({
+        id: sub.id > 0 ? sub.id : undefined, // ✅ 동일
+        amount: Number(sub.amount) || 0,
+        category: sub.category || "ETC",
+        description: sub.description || "",
+        expenseType: sub.expenseType || "ACTUAL",
+      })),
     }));
+
+    console.log("보내는 expenses:", JSON.stringify(expenses, null, 2));
 
     const requestData: any = {
       ...tripForm,
@@ -178,21 +203,27 @@ export default function MainPage() {
 
     mutation.mutate(requestData, {
       onSuccess: (data: any) => {
+        toast.dismiss();
         if (!targetTripId && data?.id) {
           setTargetTripId(data.id);
         }
         setIsModalOpen(false);
-        navigate("/trip-list");
+        setTimeout(() => navigate("/trip-list"), 0);
       },
       onError: (error) => {
         console.error("저장 중 오류 발생:", error);
+        toast.error("저장에 실패했습니다. 다시 시도해주세요.", { id: "trip-save-error" });
       },
     });
   };
 
+  const handleCalculatorClick = () => {
+    CalculatorService.openCalculator();
+  };
+
   return (
     <div className="main-page">
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster position="bottom-center" reverseOrder={false} />
       <Header />
 
       <div
@@ -206,15 +237,23 @@ export default function MainPage() {
         />
 
         <main className="map-area" style={{ flexGrow: 1, position: "relative" }}>
-          <ActionButtons
-            onOpenSaveModal={() =>
-              path.length > 0
-                ? setIsModalOpen(true)
-                : toast.error("장소를 추가해주세요.")
-            }
-            isLoading={isTripLoading}
-          />
-
+          
+          {/* 좌측 하단 플로팅 버튼 컨테이너 */}
+          <div style={{
+            position: "absolute",
+            bottom: "30px",
+            left: "20px",
+            zIndex: 1001,
+          }}>
+            <ActionButtons
+              onOpenSaveModal={() =>
+                path.length > 0
+                  ? setIsModalOpen(true)
+                  : toast.error("장소를 추가해주세요.", { id: "add-place" })
+              }
+              isLoading={isTripLoading}
+            />
+          </div>
           <div style={{ width: "100%", height: "100%" }}>
             <MyMapApp
               searchKeyword={searchKeyword}
@@ -252,6 +291,9 @@ export default function MainPage() {
         tripForm={tripForm}
         setTripForm={setTripForm}
       />
+
+      {/* 계산기 컴포넌트: tripId가 null(신규여행)이어도 항상 렌더링되어야 클릭 시 열립니다. */}
+      <Calculator tripId={targetTripId || 0} />
     </div>
   );
 }

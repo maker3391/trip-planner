@@ -203,3 +203,79 @@
   cursor: not-allowed;
   transform: none;
 }
+/* 이 밑으로 알람관련 */
+.mypage-noti-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.mypage-noti-header .mypage-section-title {
+  margin-bottom: 0;
+}
+.mypage-noti-clear-btn {
+  font-size: 12px;
+  color: #888;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 4px 12px;
+  background: transparent;
+  cursor: pointer;
+}
+.mypage-noti-clear-btn:hover {
+  background: #fff0f0;
+  border-color: #f99;
+  color: #c00;
+}
+.mypage-noti-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.mypage-noti-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.mypage-noti-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.mypage-noti-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mypage-noti-msg {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+}
+.mypage-noti-time {
+  font-size: 12px;
+  color: #aaa;
+}
+.mypage-noti-delete-btn {
+  font-size: 12px;
+  color: #888;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.mypage-noti-delete-btn:hover {
+  background: #fff0f0;
+  border-color: #f99;
+  color: #c00;
+}
+.mypage-noti-empty {
+  font-size: 14px;
+  color: #aaa;
+  text-align: center;
+  padding: 2rem 0;
+}
