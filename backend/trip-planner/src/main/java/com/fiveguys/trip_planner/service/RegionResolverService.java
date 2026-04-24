@@ -623,12 +623,29 @@ public class RegionResolverService {
         }
 
         List<String> result = new ArrayList<>();
+
         for (String token : normalized.split("\\s+")) {
-            if (StringUtils.hasText(token)) {
-                result.add(token);
+            if (!StringUtils.hasText(token)) {
+                continue;
+            }
+
+            result.add(token);
+
+            String stripped = stripKoreanParticle(token);
+            if (StringUtils.hasText(stripped) && !result.contains(stripped)) {
+                result.add(stripped);
             }
         }
+
         return result;
+    }
+
+    private String stripKoreanParticle(String token) {
+        if (!StringUtils.hasText(token)) {
+            return "";
+        }
+
+        return token.replaceAll("(에서|으로|로|에게서|에게|한테서|한테|부터|까지|에|을|를|은|는|이|가|와|과|랑|하고|도)$", "").trim();
     }
 
     private boolean looksLikeBroadAmbiguousArea(String value) {
@@ -662,11 +679,18 @@ public class RegionResolverService {
             return "";
         }
 
-        return Normalizer.normalize(value, Normalizer.Form.NFKC)
-                .toLowerCase(Locale.ROOT)
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFKC)
+                .toLowerCase()
                 .replaceAll("[^가-힣a-z0-9\\s]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
+
+        normalized = normalized
+                .replaceAll("(공항|국제공항)", " 공항")
+                .replaceAll("(터미널)", " 터미널")
+                .replaceAll("(역)", " 역");
+
+        return normalized.replaceAll("\\s+", " ").trim();
     }
 
     public static class ResolvedRegion {
