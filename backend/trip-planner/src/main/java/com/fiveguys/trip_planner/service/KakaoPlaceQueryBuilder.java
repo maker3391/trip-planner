@@ -326,10 +326,6 @@ public class KakaoPlaceQueryBuilder {
         return new ArrayList<>(keywords);
     }
 
-    public List<String> extractRestaurantFoodKeywords(String message) {
-        return restaurantKeywordService.extractRestaurantFoodKeywords(message);
-    }
-
     private String normalizeDisplayArea(String value) {
         if (!StringUtils.hasText(value)) {
             return "";

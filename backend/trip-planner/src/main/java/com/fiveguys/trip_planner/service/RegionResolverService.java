@@ -8,7 +8,6 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class RegionResolverService {
@@ -109,6 +108,61 @@ public class RegionResolverService {
         }
 
         return false;
+    }
+
+    public boolean hasExplicitProvinceArea(String message) {
+        String normalizedMessage = normalize(message);
+        List<String> tokens = tokenize(message);
+
+        if (tokens.contains("전라도") || tokens.contains("경상도") || tokens.contains("충청도")) {
+            return true;
+        }
+
+        for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
+            if (!"CTPRVN".equals(region.getLevel())) {
+                continue;
+            }
+
+            if (matchesTopLevel(tokens, normalizedMessage, region)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean hasExplicitSearchableArea(String message) {
+        String normalizedMessage = normalize(message);
+        List<String> tokens = tokenize(message);
+
+        if (tokens.contains("전라도") || tokens.contains("경상도") || tokens.contains("충청도")) {
+            return true;
+        }
+
+        for (RegionRecord region : regionCsvLoader.getRegionRecords()) {
+            if (!"CTPRVN".equals(region.getLevel()) && !"SIG".equals(region.getLevel())) {
+                continue;
+            }
+
+            if ("SIG".equals(region.getLevel()) && isDistrictOnly(region.getName())) {
+                continue;
+            }
+
+            if (matchesTopLevel(tokens, normalizedMessage, region)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isDistrictOnly(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+
+        String trimmed = value.trim();
+        return !trimmed.contains(" ") && trimmed.endsWith("구");
     }
 
     private RegionRecord findExplicitProvince(List<String> tokens, String normalizedMessage) {

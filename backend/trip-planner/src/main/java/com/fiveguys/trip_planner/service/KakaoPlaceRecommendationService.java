@@ -253,9 +253,9 @@ public class KakaoPlaceRecommendationService {
     }
 
     private void validateRegionStrict(String message) {
-        if (!regionResolverService.hasExplicitTopLevelArea(message)) {
+        if (!regionResolverService.hasExplicitSearchableArea(message)) {
             throw new LlmCallException(
-                    "지역명이 모호합니다. '시/군/구'를 포함하여 다시 입력해 주세요. (예: 서울 강남구 숙소 추천, 부산 해운대구 맛집 추천, 제주 2박 3일 일정 추천)"
+                    "지역명을 함께 입력해 주세요. (예: 서울 성수동 맛집 추천, 부산 중구 숙소 추천, 제주 애월 카페 추천)"
             );
         }
     }
@@ -263,7 +263,7 @@ public class KakaoPlaceRecommendationService {
     private void validateResolvedDestination(String destination) {
         if (!StringUtils.hasText(destination)) {
             throw new LlmCallException(
-                    "지역명이 모호합니다. '시/군/구'를 포함하여 다시 입력해 주세요. (예: 서울 강남구 숙소 추천, 부산 해운대구 맛집 추천, 제주 2박 3일 일정 추천)"
+                    "지역명이 모호합니다. 지역을 포함하여 다시 입력해 주세요. (예: 서울 성수동 맛집 추천, 부산 해운대 숙소 추천, 제주 애월 카페 추천)"
             );
         }
     }
