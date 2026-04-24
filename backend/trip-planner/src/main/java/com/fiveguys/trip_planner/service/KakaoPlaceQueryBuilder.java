@@ -214,7 +214,12 @@ public class KakaoPlaceQueryBuilder {
 
     private List<String> buildIntentKeywords(String intent, String staySubtype, String message) {
         LinkedHashSet<String> keywords = new LinkedHashSet<>();
-        String normalizedMessage = message == null ? "" : message.toLowerCase();
+
+        if ("ATTRACTION_RECOMMENDATION".equals(intent)) {
+            throw new IllegalArgumentException(
+                    "ATTRACTION_RECOMMENDATION은 AttractionRecommendationService에서 처리해야 합니다."
+            );
+        }
 
         if ("RESTAURANT_RECOMMENDATION".equals(intent)) {
             List<String> foodKeywords = restaurantKeywordService.extractRestaurantFoodKeywords(message);
