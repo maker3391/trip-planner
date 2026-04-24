@@ -368,211 +368,171 @@ export default function CommunityReadPage() {
                             </div>
 
                             <div className="form-main-area">
+                                {/* 1. 헤더 영역 */}
                                 <div className="PostHeader">
                                     <h1 className="PostTitle">{post?.title}</h1>
                                     <div className="PostMeta">
-                                        <span>
-                                            작성자: <strong>{post?.authorNickname}</strong>
-                                        </span>
-                                        <span>| {post?.createdAt?.slice(0, 10)}</span>
+                                    <span>
+                                        작성자: <strong>{post?.authorNickname}</strong>
+                                    </span>
+                                    <span>| {post?.createdAt?.slice(0, 10)}</span>
                                     </div>
                                 </div>
 
-                                {post?.tripPlan && (
-                                    <div className="attached-trip-box">
-                                        <h3>첨부된 여행 계획</h3>
-
-                                        <div>
-                                            <strong>여행 제목:</strong> {post.tripPlan.title}
-                                        </div>
-                                        <div>
-                                            <strong>여행지:</strong> {post.tripPlan.destination}
-                                        </div>
-                                        <div>
-                                            <strong>기간:</strong> {post.tripPlan.startDate} ~{" "}
-                                            {post.tripPlan.endDate}
-                                        </div>
-                                        <div>
-                                            <strong>일정 개수:</strong>{" "}
-                                            {post.tripPlan.schedules?.length ?? 0}개
-                                        </div>
-
-                                        {post.tripPlan.schedules &&
-                                            post.tripPlan.schedules.length > 0 && (
-                                                <div className="attached-trip-schedule-list">
-                                                    {post.tripPlan.schedules
-                                                        .slice(0, 5)
-                                                        .map((schedule) => (
-                                                            <div
-                                                                key={schedule.id}
-                                                                className="attached-trip-schedule-item"
-                                                            >
-                                                                <div>
-                                                                    <strong>{schedule.dayNumber}일차</strong> ·{" "}
-                                                                    {schedule.title}
-                                                                </div>
-                                                                {(schedule.startTime ||
-                                                                    schedule.endTime) && (
-                                                                    <div className="schedule-time">
-                                                                        {schedule.startTime || "--:--"} ~{" "}
-                                                                        {schedule.endTime || "--:--"}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                </div>
-                                            )}
-
-                                        <div className="trip-button-group">
-                                            <button
-                                                type="button"
-                                                className="load-trip-button"
-                                                onClick={() =>
-                                                    navigate("/", {
-                                                        state: { tripId: post.tripPlan?.id },
-                                                    })
-                                                }
-                                            >
-                                                이 여행 계획 불러오기
-                                            </button>
-
-                                            {!isAuthor && (
-                                                <button
-                                                    type="button"
-                                                    className="join-trip-button"
-                                                    onClick={handleJoinTrip}
-                                                    disabled={isJoined}
-                                                >
-                                                    {isPending
-                                                        ? "참가 신청 완료"
-                                                        : isMemberApproved
-                                                        ? "이미 참가 중"
-                                                        : "참가 신청"}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {isAuthor && post?.tripPlan && (
-                                            <div className="trip-member-manage-box">
-                                                <h3>참가 신청 관리</h3>
-
-                                                {loadingMembers ? (
-                                                    <div>멤버 목록 불러오는 중...</div>
-                                                ) : (
-                                                    <>
-                                                        <div className="member-count-row">
-                                                            <strong>참가 중:</strong>{" "}
-                                                            {approvedMembers.length}명
-                                                        </div>
-
-                                                        {approvedMembers.length !== 0 && (
-                                                            approvedMembers.map((member) => (
-                                                                <div
-                                                                    key={member.memberId}
-                                                                    className="member-manage-row"
-                                                                >
-                                                                    <div>
-                                                                        <strong>
-                                                                            {member.nickname}
-                                                                        </strong>{" "}
-                                                                        ({member.name})
-                                                                    </div>
-                                                                </div>
-                                                            ))
-                                                        )}
-
-                                                        <div className="member-count-row">
-                                                            <strong>대기 중:</strong>{" "}
-                                                            {pendingMembers.length}명
-                                                        </div>
-
-                                                        {pendingMembers.length === 0 ? (
-                                                            <div>
-                                                                대기 중인 신청자가 없습니다.
-                                                            </div>
-                                                        ) : (
-                                                            pendingMembers.map((member) => (
-                                                                <div
-                                                                    key={member.memberId}
-                                                                    className="member-manage-row"
-                                                                >
-                                                                    <div>
-                                                                        <strong>
-                                                                            {member.nickname}
-                                                                        </strong>{" "}
-                                                                        ({member.name})
-                                                                    </div>
-
-                                                                    <div className="member-action-buttons">
-                                                                        <button
-                                                                            className="accept-button"
-                                                                            onClick={() =>
-                                                                                handleAcceptMember(
-                                                                                    member.memberId
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            수락
-                                                                        </button>
-                                                                        <button
-                                                                            className="reject-button"
-                                                                            onClick={() =>
-                                                                                handleRemoveMember(
-                                                                                    member.memberId
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            거절
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            ))
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
+                                {/* 2. 본문 영역 (위로 올림) */}
                                 <div className="PostContent">
                                     <div
-                                        className="ql-editor"
-                                        dangerouslySetInnerHTML={{
-                                            __html: post?.content || "",
-                                        }}
+                                    className="ql-editor"
+                                    dangerouslySetInnerHTML={{
+                                        __html: post?.content || "",
+                                    }}
                                     />
                                     {post?.tags && (
-                                        <div className="tags">
-                                            {post.tags.split(",").map((tag, idx) => (
-                                                <span key={idx} className="tag">
-                                                    #{tag.trim().replace("#", "")}
-                                                </span>
-                                            ))}
-                                        </div>
+                                    <div className="tags">
+                                        {post.tags.split(",").map((tag, idx) => (
+                                        <span key={idx} className="tag">
+                                            #{tag.trim().replace("#", "")}
+                                        </span>
+                                        ))}
+                                    </div>
                                     )}
                                 </div>
 
+                                {/* 3. 첨부된 여행 계획 (본문 밑으로 이동) */}
+                                {post?.tripPlan && (
+                                    <div className="attached-trip-box">
+                                    <h3>첨부된 여행 계획</h3>
+                                    <div>
+                                        <strong>여행 제목:</strong> {post.tripPlan.title}
+                                    </div>
+                                    <div>
+                                        <strong>여행지:</strong> {post.tripPlan.destination}
+                                    </div>
+                                    <div>
+                                        <strong>기간:</strong> {post.tripPlan.startDate} ~ {post.tripPlan.endDate}
+                                    </div>
+                                    <div>
+                                        <strong>일정 개수:</strong> {post.tripPlan.schedules?.length ?? 0}개
+                                    </div>
+
+                                    {post.tripPlan.schedules && post.tripPlan.schedules.length > 0 && (
+                                        <div className="attached-trip-schedule-list">
+                                        {post.tripPlan.schedules.slice(0, 5).map((schedule) => (
+                                            <div key={schedule.id} className="attached-trip-schedule-item">
+                                            <div>
+                                                <strong>{schedule.dayNumber}일차</strong> · {schedule.title}
+                                            </div>
+                                            {(schedule.startTime || schedule.endTime) && (
+                                                <div className="schedule-time">
+                                                {schedule.startTime || "--:--"} ~ {schedule.endTime || "--:--"}
+                                                </div>
+                                            )}
+                                            </div>
+                                        ))}
+                                        </div>
+                                    )}
+
+                                    <div className="trip-button-group">
+                                        <button
+                                        type="button"
+                                        className="load-trip-button"
+                                        onClick={() =>
+                                            navigate("/", {
+                                            state: { tripId: post.tripPlan?.id },
+                                            })
+                                        }
+                                        >
+                                        이 여행 계획 불러오기
+                                        </button>
+
+                                        {!isAuthor && (
+                                        <button
+                                            type="button"
+                                            className="join-trip-button"
+                                            onClick={handleJoinTrip}
+                                            disabled={isJoined}
+                                        >
+                                            {isPending
+                                            ? "참가 신청 완료"
+                                            : isMemberApproved
+                                            ? "이미 참가 중"
+                                            : "참가 신청"}
+                                        </button>
+                                        )}
+                                    </div>
+
+                                    {/* 작성자 전용 관리 박스 */}
+                                    {isAuthor && (
+                                        <div className="trip-member-manage-box">
+                                        <h3>참가 신청 관리</h3>
+                                        {loadingMembers ? (
+                                            <div>멤버 목록 불러오는 중...</div>
+                                        ) : (
+                                            <>
+                                            <div className="member-count-row">
+                                                <strong>참가 중:</strong> {approvedMembers.length}명
+                                            </div>
+                                            {approvedMembers.map((member) => (
+                                                <div key={member.memberId} className="member-manage-row">
+                                                <div>
+                                                    <strong>{member.nickname}</strong> ({member.name})
+                                                </div>
+                                                </div>
+                                            ))}
+                                            <div className="member-count-row">
+                                                <strong>대기 중:</strong> {pendingMembers.length}명
+                                            </div>
+                                            {pendingMembers.length === 0 ? (
+                                                <div>대기 중인 신청자가 없습니다.</div>
+                                            ) : (
+                                                pendingMembers.map((member) => (
+                                                <div key={member.memberId} className="member-manage-row">
+                                                    <div>
+                                                    <strong>{member.nickname}</strong> ({member.name})
+                                                    </div>
+                                                    <div className="member-action-buttons">
+                                                    <button
+                                                        className="accept-button"
+                                                        onClick={() => handleAcceptMember(member.memberId)}
+                                                    >
+                                                        수락
+                                                    </button>
+                                                    <button
+                                                        className="reject-button"
+                                                        onClick={() => handleRemoveMember(member.memberId)}
+                                                    >
+                                                        거절
+                                                    </button>
+                                                    </div>
+                                                </div>
+                                                ))
+                                            )}
+                                            </>
+                                        )}
+                                        </div>
+                                    )}
+                                    </div>
+                                )}
+
+                                {/* 4. 푸터 영역 (좋아요, 공유 등) */}
                                 <div className="PostFooter">
                                     <div className="footer-item">
-                                        <RemoveRedEyeIcon /> {post?.viewCount}
+                                    <RemoveRedEyeIcon /> {post?.viewCount}
                                     </div>
                                     <div className="footer-item">
-                                        <button onClick={handleLike} className="icon-btn">
-                                            <ThumbUpOffAltIcon
-                                                style={{ color: liked ? "#1976d2" : "#aaa" }}
-                                            />
-                                        </button>
-                                        {post?.likeCount}
+                                    <button onClick={handleLike} className="icon-btn">
+                                        <ThumbUpOffAltIcon style={{ color: liked ? "#1976d2" : "#aaa" }} />
+                                    </button>
+                                    {post?.likeCount}
                                     </div>
                                     <div className="footer-item">
-                                        <button onClick={handleShare} className="icon-btn">
-                                            <ShareIcon />
-                                        </button>
-                                        공유
+                                    <button onClick={handleShare} className="icon-btn">
+                                        <ShareIcon />
+                                    </button>
+                                    공유
                                     </div>
                                 </div>
-                            </div>
+                                </div>
                         </article>
 
                         <div className="community-footer">

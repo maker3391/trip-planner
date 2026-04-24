@@ -145,7 +145,7 @@ public class TripMemberService {
         User currentUser = getCurrentUser();
 
         return tripMemberRepository
-                .findAllByUserAndRoleIn(currentUser, List.of("MEMBER", "PENDING"))
+                .findAllByUserAndRoleIn(currentUser, List.of("MEMBER"))
                 .stream()
                 .map(tm -> TripPlanResponseDto.from(tm.getTripPlan()))
                 .collect(Collectors.toList());

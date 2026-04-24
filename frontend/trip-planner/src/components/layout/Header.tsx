@@ -187,7 +187,6 @@ export default function Header() {
 
   return (
     <>
-      <Toaster position="top-center" />
       <AppBar position="static" elevation={0} className="header">
         <Toolbar className="header-toolbar">
           <div className="header-logo" onClick={() => navigate("/")}>
