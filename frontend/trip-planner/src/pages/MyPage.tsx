@@ -29,6 +29,14 @@ interface PasswordForm {
   newPasswordConfirm: string;
 }
 
+interface NotificationHistory {
+  id: number;
+  message: string;
+  targetUrl?: string;
+  receivedAt: string;
+}
+
+
 export default function MyPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -48,6 +56,7 @@ export default function MyPage() {
   const [isSavingBasic, setIsSavingBasic] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [notiHistory, setNotiHistory] = useState<NotificationHistory[]>([]);
 
   const clearAuthAndMoveLogin = () => {
     localStorage.removeItem("accessToken");
@@ -84,6 +93,30 @@ export default function MyPage() {
     fetchUser();
   }, []);
 
+  useEffect(() => {
+  // 로컬 스토리지에서 데이터를 읽어와 상태를 업데이트하는 함수
+    const syncNotiHistory = () => {
+      const stored = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
+      setNotiHistory(stored);
+    };
+
+    // 마이페이지 진입 시 최초 실행
+    syncNotiHistory();
+
+    // 방법 1: 다른 탭/창에서 변경 시 감지 (storage 이벤트)
+    window.addEventListener("storage", (e) => {
+      if (e.key === "notificationHistory") syncNotiHistory();
+    });
+
+    // 방법 2: 같은 창(Header -> MyPage) 실시간 반영을 위한 인터벌
+    // Header가 SSE로 알림을 넣으면 0.5초 안에 감지해서 화면에 뿌려줌
+    const interval = setInterval(syncNotiHistory, 500);
+
+    return () => {
+      window.removeEventListener("storage", syncNotiHistory);
+      clearInterval(interval);
+    };
+  }, []);
   const handleBasicChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setBasicForm((prev) => ({
@@ -206,6 +239,7 @@ export default function MyPage() {
       setIsSavingPassword(false);
     }
   };
+  
 
   const handleWithdraw = async () => {
     if (!user || isWithdrawing) return;
@@ -247,6 +281,19 @@ export default function MyPage() {
       setIsWithdrawing(false);
     }
   };
+  // 개별 삭제 핸들러
+  const handleDeleteNoti = (id: number) => {
+    const updated = notiHistory.filter((n) => n.id !== id);
+    setNotiHistory(updated);
+    localStorage.setItem("notificationHistory", JSON.stringify(updated));
+  };
+
+  // 전체 삭제 핸들러
+  const handleDeleteAllNoti = () => {
+    setNotiHistory([]);
+    localStorage.removeItem("notificationHistory");
+  };
+
 
   const displayName =
     user?.nickname?.trim() ||
@@ -267,6 +314,55 @@ export default function MyPage() {
           <p className="mypage-description">
             계정 정보를 확인하고 수정할 수 있습니다.
           </p>
+        </section>
+
+        <section className="mypage-edit-card">
+          <div className="mypage-noti-header">
+            <h2 className="mypage-section-title">받은 알림</h2>
+            {notiHistory.length > 0 && (
+              <button
+                type="button"
+                className="mypage-noti-clear-btn"
+                onClick={handleDeleteAllNoti}
+              >
+                전체 삭제
+              </button>
+            )}
+          </div>
+
+          {notiHistory.length === 0 ? (
+            <p className="mypage-noti-empty">받은 알림이 없습니다.</p>
+          ) : (
+            <ul className="mypage-noti-list">
+              {notiHistory.map((noti) => (
+                <li
+                  key={`${noti.id}-${noti.receivedAt}`}
+                  className="mypage-noti-item"
+                  onClick={() => {
+                    if (noti.targetUrl) navigate(noti.targetUrl);
+                  }}
+                  style={{ cursor: noti.targetUrl ? "pointer" : "default" }}
+                >
+                  <div className="mypage-noti-content">
+                    <span className="mypage-noti-msg">{noti.message}</span>
+                    <span className="mypage-noti-time">
+                      {new Date(noti.receivedAt).toLocaleString("ko-KR")}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="mypage-noti-delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteNoti(noti.id);
+                    }}
+                  >
+                    삭제
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="mypage-view-card">

@@ -1,5 +1,4 @@
 import { AppBar, Toolbar, Button, Badge, Menu, MenuItem, Typography, Box } from "@mui/material";
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -13,7 +12,7 @@ import { getUnreadNotifications, NotificationResponseDto, readNotificationApi } 
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 // react-hot-toast를 사용 중이라면 임포트 (기존 alert 대체용)
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -94,6 +93,22 @@ export default function Header() {
       try {
         const data = await getUnreadNotifications();
         setNotifications(data);
+
+        // ✅ [추가] 서버에서 가져온 미확인 알림들을 히스토리에 병합
+        const existing = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
+        
+        // 중복 제거 (이미 히스토리에 있는 ID는 제외)
+        const newItems = data.filter(
+          (serverNoti) => !existing.some((hist: any) => hist.id === serverNoti.id)
+        ).map(noti => ({
+          ...noti,
+          receivedAt: noti.createdAt || new Date().toISOString() // 시간 데이터 없으면 현재시간
+        }));
+
+        if (newItems.length > 0) {
+          const updated = [...newItems, ...existing].slice(0, 50);
+          localStorage.setItem("notificationHistory", JSON.stringify(updated));
+        }
       } catch (error) {
         console.error("알림 목록 조회 실패:", error);
       }
@@ -117,9 +132,19 @@ export default function Header() {
           try {
             const newNoti = JSON.parse(ev.data);
 
-            toast(newNoti.message, {icon: "🔔", duration: 3000});
+            toast(newNoti.message, { icon: "🔔", duration: 3000 });
 
+            // 실시간 뱃지용
             setNotifications((prev) => [newNoti, ...prev]);
+
+            // ↓ 이 부분 추가 - MyPage 히스토리에 즉시 저장
+            const existing = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
+            const updated = [
+              { ...newNoti, receivedAt: new Date().toISOString() },
+              ...existing,
+            ].slice(0, 50);
+            localStorage.setItem("notificationHistory", JSON.stringify(updated));
+
           } catch (error) {
             console.error("알림 데이터 파싱 오류:", error);
           }
@@ -138,9 +163,13 @@ export default function Header() {
 
   const handleReadNotification = async (id: number, targetUrl?: string) => {
     try {
-      await readNotificationApi(id);
+      await readNotificationApi(id); // 서버에 읽음 알림
+      
+      // ✅ 헤더 알림 목록(뱃지 숫자)에서만 제거
       setNotifications((prev) => prev.filter((noti) => noti.id !== id));
       setAnchorEl(null);
+
+      // 여기서 localStorage를 건드리지 마! 그래야 MyPage 기록이 보존돼.
       if (targetUrl) {
         navigate(targetUrl);
       }
@@ -222,12 +251,24 @@ export default function Header() {
                   onClose={() => setAnchorEl(null)}
                   PaperProps={{className: "notification-menu-paper"}}
                 >
-                  <div className="notification-header">
-                    <Typography className="notification-title">
-                      미확인 알림
-                    </Typography>
-                  </div>
-                  
+                  {notifications.length > 0 && (
+                    <MenuItem
+                      onClick={async () => {
+                        // 1. 서버 API 호출
+                        await Promise.all(notifications.map((n) => readNotificationApi(n.id)));
+                        
+                        // 2. 헤더 상태 비우기 (뱃지 사라짐)
+                        setNotifications([]); 
+                        setAnchorEl(null);
+                        
+                        // 💡 saveToHistory 호출 절대 금지! (이미 SSE 받을 때 저장됐음)
+                      }}
+                      className="notification-mark-all"
+                    >
+                      전체 읽음
+                    </MenuItem>
+                  )}
+                     
                   {notifications.length === 0 ? (
                     <MenuItem disabled>새로운 알림이 없습니다.</MenuItem>
                   ) : (

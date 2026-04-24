@@ -28,10 +28,7 @@ public class CommunityController {
 
     private final CommunityService communityService;
 
-    // =========================
-    // 🔹 게시글 생성
-    // =========================
-    @Operation(summary = "게시글 작성", description = "새로운 커뮤니티 게시글을 등록합니다. 작성자 정보는 토큰에서 추출합니다.")
+    @Operation(summary = "게시글 작성")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "게시글 작성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 파라미터"),
@@ -39,255 +36,169 @@ public class CommunityController {
     })
     @PostMapping("/posts")
     public ResponseEntity<?> createPost(@RequestBody CommunityRequest request) {
-
         Long postId = communityService.createPost(request);
-
-        return ResponseEntity.status(201).body(
-                Map.of(
-                        "success", true,
-                        "postId", postId
-                )
-        );
+        return ResponseEntity.status(201).body(Map.of("success", true, "postId", postId));
     }
 
-    // =========================
-    // 🔹 게시글 목록 + 검색 + 필터 (통합 API)
-    // =========================
-    @Operation(summary = "게시글 목록 조회", description = "페이징 및 필터링(카테고리, 지역, 검색어)을 적용하여 게시글 목록을 조회합니다.")
+    @Operation(summary = "게시글 목록 조회")
     @GetMapping("/posts")
     public ResponseEntity<Page<CommunityResponse>> getPosts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String region,
-            @RequestParam(required = false) String searchType,
-            @RequestParam(required = false) String keyword
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "category", required = false) String category,
+            @RequestParam(name = "region", required = false) String region,
+            @RequestParam(name = "searchType", required = false) String searchType,
+            @RequestParam(name = "keyword", required = false) String keyword
     ) {
-
         return ResponseEntity.ok(
-                communityService.getPosts(
-                        page,
-                        size,
-                        category,
-                        region,
-                        searchType,
-                        keyword
-                )
+                communityService.getPosts(page, size, category, region, searchType, keyword)
         );
     }
 
-    // =========================
-    // 🔹 게시글 단건 조회
-    // =========================
-    @Operation(summary = "게시글 상세 조회", description = "특정 ID의 게시글 상세 정보를 가져옵니다. 호출 시 조회수가 증가하지는 않습니다. (별도 API 사용)")
+    @Operation(summary = "게시글 상세 조회")
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<CommunityResponse> getPost(@PathVariable Long postId) {
-
-        return ResponseEntity.ok(
-                communityService.getPost(postId)
-        );
+    public ResponseEntity<CommunityResponse> getPost(
+            @PathVariable("postId") Long postId
+    ) {
+        return ResponseEntity.ok(communityService.getPost(postId));
     }
 
-    // =========================
-    // 🔹 조회수 증가
-    // =========================
-    @Operation(summary = "조회수 증가", description = "게시글 상세 페이지 진입 외에 수동으로 조회수를 1 증가시킬 때 사용합니다.")
+    @Operation(summary = "조회수 증가")
     @PatchMapping("/posts/{postId}/view")
-    public ResponseEntity<?> viewPost(@PathVariable Long postId) {
-
+    public ResponseEntity<?> viewPost(
+            @PathVariable("postId") Long postId
+    ) {
         communityService.viewPost(postId);
-
-        return ResponseEntity.ok(
-                Map.of("success", true)
-        );
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
-    // =========================
-    // 🔹 공유 증가
-    // =========================
-    @Operation(summary = "공유 횟수 증가", description = "공유 버튼 클릭 시 공유 카운트를 1 증가시킵니다.")
+    @Operation(summary = "공유 횟수 증가")
     @PatchMapping("/posts/{postId}/share")
-    public ResponseEntity<?> sharePost(@PathVariable Long postId) {
-
+    public ResponseEntity<?> sharePost(
+            @PathVariable("postId") Long postId
+    ) {
         communityService.incrementShare(postId);
-
-        return ResponseEntity.ok(
-                Map.of("success", true)
-        );
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
-    // =========================
-    // 🔥 좋아요 토글
-    // =========================
-    @Operation(summary = "좋아요 토글", description = "게시글에 좋아요를 등록하거나 취소합니다.")
+    @Operation(summary = "좋아요 토글")
     @PostMapping("/posts/{postId}/like")
-    public ResponseEntity<?> toggleLike(@PathVariable Long postId) {
-
+    public ResponseEntity<?> toggleLike(
+            @PathVariable("postId") Long postId
+    ) {
         boolean liked = communityService.toggleLike(postId);
         Long likeCount = communityService.getLikeCount(postId);
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "liked", liked,
-                        "likeCount", likeCount
-                )
-        );
+        return ResponseEntity.ok(Map.of("liked", liked, "likeCount", likeCount));
     }
 
-    // =========================
-    // 🔥 좋아요 상태 조회
-    // =========================
-    @Operation(summary = "좋아요 상태 조회", description = "로그인한 유저가 현재 게시글에 좋아요를 눌렀는지 여부와 전체 좋아요 수를 확인합니다.")
+    @Operation(summary = "좋아요 상태 조회")
     @GetMapping("/posts/{postId}/like-status")
-    public ResponseEntity<?> getLikeStatus(@PathVariable Long postId) {
-
+    public ResponseEntity<?> getLikeStatus(
+            @PathVariable("postId") Long postId
+    ) {
         boolean liked = communityService.isLiked(postId);
         Long likeCount = communityService.getLikeCount(postId);
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "liked", liked,
-                        "likeCount", likeCount
-                )
-        );
+        return ResponseEntity.ok(Map.of("liked", liked, "likeCount", likeCount));
     }
 
-    // =========================
-    // 🔹 이미지 업로드
-    // =========================
-    @Operation(summary = "이미지 업로드", description = "게시글에 포함될 이미지를 업로드하고 고유 ID를 반환받습니다.")
+    @Operation(summary = "이미지 업로드")
     @PostMapping("/image")
-    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
-
+    public ResponseEntity<?> uploadImage(
+            @RequestParam("file") MultipartFile file
+    ) {
         Long imageId = communityService.uploadImage(file);
-
-        return ResponseEntity.ok(
-                Map.of("imageId", imageId)
-        );
+        return ResponseEntity.ok(Map.of("imageId", imageId));
     }
 
-    // =========================
-    // 🔹 이미지 조회
-    // =========================
-    @Operation(summary = "이미지 조회", description = "이미지 ID를 통해 실제 이미지 데이터(파일)를 브라우저에 렌더링하거나 다운로드합니다.")
+    @Operation(summary = "이미지 조회")
     @GetMapping("/image/{id}")
-    public ResponseEntity<byte[]> getImage(@PathVariable Long id) {
-
-        // 🔥 Service에 존재하는 메서드를 조합하여 사용하도록 수정했습니다.
+    public ResponseEntity<byte[]> getImage(
+            @PathVariable("id") Long id
+    ) {
         byte[] imageData = communityService.getImage(id);
         String contentType = communityService.getImageContentType(id);
         String fileName = communityService.getImageName(id);
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + fileName + "\""
-                )
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
                 .body(imageData);
     }
 
-    // =========================
-    // 🔹 게시글 수정을 위한 데이터 조회
-    // =========================
-    @Operation(summary = "수정용 데이터 조회", description = "게시글 수정을 위해 기존 데이터를 조회합니다. (조회수가 증가하지 않습니다.)")
+    @Operation(summary = "수정용 데이터 조회")
     @GetMapping("/posts/{postId}/edit")
     public ResponseEntity<CommunityResponse> getPostForEdit(
-            @PathVariable Long postId
+            @PathVariable("postId") Long postId
     ) {
-        CommunityResponse response = communityService.getPost(postId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(communityService.getPost(postId));
     }
 
-    // =========================
-    // 🔹 게시글 수정 실행
-    // =========================
-    @Operation(summary = "게시글 수정", description = "게시글의 제목, 내용, 카테고리 등을 수정합니다.")
+    @Operation(summary = "게시글 수정")
     @PutMapping("/posts/{postId}")
     public ResponseEntity<?> updatePost(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @RequestBody CommunityRequest request
     ) {
         try {
             communityService.updatePost(postId, request);
-            return ResponseEntity.ok(
-                    Map.of("success", true, "message", "게시글이 수정되었습니다.")
-            );
+            return ResponseEntity.ok(Map.of("success", true, "message", "게시글이 수정되었습니다."));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "message", "서버 오류"));
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "서버 오류"));
         }
     }
 
-    // =========================
-    // 🔹 게시글 삭제
-    // =========================
-    @Operation(summary = "게시글 삭제", description = "특정 게시글을 영구적으로 삭제합니다.")
+    @Operation(summary = "게시글 삭제")
     @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<?> deletePost(@PathVariable Long postId) {
+    public ResponseEntity<?> deletePost(
+            @PathVariable("postId") Long postId
+    ) {
         try {
             communityService.deletePost(postId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "message", "삭제 실패"));
+            return ResponseEntity.internalServerError().body(Map.of("success", false, "message", "삭제 실패"));
         }
     }
 
-    // =========================
-    // 🔹 댓글 작성
-    // =========================
-    @PostMapping("/posts/{postId}/comments") // ✅ 쿼리 파라미터 부분 삭제!
+    @Operation(summary = "댓글 작성")
+    @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<?> createComment(
-            @PathVariable Long postId,
-            @RequestParam Long userId,
+            @PathVariable("postId") Long postId,
+            @RequestParam("userId") Long userId,
             @Valid @RequestBody CommunityCommentRequest request
     ) {
         communityService.createComment(postId, userId, request);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-
-    // =========================
-    // 🔹 대댓글 작성
-    // =========================
+    @Operation(summary = "대댓글 작성")
     @PostMapping("/posts/{postId}/comments/{parentId}")
     public ResponseEntity<?> createReply(
-            @PathVariable Long postId,
-            @PathVariable Long parentId,
-            @RequestParam Long userId,
+            @PathVariable("postId") Long postId,
+            @PathVariable("parentId") Long parentId,
+            @RequestParam("userId") Long userId,
             @Valid @RequestBody CommunityCommentRequest request
     ) {
         communityService.createReply(postId, parentId, userId, request);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-
-    // =========================
-    // 🔹 댓글 조회
-    // =========================
+    @Operation(summary = "댓글 조회")
     @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<CommunityCommentResponse> getComments(
-            @PathVariable Long postId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @PathVariable("postId") Long postId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(
-                communityService.getComments(postId, page, size)
-        );
+        return ResponseEntity.ok(communityService.getComments(postId, page, size));
     }
 
-
-    // =========================
-    // 🔹 댓글 삭제
-    // =========================
+    @Operation(summary = "댓글 삭제")
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<?> deleteComment(
-            @PathVariable Long commentId,
-            @RequestParam Long userId
+            @PathVariable("commentId") Long commentId,
+            @RequestParam("userId") Long userId
     ) {
         communityService.deleteComment(commentId, userId);
         return ResponseEntity.ok(Map.of("success", true));
