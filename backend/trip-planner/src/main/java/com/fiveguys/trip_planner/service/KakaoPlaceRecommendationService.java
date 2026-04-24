@@ -19,15 +19,6 @@ public class KakaoPlaceRecommendationService {
 
     private static final int MAX_ITEMS = 5;
 
-    private static final String STAY_SUBTYPE_GENERIC = "generic";
-    private static final String STAY_SUBTYPE_HOTEL = "hotel";
-    private static final String STAY_SUBTYPE_MOTEL = "motel";
-    private static final String STAY_SUBTYPE_PENSION = "pension";
-    private static final String STAY_SUBTYPE_RESORT = "resort";
-    private static final String STAY_SUBTYPE_GUEST_HOUSE = "guesthouse";
-    private static final String STAY_SUBTYPE_HANOK = "hanok";
-    private static final String STAY_SUBTYPE_POOL_VILLA = "poolvilla";
-
     private final KakaoLocalClient kakaoLocalClient;
     private final RecommendationIntentResolverService intentResolverService;
     private final RegionResolverService regionResolverService;
@@ -39,6 +30,7 @@ public class KakaoPlaceRecommendationService {
     private final KakaoPlaceMapper kakaoPlaceMapper;
     private final KakaoPlaceScoringService kakaoPlaceScoringService;
     private final RecommendationDisplayService recommendationDisplayService;
+    private final StaySubtypeResolver staySubtypeResolver;
 
     public KakaoPlaceRecommendationService(KakaoLocalClient kakaoLocalClient,
                                            RecommendationIntentResolverService intentResolverService,
@@ -49,7 +41,9 @@ public class KakaoPlaceRecommendationService {
                                            RecommendationCacheKeyGenerator cacheKeyGenerator,
                                            KakaoPlaceQueryBuilder kakaoPlaceQueryBuilder,
                                            KakaoPlaceMapper kakaoPlaceMapper,
-                                           KakaoPlaceScoringService kakaoPlaceScoringService, RecommendationDisplayService recommendationDisplayService) {
+                                           KakaoPlaceScoringService kakaoPlaceScoringService,
+                                           RecommendationDisplayService recommendationDisplayService,
+                                           StaySubtypeResolver staySubtypeResolver) {
         this.kakaoLocalClient = kakaoLocalClient;
         this.intentResolverService = intentResolverService;
         this.regionResolverService = regionResolverService;
@@ -61,6 +55,7 @@ public class KakaoPlaceRecommendationService {
         this.kakaoPlaceMapper = kakaoPlaceMapper;
         this.kakaoPlaceScoringService = kakaoPlaceScoringService;
         this.recommendationDisplayService = recommendationDisplayService;
+        this.staySubtypeResolver = staySubtypeResolver;
     }
 
     public ChatResponse recommend(ChatRequest request) {
@@ -69,7 +64,7 @@ public class KakaoPlaceRecommendationService {
         validateRegionStrict(message);
 
         String intent = intentResolverService.resolve(message);
-        String staySubtype = resolveStaySubtype(message, intent);
+        StaySubtype staySubtype = staySubtypeResolver.resolve(message, intent);
 
         RegionResolverService.ResolvedRegion resolvedRegion = regionResolverService.resolve(message);
 
@@ -308,38 +303,6 @@ public class KakaoPlaceRecommendationService {
     private boolean isCityOrCounty(String value) {
         return StringUtils.hasText(value)
                 && (value.endsWith("시") || value.endsWith("군"));
-    }
-
-    private String resolveStaySubtype(String message, String intent) {
-        if (!"STAY_RECOMMENDATION".equals(intent)) {
-            return STAY_SUBTYPE_GENERIC;
-        }
-
-        String normalizedMessage = message == null ? "" : message.toLowerCase();
-
-        if (normalizedMessage.contains("풀빌라")) {
-            return STAY_SUBTYPE_POOL_VILLA;
-        }
-        if (normalizedMessage.contains("한옥스테이")) {
-            return STAY_SUBTYPE_HANOK;
-        }
-        if (normalizedMessage.contains("게스트하우스")) {
-            return STAY_SUBTYPE_GUEST_HOUSE;
-        }
-        if (normalizedMessage.contains("리조트")) {
-            return STAY_SUBTYPE_RESORT;
-        }
-        if (normalizedMessage.contains("펜션")) {
-            return STAY_SUBTYPE_PENSION;
-        }
-        if (normalizedMessage.contains("무인텔") || normalizedMessage.contains("모텔")) {
-            return STAY_SUBTYPE_MOTEL;
-        }
-        if (normalizedMessage.contains("호텔")) {
-            return STAY_SUBTYPE_HOTEL;
-        }
-
-        return STAY_SUBTYPE_GENERIC;
     }
 
     private List<JsonNode> extractDocuments(JsonNode root) {

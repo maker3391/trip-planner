@@ -28,6 +28,32 @@ public class KakaoPlaceQueryBuilder {
                                              String aliasTargetParent,
                                              String rawAreaHint,
                                              String message) {
+        return buildQueryCandidates(
+                intent,
+                StaySubtype.from(staySubtype),
+                destination,
+                detailArea,
+                neighborhood,
+                district,
+                aliasQueryHint,
+                aliasTargetName,
+                aliasTargetParent,
+                rawAreaHint,
+                message
+        );
+    }
+
+    public List<String> buildQueryCandidates(String intent,
+                                             StaySubtype staySubtype,
+                                             String destination,
+                                             String detailArea,
+                                             String neighborhood,
+                                             String district,
+                                             String aliasQueryHint,
+                                             String aliasTargetName,
+                                             String aliasTargetParent,
+                                             String rawAreaHint,
+                                             String message) {
         LinkedHashSet<String> queries = new LinkedHashSet<>();
 
         List<String> locationBases = buildLocationBases(
@@ -212,7 +238,7 @@ public class KakaoPlaceQueryBuilder {
         return new ArrayList<>(result);
     }
 
-    private List<String> buildIntentKeywords(String intent, String staySubtype, String message) {
+    private List<String> buildIntentKeywords(String intent, StaySubtype staySubtype, String message) {
         LinkedHashSet<String> keywords = new LinkedHashSet<>();
 
         if ("ATTRACTION_RECOMMENDATION".equals(intent)) {
@@ -253,46 +279,48 @@ public class KakaoPlaceQueryBuilder {
             return new ArrayList<>(keywords);
         }
 
-        switch (staySubtype) {
-            case "motel":
+        StaySubtype resolvedSubtype = staySubtype == null ? StaySubtype.GENERIC : staySubtype;
+
+        switch (resolvedSubtype) {
+            case MOTEL -> {
                 keywords.add("모텔");
                 keywords.add("무인텔");
                 keywords.add("숙박");
-                break;
-            case "hotel":
+            }
+            case HOTEL -> {
                 keywords.add("호텔");
                 keywords.add("숙소");
-                break;
-            case "pension":
+            }
+            case PENSION -> {
                 keywords.add("펜션");
                 keywords.add("숙소");
-                break;
-            case "resort":
+            }
+            case RESORT -> {
                 keywords.add("리조트");
                 keywords.add("숙소");
-                break;
-            case "guesthouse":
+            }
+            case GUEST_HOUSE -> {
                 keywords.add("게스트하우스");
                 keywords.add("숙소");
-                break;
-            case "hanok":
+            }
+            case HANOK -> {
                 keywords.add("한옥스테이");
                 keywords.add("한옥 숙소");
                 keywords.add("숙소");
-                break;
-            case "poolvilla":
+            }
+            case POOL_VILLA -> {
                 keywords.add("풀빌라");
                 keywords.add("리조트");
                 keywords.add("숙소");
-                break;
-            default:
+            }
+            default -> {
                 keywords.add("숙소");
                 keywords.add("숙박");
                 keywords.add("호텔");
                 keywords.add("모텔");
                 keywords.add("펜션");
                 keywords.add("게스트하우스");
-                break;
+            }
         }
 
         return new ArrayList<>(keywords);

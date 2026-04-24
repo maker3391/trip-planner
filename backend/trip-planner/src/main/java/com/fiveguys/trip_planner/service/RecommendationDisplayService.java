@@ -10,19 +10,22 @@ import java.util.List;
 public class RecommendationDisplayService {
 
     private final RestaurantKeywordService restaurantKeywordService;
+    private final StaySubtypeResolver staySubtypeResolver;
 
-    public RecommendationDisplayService(RestaurantKeywordService restaurantKeywordService) {
+    public RecommendationDisplayService(RestaurantKeywordService restaurantKeywordService,
+                                        StaySubtypeResolver staySubtypeResolver) {
         this.restaurantKeywordService = restaurantKeywordService;
+        this.staySubtypeResolver = staySubtypeResolver;
     }
 
     public DisplayMeta buildPlaceDisplayMeta(String intent,
                                              String originalMessage,
                                              String destination,
                                              List<RecommendationItemResponse> items) {
-        String normalizedDestination = normalize(destination);
+        String normalizedDestination = normalizeDisplayDestination(destination);
 
         if ("STAY_RECOMMENDATION".equals(intent)) {
-            String displayType = resolveStayDisplayType(originalMessage, items);
+            String displayType = resolveStayDisplayType(originalMessage, intent, items);
             String displayTitle = normalizedDestination + "에서 괜찮은 " + attachStayPluralSuffix(displayType) + "을 모아봤어요";
             return new DisplayMeta(displayType, displayTitle);
         }
@@ -33,18 +36,12 @@ public class RecommendationDisplayService {
     }
 
     public String buildCombinedRestaurantTitle(String destination) {
-        String region = normalize(destination);
-        if (!StringUtils.hasText(region)) {
-            region = "이 지역";
-        }
+        String region = normalizeDisplayDestination(destination);
         return region + "에서 가볼 만한 맛집을 모아봤어요";
     }
 
     public String buildCombinedStayTitle(String destination) {
-        String region = normalize(destination);
-        if (!StringUtils.hasText(region)) {
-            region = "이 지역";
-        }
+        String region = normalizeDisplayDestination(destination);
         return region + "에서 괜찮은 숙소들을 모아봤어요";
     }
 
@@ -61,6 +58,7 @@ public class RecommendationDisplayService {
         }
 
         List<String> keywords = restaurantKeywordService.extractRestaurantFoodKeywords(message);
+
         if (!keywords.isEmpty()) {
             return keywords.get(0);
         }
@@ -70,6 +68,7 @@ public class RecommendationDisplayService {
         }
 
         String firstCategory = firstItemCategory(items);
+
         if (StringUtils.hasText(firstCategory)) {
             return firstCategory;
         }
@@ -78,27 +77,28 @@ public class RecommendationDisplayService {
     }
 
     private String resolveStayDisplayType(String originalMessage,
+                                          String intent,
                                           List<RecommendationItemResponse> items) {
-        String message = normalize(originalMessage);
+        StaySubtype subtype = staySubtypeResolver.resolve(originalMessage, intent);
 
-        if (message.contains("풀빌라")) return "풀빌라";
-        if (message.contains("한옥스테이")) return "한옥스테이";
-        if (message.contains("게스트하우스")) return "게스트하우스";
-        if (message.contains("리조트")) return "리조트";
-        if (message.contains("펜션")) return "펜션";
-        if (message.contains("무인텔") || message.contains("모텔")) return "모텔";
-        if (message.contains("호텔")) return "호텔";
+        return switch (subtype) {
+            case POOL_VILLA -> "풀빌라";
+            case HANOK -> "한옥스테이";
+            case GUEST_HOUSE -> "게스트하우스";
+            case RESORT -> "리조트";
+            case PENSION -> "펜션";
+            case MOTEL -> "모텔";
+            case HOTEL -> "호텔";
+            default -> {
+                String firstCategory = firstItemCategory(items);
 
-        if (containsAny(message, "숙소", "숙박", "stay", "accommodation")) {
-            return "숙소";
-        }
+                if (StringUtils.hasText(firstCategory)) {
+                    yield firstCategory;
+                }
 
-        String firstCategory = firstItemCategory(items);
-        if (StringUtils.hasText(firstCategory)) {
-            return firstCategory;
-        }
-
-        return "숙소";
+                yield "숙소";
+            }
+        };
     }
 
     private String firstItemCategory(List<RecommendationItemResponse> items) {
@@ -107,6 +107,7 @@ public class RecommendationDisplayService {
         }
 
         RecommendationItemResponse first = items.get(0);
+
         if (first == null) {
             return "";
         }
@@ -139,30 +140,57 @@ public class RecommendationDisplayService {
     }
 
     public DisplayMeta buildAttractionDisplayMeta(String originalMessage, String destination) {
-        String region = normalize(destination);
         String message = normalize(originalMessage);
 
-        if (!StringUtils.hasText(region)) {
-            region = "이 지역";
+        if (containsAny(message, "사진 찍기", "사진찍기", "사진", "포토존", "인생샷")) {
+            return new DisplayMeta("포토스팟", "사진 찍기 좋은 곳을 모아봤어요");
         }
 
-        if (message.contains("랜드마크") || message.contains("landmark")) {
-            return new DisplayMeta("랜드마크", region + "의 대표 랜드마크를 모아봤어요");
+        if (containsAny(message, "핫플", "핫플레이스", "요즘", "인기", "트렌디")) {
+            return new DisplayMeta("핫플", "가볼 만한 핫플을 모아봤어요");
         }
 
-        if (message.contains("관광지") || message.contains("대표 관광지") || message.contains("sightseeing")) {
-            return new DisplayMeta("관광지", region + "에서 둘러볼 만한 관광지를 모아봤어요");
+        if (containsAny(message, "야경", "밤에", "나이트뷰")) {
+            return new DisplayMeta("야경 명소", "야경 보기 좋은 곳을 모아봤어요");
         }
 
-        if (message.contains("볼거리")) {
-            return new DisplayMeta("볼거리", region + "에서 둘러볼 만한 볼거리를 모아봤어요");
+        if (containsAny(message, "데이트코스", "데이트 코스", "데이트")) {
+            return new DisplayMeta("데이트코스", "데이트하기 좋은 곳을 모아봤어요");
         }
 
-        if (message.contains("가볼만") || message.contains("attraction")) {
-            return new DisplayMeta("명소", region + "에서 가볼 만한 명소를 모아봤어요");
+        if (containsAny(message, "산책", "산책로", "걷기", "걷기 좋은", "둘레길", "올레길")) {
+            return new DisplayMeta("산책 명소", "산책하기 좋은 곳을 모아봤어요");
         }
 
-        return new DisplayMeta("명소", region + "에서 가볼 만한 명소를 모아봤어요");
+        if (containsAny(message, "실내", "비올때", "비 올 때", "박물관", "미술관", "전시", "전시관")) {
+            return new DisplayMeta("실내 명소", "실내로 가기 좋은 곳을 모아봤어요");
+        }
+
+        if (containsAny(message, "자연", "오름", "숲", "해변", "바다", "수목원", "휴양림", "계곡", "폭포")) {
+            return new DisplayMeta("자연 명소", "자연을 느끼기 좋은 곳을 모아봤어요");
+        }
+
+        if (containsAny(message, "드라이브", "드라이브코스", "해안도로")) {
+            return new DisplayMeta("드라이브코스", "드라이브하기 좋은 곳을 모아봤어요");
+        }
+
+        if (containsAny(message, "놀거리", "체험", "액티비티", "테마파크", "유원지")) {
+            return new DisplayMeta("놀거리", "즐길 만한 놀거리를 모아봤어요");
+        }
+
+        if (containsAny(message, "랜드마크", "landmark")) {
+            return new DisplayMeta("랜드마크", "대표 랜드마크를 모아봤어요");
+        }
+
+        if (containsAny(message, "관광지", "대표 관광지", "sightseeing")) {
+            return new DisplayMeta("관광지", "둘러볼 만한 관광지를 모아봤어요");
+        }
+
+        if (containsAny(message, "볼거리")) {
+            return new DisplayMeta("볼거리", "둘러볼 만한 볼거리를 모아봤어요");
+        }
+
+        return new DisplayMeta("명소", "가볼 만한 명소를 모아봤어요");
     }
 
     private boolean containsAny(String value, String... keywords) {
@@ -171,11 +199,13 @@ public class RecommendationDisplayService {
         }
 
         String normalized = value.toLowerCase();
+
         for (String keyword : keywords) {
             if (normalized.contains(keyword.toLowerCase())) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -183,7 +213,28 @@ public class RecommendationDisplayService {
         if (!StringUtils.hasText(value)) {
             return "";
         }
+
         return value.trim().replaceAll("\\s+", " ");
+    }
+
+    private String normalizeDisplayDestination(String destination) {
+        String region = normalize(destination);
+
+        if (!StringUtils.hasText(region)) {
+            return "이 지역";
+        }
+
+        if (region.contains("공항")) {
+            String[] parts = region.split("\\s+");
+
+            for (String part : parts) {
+                if (part.contains("공항")) {
+                    return part;
+                }
+            }
+        }
+
+        return region;
     }
 
     public record DisplayMeta(String displayType, String displayTitle) {

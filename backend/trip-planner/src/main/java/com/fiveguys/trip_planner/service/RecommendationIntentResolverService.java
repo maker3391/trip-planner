@@ -19,6 +19,10 @@ public class RecommendationIntentResolverService {
         int attractionScore = scoreAttraction(value);
         int itineraryScore = scoreItinerary(value);
 
+        if (attractionScore > 0 && isAttractionStrongKeyword(value)) {
+            return "ATTRACTION_RECOMMENDATION";
+        }
+
         int matchedCount = 0;
         if (restaurantScore > 0) matchedCount++;
         if (stayScore > 0) matchedCount++;
@@ -98,6 +102,13 @@ public class RecommendationIntentResolverService {
                 "구경할만한", "구경할 만한", "구경할곳", "구경할 곳",
                 "놀러갈만한", "놀러갈 만한", "놀거리",
                 "핫플", "핫플레이스", "데이트코스", "데이트 코스",
+                "산책", "산책로", "걷기", "걷기 좋은", "걸을만한", "둘레길", "올레길",
+                "야경", "밤에", "밤", "나이트뷰",
+                "오름", "숲", "자연", "해변", "바다", "수목원", "휴양림", "계곡", "폭포",
+                "실내", "비올때", "비 올 때", "박물관", "미술관", "전시", "전시관", "아쿠아리움",
+                "사진", "사진 찍기", "사진찍기", "포토존", "인생샷", "감성",
+                "드라이브", "드라이브코스", "드라이브 코스", "해안도로",
+                "체험", "액티비티", "테마파크", "유원지",
                 "attraction", "landmark", "sightseeing", "place to visit", "things to see")) {
             score += 10;
         }
@@ -107,6 +118,15 @@ public class RecommendationIntentResolverService {
 
     private int scoreItinerary(String value) {
         int score = 0;
+
+        if (containsAny(value,
+                "데이트코스", "데이트 코스",
+                "드라이브코스", "드라이브 코스",
+                "산책코스", "산책 코스",
+                "야경코스", "야경 코스",
+                "사진코스", "사진 코스")) {
+            return 0;
+        }
 
         if (containsAny(value,
                 "일정", "코스", "여행", "플랜", "동선", "루트",
@@ -120,6 +140,23 @@ public class RecommendationIntentResolverService {
         }
 
         return score;
+    }
+
+    private boolean isAttractionStrongKeyword(String value) {
+        return containsAny(value,
+                "데이트코스", "데이트 코스",
+                "드라이브코스", "드라이브 코스",
+                "산책하기 좋은", "걷기 좋은", "걸을만한",
+                "사진 찍기 좋은", "사진찍기 좋은",
+                "야경 명소", "야경 추천",
+                "실내 명소", "실내 추천",
+                "오름 추천", "오름",
+                "핫플 추천", "핫플",
+                "랜드마크 추천", "랜드마크",
+                "포토존", "인생샷",
+                "해안도로",
+                "테마파크", "유원지",
+                "액티비티", "체험");
     }
 
     private boolean hasDayExpression(String value) {

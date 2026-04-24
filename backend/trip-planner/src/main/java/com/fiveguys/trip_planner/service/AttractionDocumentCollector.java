@@ -10,7 +10,7 @@ import java.util.List;
 @Service
 public class AttractionDocumentCollector {
 
-    private static final int MAX_COLLECT_SIZE = 20;
+    private static final int MAX_COLLECT_SIZE = 40;
 
     private final KakaoLocalClient kakaoLocalClient;
 
