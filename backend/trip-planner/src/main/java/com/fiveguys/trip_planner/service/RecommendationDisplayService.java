@@ -138,6 +138,33 @@ public class RecommendationDisplayService {
         return displayType + "들";
     }
 
+    public DisplayMeta buildAttractionDisplayMeta(String originalMessage, String destination) {
+        String region = normalize(destination);
+        String message = normalize(originalMessage);
+
+        if (!StringUtils.hasText(region)) {
+            region = "이 지역";
+        }
+
+        if (message.contains("랜드마크") || message.contains("landmark")) {
+            return new DisplayMeta("랜드마크", region + "의 대표 랜드마크를 모아봤어요");
+        }
+
+        if (message.contains("관광지") || message.contains("대표 관광지") || message.contains("sightseeing")) {
+            return new DisplayMeta("관광지", region + "에서 둘러볼 만한 관광지를 모아봤어요");
+        }
+
+        if (message.contains("볼거리")) {
+            return new DisplayMeta("볼거리", region + "에서 둘러볼 만한 볼거리를 모아봤어요");
+        }
+
+        if (message.contains("가볼만") || message.contains("attraction")) {
+            return new DisplayMeta("명소", region + "에서 가볼 만한 명소를 모아봤어요");
+        }
+
+        return new DisplayMeta("명소", region + "에서 가볼 만한 명소를 모아봤어요");
+    }
+
     private boolean containsAny(String value, String... keywords) {
         if (!StringUtils.hasText(value)) {
             return false;

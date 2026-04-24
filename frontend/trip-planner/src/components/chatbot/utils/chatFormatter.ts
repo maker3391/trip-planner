@@ -169,7 +169,6 @@ const formatItineraryResponse = (data: ChatResponse): FormattedChatResponse => {
 
 const normalizeRecommendationCardItems = (
   items: RecommendationItem[],
-  _kind: RecommendationKind
 ): RecommendationCardItem[] => {
   return items.map((item, index) => ({
     id: `${safeText(item.name) || safeText(item.title) || "recommendation"}-${index}`,
@@ -186,9 +185,16 @@ const buildFallbackRecommendationTitle = (
   kind: RecommendationKind
 ): string => {
   const region = normalizeDestinationLabel(destination) || "이 지역";
-  return kind === "restaurant"
-    ? `${region} 추천 정보를 모아봤어요`
-    : `${region} 숙소 정보를 모아봤어요`;
+
+  if (kind === "restaurant") {
+    return `${region} 추천 정보를 모아봤어요`;
+  }
+
+  if (kind === "stay") {
+    return `${region} 숙소 정보를 모아봤어요`;
+  }
+
+  return `${region}에서 가볼 만한 명소를 모아봤어요`;
 };
 
 const createRecommendationPayload = (
@@ -197,7 +203,7 @@ const createRecommendationPayload = (
   title: string,
   summary = ""
 ): RecommendationPayload => {
-  const normalizedItems = normalizeRecommendationCardItems(rawItems, kind);
+  const normalizedItems = normalizeRecommendationCardItems(rawItems);
 
   return {
     kind,
@@ -361,6 +367,9 @@ export const formatChatResponses = (
 
     case "STAY_RECOMMENDATION":
       return [formatRecommendationResponse(data, "stay")];
+
+    case "ATTRACTION_RECOMMENDATION":
+      return [formatRecommendationResponse(data, "attraction")];
 
     case "COMBINED_RECOMMENDATION":
       return formatCombinedResponses(data);

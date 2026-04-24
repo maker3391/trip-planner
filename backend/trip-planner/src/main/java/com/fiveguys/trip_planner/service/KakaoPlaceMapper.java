@@ -28,7 +28,15 @@ public class KakaoPlaceMapper {
     public String resolveCategory(String intent, JsonNode doc) {
         String categoryName = text(doc, "category_name");
         if (!StringUtils.hasText(categoryName)) {
-            return "STAY_RECOMMENDATION".equals(intent) ? "숙소" : "맛집";
+            if ("STAY_RECOMMENDATION".equals(intent)) {
+                return "숙소";
+            }
+
+            if ("ATTRACTION_RECOMMENDATION".equals(intent)) {
+                return "명소";
+            }
+
+            return "맛집";
         }
 
         if ("STAY_RECOMMENDATION".equals(intent)) {
@@ -40,6 +48,20 @@ public class KakaoPlaceMapper {
                 }
             }
             return "숙소";
+        }
+
+        if ("ATTRACTION_RECOMMENDATION".equals(intent)) {
+            String[] parts = categoryName.split(">");
+            for (int i = parts.length - 1; i >= 0; i--) {
+                String part = parts[i].trim();
+
+                if (!StringUtils.hasText(part)) continue;
+
+                if (part.contains("여행") || part.contains("서비스")) continue;
+
+                return part;
+            }
+            return "명소";
         }
 
         String[] parts = categoryName.split(">");

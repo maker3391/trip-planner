@@ -41,6 +41,10 @@ public class KakaoPlaceScoringService {
                                                        String aliasQueryHint,
                                                        String aliasTargetParent,
                                                        String message) {
+        if (!"RESTAURANT_RECOMMENDATION".equals(intent)
+                && !"STAY_RECOMMENDATION".equals(intent)) {
+            throw new IllegalArgumentException("지원하지 않는 place intent입니다: " + intent);
+        }
         LinkedHashSet<String> seen = new LinkedHashSet<>();
         List<RecommendationCandidate> scored = new ArrayList<>();
         List<String> foodKeywords = restaurantKeywordService.extractRestaurantFoodKeywords(message);

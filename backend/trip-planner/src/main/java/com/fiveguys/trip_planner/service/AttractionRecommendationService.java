@@ -1,7 +1,6 @@
 package com.fiveguys.trip_planner.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fiveguys.trip_planner.client.KakaoLocalClient;
 import com.fiveguys.trip_planner.dto.ChatRequest;
 import com.fiveguys.trip_planner.exception.LlmCallException;
 import com.fiveguys.trip_planner.response.ChatResponse;
@@ -12,33 +11,44 @@ import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class AttractionRecommendationService {
 
-    private static final int MAX_COLLECT_SIZE = 20;
-    private static final int MAX_ATTRACTION_ITEMS = 4;
+    private static final int MIN_FALLBACK_ITEMS = 3;
 
-    private final KakaoLocalClient kakaoLocalClient;
     private final RegionResolverService regionResolverService;
     private final RegionAliasResolverService regionAliasResolverService;
     private final RecommendationCacheService recommendationCacheService;
     private final RecommendationCacheKeyGenerator cacheKeyGenerator;
+    private final RecommendationDisplayService recommendationDisplayService;
+    private final RawAreaHintExtractorService rawAreaHintExtractorService;
+    private final AttractionQueryBuilder attractionQueryBuilder;
+    private final AttractionDocumentCollector attractionDocumentCollector;
+    private final AttractionFilterService attractionFilterService;
+    private final AttractionMapper attractionMapper;
 
-    public AttractionRecommendationService(KakaoLocalClient kakaoLocalClient,
-                                           RegionResolverService regionResolverService,
+    public AttractionRecommendationService(RegionResolverService regionResolverService,
                                            RegionAliasResolverService regionAliasResolverService,
                                            RecommendationCacheService recommendationCacheService,
-                                           RecommendationCacheKeyGenerator cacheKeyGenerator) {
-        this.kakaoLocalClient = kakaoLocalClient;
+                                           RecommendationCacheKeyGenerator cacheKeyGenerator,
+                                           RecommendationDisplayService recommendationDisplayService,
+                                           RawAreaHintExtractorService rawAreaHintExtractorService,
+                                           AttractionQueryBuilder attractionQueryBuilder,
+                                           AttractionDocumentCollector attractionDocumentCollector,
+                                           AttractionFilterService attractionFilterService,
+                                           AttractionMapper attractionMapper) {
         this.regionResolverService = regionResolverService;
         this.regionAliasResolverService = regionAliasResolverService;
         this.recommendationCacheService = recommendationCacheService;
         this.cacheKeyGenerator = cacheKeyGenerator;
+        this.recommendationDisplayService = recommendationDisplayService;
+        this.rawAreaHintExtractorService = rawAreaHintExtractorService;
+        this.attractionQueryBuilder = attractionQueryBuilder;
+        this.attractionDocumentCollector = attractionDocumentCollector;
+        this.attractionFilterService = attractionFilterService;
+        this.attractionMapper = attractionMapper;
     }
 
     public ChatResponse recommend(ChatRequest request) {
@@ -53,64 +63,74 @@ public class AttractionRecommendationService {
         String neighborhood = resolvedRegion.getNeighborhood();
         String detailArea = resolvedRegion.getDetailName();
 
-        String queryDestination = resolveEffectiveDestination(destination, district);
+        String queryDestination = AttractionTextHelper.resolveEffectiveDestination(destination, district);
 
         RegionAliasResolverService.ResolvedAlias alias =
-                regionAliasResolverService.resolve(message, StringUtils.hasText(queryDestination) ? queryDestination : destination);
+                regionAliasResolverService.resolve(
+                        message,
+                        StringUtils.hasText(queryDestination) ? queryDestination : destination
+                );
 
         if (alias != null) {
             if (StringUtils.hasText(alias.getCity())) {
-                destination = normalizeDisplayArea(alias.getCity());
-                queryDestination = normalizeDisplayArea(alias.getCity());
+                destination = AttractionTextHelper.normalizeDisplayArea(alias.getCity());
+                queryDestination = AttractionTextHelper.normalizeDisplayArea(alias.getCity());
             }
 
             if (StringUtils.hasText(alias.getTargetParent())) {
-                district = normalizeDisplayArea(alias.getTargetParent());
+                district = AttractionTextHelper.normalizeDisplayArea(alias.getTargetParent());
             }
 
             if (StringUtils.hasText(alias.getTargetName())) {
-                neighborhood = normalizeDisplayArea(alias.getTargetName());
-                detailArea = normalizeDisplayArea(alias.getTargetName());
+                neighborhood = AttractionTextHelper.normalizeDisplayArea(alias.getTargetName());
+                detailArea = AttractionTextHelper.normalizeDisplayArea(alias.getTargetName());
             }
         }
 
-        queryDestination = normalizeDisplayArea(queryDestination);
-        destination = normalizeDisplayArea(destination);
-        district = normalizeDisplayArea(district);
-        neighborhood = normalizeDisplayArea(neighborhood);
-        detailArea = normalizeDisplayArea(detailArea);
+        queryDestination = AttractionTextHelper.normalizeDisplayArea(queryDestination);
+        district = AttractionTextHelper.normalizeDisplayArea(district);
+        neighborhood = AttractionTextHelper.normalizeDisplayArea(neighborhood);
+        detailArea = AttractionTextHelper.normalizeDisplayArea(detailArea);
+
+        String rawAreaHint = rawAreaHintExtractorService.extract(message, queryDestination);
+        rawAreaHint = AttractionTextHelper.normalizeDisplayArea(rawAreaHint);
+
+        if (StringUtils.hasText(rawAreaHint)
+                && !AttractionTextHelper.normalizeAreaName(rawAreaHint).equals(AttractionTextHelper.normalizeAreaName(queryDestination))
+                && !AttractionTextHelper.normalizeAreaName(rawAreaHint).equals(AttractionTextHelper.normalizeAreaName(detailArea))
+                && !AttractionTextHelper.normalizeAreaName(rawAreaHint).equals(AttractionTextHelper.normalizeAreaName(neighborhood))
+                && !AttractionTextHelper.normalizeAreaName(rawAreaHint).equals(AttractionTextHelper.normalizeAreaName(district))) {
+            detailArea = rawAreaHint;
+        }
 
         if (!StringUtils.hasText(queryDestination)) {
             throw new LlmCallException("지역명을 해석하지 못했습니다.");
         }
 
-        String cacheKey = cacheKeyGenerator.generateAttractionKey(queryDestination, detailArea, neighborhood, district);
+        String cacheKey = cacheKeyGenerator.generateAttractionKey(
+                queryDestination,
+                detailArea,
+                neighborhood,
+                district,
+                message
+        );
+
         ChatResponse cached = recommendationCacheService.get(cacheKey);
+
         if (cached != null) {
             return cached;
         }
 
-        List<String> queries = buildQueries(queryDestination, detailArea, neighborhood, district);
-        List<JsonNode> collectedDocs = new ArrayList<>();
+        List<String> queries = attractionQueryBuilder.buildQueries(
+                queryDestination,
+                detailArea,
+                neighborhood,
+                district
+        );
 
-        for (String query : queries) {
-            JsonNode root = kakaoLocalClient.searchKeyword(query);
-            List<JsonNode> docs = extractDocuments(root);
+        List<JsonNode> collectedDocs = attractionDocumentCollector.collectDocuments(queries);
 
-            if (!docs.isEmpty()) {
-                collectedDocs.addAll(docs);
-            }
-
-            if (collectedDocs.size() >= MAX_COLLECT_SIZE) {
-                break;
-            }
-        }
-
-        if (collectedDocs.isEmpty()) {
-            throw new LlmCallException("명소 검색 결과가 없습니다: " + buildDisplayDestination(queryDestination, detailArea, neighborhood, district));
-        }
-
-        List<RecommendationItemResponse> items = pickTopAttractions(
+        List<RecommendationItemResponse> items = attractionMapper.pickTopAttractions(
                 collectedDocs,
                 queryDestination,
                 detailArea,
@@ -118,19 +138,67 @@ public class AttractionRecommendationService {
                 district
         );
 
-        if (items.isEmpty()) {
-            throw new LlmCallException("추천 가능한 명소가 없습니다: " + buildDisplayDestination(queryDestination, detailArea, neighborhood, district));
+        if (items.size() < MIN_FALLBACK_ITEMS) {
+            List<String> fallbackQueries = attractionQueryBuilder.buildRelaxedFallbackQueries(
+                    queryDestination,
+                    district
+            );
+
+            List<JsonNode> fallbackDocs = attractionDocumentCollector.collectDocuments(fallbackQueries);
+
+            collectedDocs.addAll(fallbackDocs);
+
+            items = attractionMapper.pickTopAttractions(
+                    collectedDocs,
+                    queryDestination,
+                    "",
+                    "",
+                    district
+            );
         }
+
+        if (collectedDocs.isEmpty()) {
+            throw new LlmCallException(
+                    "명소 검색 결과가 없습니다: "
+                            + buildDisplayDestination(queryDestination, detailArea, neighborhood, district)
+            );
+        }
+
+        if (items.isEmpty()) {
+            throw new LlmCallException(
+                    "추천 가능한 명소가 없습니다: "
+                            + buildDisplayDestination(queryDestination, detailArea, neighborhood, district)
+            );
+        }
+
+        String displayDestination = buildDisplayDestination(
+                queryDestination,
+                detailArea,
+                neighborhood,
+                district
+        );
+
+        RecommendationDisplayService.DisplayMeta displayMeta =
+                recommendationDisplayService.buildAttractionDisplayMeta(
+                        message,
+                        displayDestination
+                );
 
         ChatResponse response = new ChatResponse(
                 message,
                 "ATTRACTION_RECOMMENDATION",
-                buildDisplayDestination(queryDestination, detailArea, neighborhood, district),
+                displayDestination,
                 null,
-                new RecommendationContentResponse(new ArrayList<>(), items)
+                new RecommendationContentResponse(
+                        new ArrayList<>(),
+                        items,
+                        displayMeta.displayType(),
+                        displayMeta.displayTitle()
+                )
         );
 
         recommendationCacheService.put(cacheKey, response, Duration.ofHours(6));
+
         return response;
     }
 
@@ -142,533 +210,22 @@ public class AttractionRecommendationService {
         }
     }
 
-    private String resolveEffectiveDestination(String destination, String district) {
-        String districtHead = extractCityHead(district);
-
-        if (isCityOrCounty(districtHead)) {
-            return districtHead;
-        }
-
-        if (isCityOrCounty(district)) {
-            return district;
-        }
-
-        return destination;
-    }
-
-    private String extractCityHead(String value) {
-        if (!StringUtils.hasText(value)) {
-            return "";
-        }
-
-        String[] parts = value.trim().split("\\s+");
-        if (parts.length == 0) {
-            return "";
-        }
-
-        String first = parts[0];
-        if (first.endsWith("시") || first.endsWith("군")) {
-            return first;
-        }
-
-        return "";
-    }
-
-    private boolean isCityOrCounty(String value) {
-        return StringUtils.hasText(value)
-                && (value.endsWith("시") || value.endsWith("군"));
-    }
-
-    private List<String> buildQueries(String destination,
-                                      String detailArea,
-                                      String neighborhood,
-                                      String district) {
-        Set<String> result = new LinkedHashSet<>();
-
-        List<String> bases = new ArrayList<>();
-        if (StringUtils.hasText(detailArea)) {
-            bases.add(joinDistinctLocation(destination, detailArea));
-        }
-        if (StringUtils.hasText(neighborhood)) {
-            bases.add(joinDistinctLocation(destination, neighborhood));
-        }
-        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            bases.add(joinDistinctLocation(destination, district));
-        }
-        bases.add(destination);
-
-        List<String> expandedBases = new ArrayList<>();
-        for (String base : bases) {
-            if (!StringUtils.hasText(base)) {
-                continue;
-            }
-
-            expandedBases.add(base);
-
-            String provinceExpanded = expandProvinceName(base);
-            if (StringUtils.hasText(provinceExpanded) && !provinceExpanded.equals(base)) {
-                expandedBases.add(provinceExpanded);
-            }
-        }
-
-        for (String base : expandedBases) {
-            result.add(base + " 명소");
-            result.add(base + " 관광지");
-            result.add(base + " 대표 관광지");
-            result.add(base + " 가볼만한곳");
-        }
-
-        return new ArrayList<>(result);
-    }
-
-    private List<JsonNode> extractDocuments(JsonNode root) {
-        List<JsonNode> result = new ArrayList<>();
-        JsonNode docs = root.path("documents");
-
-        if (!docs.isArray()) {
-            return result;
-        }
-
-        for (JsonNode doc : docs) {
-            result.add(doc);
-        }
-
-        return result;
-    }
-
-    private List<RecommendationItemResponse> pickTopAttractions(List<JsonNode> docs,
-                                                                String destination,
-                                                                String detailArea,
-                                                                String neighborhood,
-                                                                String district) {
-        List<ScoredPlace> scoredPlaces = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-
-        for (JsonNode doc : docs) {
-            if (!isAllowedAttraction(doc)) {
-                continue;
-            }
-
-            if (!isLocationRelevant(doc, destination, detailArea, neighborhood, district)) {
-                continue;
-            }
-
-            String name = clean(doc.path("place_name").asText());
-            String address = chooseAddress(doc);
-            String placeUrl = clean(doc.path("place_url").asText());
-            String category = clean(doc.path("category_name").asText());
-
-            if (!StringUtils.hasText(name)) {
-                continue;
-            }
-
-            if (looksLikeNoise(name, category)) {
-                continue;
-            }
-
-            String dedupKey = buildDedupKey(name, address);
-            if (!seen.add(dedupKey)) {
-                continue;
-            }
-
-            int score = score(doc, destination, detailArea, neighborhood, district);
-            scoredPlaces.add(new ScoredPlace(name, address, placeUrl, category, score));
-        }
-
-        scoredPlaces.sort(Comparator.comparingInt(ScoredPlace::score).reversed());
-
-        List<RecommendationItemResponse> result = new ArrayList<>();
-
-        for (ScoredPlace place : scoredPlaces) {
-            result.add(new RecommendationItemResponse(
-                    place.name(),
-                    place.address(),
-                    place.placeUrl(),
-                    place.category()
-            ));
-
-            if (result.size() >= MAX_ATTRACTION_ITEMS) {
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    private boolean isAllowedAttraction(JsonNode doc) {
-        String categoryGroupCode = clean(doc.path("category_group_code").asText());
-        String categoryName = clean(doc.path("category_name").asText());
-
-        if ("AT4".equals(categoryGroupCode)) {
-            return true;
-        }
-
-        return containsKeyword(categoryName,
-                "관광명소", "문화시설", "유적", "박물관", "미술관", "공원",
-                "전망대", "폭포", "해변", "산", "사찰", "궁", "랜드마크", "케이블카");
-    }
-
-    private boolean isLocationRelevant(JsonNode doc,
-                                       String destination,
-                                       String detailArea,
-                                       String neighborhood,
-                                       String district) {
-        String name = clean(doc.path("place_name").asText());
-        String roadAddress = clean(doc.path("road_address_name").asText());
-        String addressName = clean(doc.path("address_name").asText());
-
-        String merged = ((roadAddress == null ? "" : roadAddress) + " "
-                + (addressName == null ? "" : addressName) + " "
-                + (name == null ? "" : name)).toLowerCase();
-
-        boolean destinationMatch = !StringUtils.hasText(destination) || containsLooseRegion(merged, destination);
-        boolean detailMatch = !StringUtils.hasText(detailArea) || containsLooseRegion(merged, detailArea);
-        boolean neighborhoodMatch = !StringUtils.hasText(neighborhood) || containsLooseRegion(merged, neighborhood);
-        boolean districtMatch = !StringUtils.hasText(district) || isCityOrCounty(district) || containsLooseRegion(merged, district);
-
-        if (!destinationMatch) {
-            return false;
-        }
-
-        if (StringUtils.hasText(detailArea)) {
-            return detailMatch;
-        }
-
-        if (StringUtils.hasText(neighborhood)) {
-            return neighborhoodMatch;
-        }
-
-        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            return districtMatch;
-        }
-
-        return true;
-    }
-
-    private int score(JsonNode doc,
-                      String destination,
-                      String detailArea,
-                      String neighborhood,
-                      String district) {
-        int score = 0;
-
-        String name = clean(doc.path("place_name").asText());
-        String mergedAddress = combinedAddress(doc);
-        String category = clean(doc.path("category_name").asText());
-        String categoryGroupCode = clean(doc.path("category_group_code").asText());
-
-        if ("AT4".equals(categoryGroupCode)) {
-            score += 20;
-        }
-
-        if (StringUtils.hasText(destination)) {
-            if (containsLooseRegion(mergedAddress, destination)) score += 12;
-            if (containsLooseRegion(name, destination)) score += 4;
-        }
-
-        if (StringUtils.hasText(detailArea)) {
-            if (containsLooseRegion(mergedAddress, detailArea)) score += 18;
-            if (containsLooseRegion(name, detailArea)) score += 10;
-        }
-
-        if (StringUtils.hasText(neighborhood)) {
-            if (containsLooseRegion(mergedAddress, neighborhood)) score += 15;
-            if (containsLooseRegion(name, neighborhood)) score += 8;
-        }
-
-        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            if (containsLooseRegion(mergedAddress, district)) score += 10;
-        }
-
-        if (containsKeyword(category, "관광명소", "유적", "박물관", "미술관", "공원", "전망대", "해변")) {
-            score += 6;
-        }
-
-        if (StringUtils.hasText(doc.path("road_address_name").asText())) {
-            score += 2;
-        }
-
-        if (StringUtils.hasText(doc.path("phone").asText())) {
-            score += 1;
-        }
-
-        return score;
-    }
-
-    private boolean looksLikeNoise(String name, String category) {
-        if (!StringUtils.hasText(name)) {
-            return true;
-        }
-
-        if (name.length() > 40) {
-            return true;
-        }
-
-        if (containsKeyword(category, "숙박", "음식점", "카페", "주점")) {
-            return true;
-        }
-
-        return containsKeyword(name,
-                "호텔", "모텔", "펜션", "게스트하우스", "리조트",
-                "맛집", "카페", "주차장", "관리사무소", "행정복지센터", "주민센터");
-    }
-
-    private String chooseAddress(JsonNode doc) {
-        String roadAddress = clean(doc.path("road_address_name").asText());
-        if (StringUtils.hasText(roadAddress)) {
-            return roadAddress;
-        }
-        return clean(doc.path("address_name").asText());
-    }
-
-    private String combinedAddress(JsonNode doc) {
-        String roadAddress = clean(doc.path("road_address_name").asText());
-        String addressName = clean(doc.path("address_name").asText());
-
-        if (StringUtils.hasText(roadAddress) && StringUtils.hasText(addressName)) {
-            return roadAddress + " | " + addressName;
-        }
-
-        if (StringUtils.hasText(roadAddress)) {
-            return roadAddress;
-        }
-
-        return addressName;
-    }
-
-    private String buildDedupKey(String name, String address) {
-        return (clean(name) + "|" + clean(address))
-                .toLowerCase()
-                .replaceAll("[\\s\\-_/()\\[\\],.]", "");
-    }
-
     private String buildDisplayDestination(String destination,
                                            String detailArea,
                                            String neighborhood,
                                            String district) {
         if (StringUtils.hasText(detailArea)) {
-            return joinDistinctLocation(destination, detailArea);
+            return AttractionTextHelper.joinDistinctLocation(destination, detailArea);
         }
 
         if (StringUtils.hasText(neighborhood)) {
-            return joinDistinctLocation(destination, neighborhood);
+            return AttractionTextHelper.joinDistinctLocation(destination, neighborhood);
         }
 
-        if (StringUtils.hasText(district) && !isCityOrCounty(district)) {
-            return joinDistinctLocation(destination, district);
+        if (StringUtils.hasText(district) && !AttractionTextHelper.isCityOrCounty(district)) {
+            return AttractionTextHelper.joinDistinctLocation(destination, district);
         }
 
         return destination;
-    }
-
-    private String joinDistinctLocation(String first, String second) {
-        if (!StringUtils.hasText(first)) {
-            return normalizeDisplayArea(second);
-        }
-        if (!StringUtils.hasText(second)) {
-            return normalizeDisplayArea(first);
-        }
-
-        String a = normalizeDisplayArea(first);
-        String b = normalizeDisplayArea(second);
-
-        if (normalizeAreaName(a).equals(normalizeAreaName(b))) {
-            return a;
-        }
-
-        return (a + " " + b).replaceAll("\\s+", " ").trim();
-    }
-
-    private String normalizeDisplayArea(String value) {
-        if (!StringUtils.hasText(value)) {
-            return "";
-        }
-        return value.trim().replaceAll("\\s+", " ");
-    }
-
-    private String normalizeAreaName(String value) {
-        if (!StringUtils.hasText(value)) {
-            return "";
-        }
-        return value.replaceAll("\\s+", "").trim().toLowerCase();
-    }
-
-    private boolean containsKeyword(String value, String... keywords) {
-        if (!StringUtils.hasText(value)) {
-            return false;
-        }
-
-        String lower = value.toLowerCase();
-        for (String keyword : keywords) {
-            if (lower.contains(keyword.toLowerCase())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean containsLooseRegion(String value, String keyword) {
-        if (!StringUtils.hasText(value) || !StringUtils.hasText(keyword)) {
-            return false;
-        }
-
-        String normalizedValue = normalizeForMatch(value);
-        String normalizedKeyword = normalizeForMatch(keyword);
-
-        if (normalizedValue.equals(normalizedKeyword)) {
-            return true;
-        }
-
-        if (normalizedValue.contains(normalizedKeyword)) {
-            return true;
-        }
-
-        String strippedKeyword = stripRegionSuffixForLooseMatch(normalizedKeyword);
-        if (StringUtils.hasText(strippedKeyword)
-                && strippedKeyword.length() >= 2
-                && normalizedValue.contains(strippedKeyword)) {
-            return true;
-        }
-
-        for (String alias : expandRegionAliases(normalizedKeyword)) {
-            if (normalizedValue.equals(alias) || normalizedValue.contains(alias)) {
-                return true;
-            }
-
-            String strippedAlias = stripRegionSuffixForLooseMatch(alias);
-            if (StringUtils.hasText(strippedAlias)
-                    && strippedAlias.length() >= 2
-                    && normalizedValue.contains(strippedAlias)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private List<String> expandRegionAliases(String keyword) {
-        List<String> aliases = new ArrayList<>();
-        aliases.add(keyword);
-
-        String compact = keyword.replaceAll("\\s+", "");
-
-        switch (compact) {
-            case "경상북":
-            case "경상북도":
-            case "경북":
-                aliases.add("경상북");
-                aliases.add("경상북도");
-                aliases.add("경북");
-                break;
-            case "경상남":
-            case "경상남도":
-            case "경남":
-                aliases.add("경상남");
-                aliases.add("경상남도");
-                aliases.add("경남");
-                break;
-            case "전라북":
-            case "전라북도":
-            case "전북":
-                aliases.add("전라북");
-                aliases.add("전라북도");
-                aliases.add("전북");
-                break;
-            case "전라남":
-            case "전라남도":
-            case "전남":
-                aliases.add("전라남");
-                aliases.add("전라남도");
-                aliases.add("전남");
-                break;
-            case "충청북":
-            case "충청북도":
-            case "충북":
-                aliases.add("충청북");
-                aliases.add("충청북도");
-                aliases.add("충북");
-                break;
-            case "충청남":
-            case "충청남도":
-            case "충남":
-                aliases.add("충청남");
-                aliases.add("충청남도");
-                aliases.add("충남");
-                break;
-            case "제주":
-            case "제주도":
-            case "제주특별자치도":
-                aliases.add("제주");
-                aliases.add("제주도");
-                aliases.add("제주특별자치도");
-                break;
-            case "강원":
-            case "강원도":
-            case "강원특별자치도":
-                aliases.add("강원");
-                aliases.add("강원도");
-                aliases.add("강원특별자치도");
-                break;
-            default:
-                break;
-        }
-
-        return aliases.stream().distinct().toList();
-    }
-
-    private String expandProvinceName(String value) {
-        if (!StringUtils.hasText(value)) {
-            return value;
-        }
-
-        String compact = value.replaceAll("\\s+", "");
-
-        if ("경상북".equals(compact) || "경북".equals(compact)) {
-            return "경상북도";
-        }
-        if ("경상남".equals(compact) || "경남".equals(compact)) {
-            return "경상남도";
-        }
-        if ("전라북".equals(compact) || "전북".equals(compact)) {
-            return "전라북도";
-        }
-        if ("전라남".equals(compact) || "전남".equals(compact)) {
-            return "전라남도";
-        }
-        if ("충청북".equals(compact) || "충북".equals(compact)) {
-            return "충청북도";
-        }
-        if ("충청남".equals(compact) || "충남".equals(compact)) {
-            return "충청남도";
-        }
-        if ("제주".equals(compact) || "제주도".equals(compact)) {
-            return "제주특별자치도";
-        }
-        if ("강원".equals(compact) || "강원도".equals(compact)) {
-            return "강원특별자치도";
-        }
-
-        return value;
-    }
-
-    private String stripRegionSuffixForLooseMatch(String value) {
-        return value.replaceAll("(특별자치도|특별자치시|광역시|특별시|도|시|군|구|동|읍|면|리)$", "").trim();
-    }
-
-    private String normalizeForMatch(String value) {
-        return value.toLowerCase()
-                .replaceAll("[^가-힣a-z0-9\\s]", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
-    }
-
-    private String clean(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-        return value.trim().replaceAll("\\s+", " ");
-    }
-
-    private record ScoredPlace(String name, String address, String placeUrl, String category, int score) {
     }
 }

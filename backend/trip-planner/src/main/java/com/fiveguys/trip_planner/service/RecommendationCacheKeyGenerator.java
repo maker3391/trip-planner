@@ -49,7 +49,7 @@ public class RecommendationCacheKeyGenerator {
         Integer days = resolveDays(normalizedMessage);
         String subtype = resolveSubtype(intent, normalizedMessage);
 
-        StringBuilder key = new StringBuilder("recommendation:v20");
+        StringBuilder key = new StringBuilder("recommendation:v25");
         key.append(":").append(intent);
         key.append(":").append(safeSegment(destination));
 
@@ -117,8 +117,9 @@ public class RecommendationCacheKeyGenerator {
     public String generateAttractionKey(String destination,
                                         String detailArea,
                                         String neighborhood,
-                                        String district) {
-        StringBuilder key = new StringBuilder("recommendation:v23");
+                                        String district,
+                                        String message) {
+        StringBuilder key = new StringBuilder("recommendation:v25");
         key.append(":ATTRACTION_RECOMMENDATION");
         key.append(":").append(safeSegment(destination));
 
@@ -132,8 +133,31 @@ public class RecommendationCacheKeyGenerator {
             key.append(":").append(safeSegment(specificArea));
         }
 
-        key.append(":top4");
+        key.append(":").append(resolveAttractionSubtype(message));
+
         return key.toString();
+    }
+
+    private String resolveAttractionSubtype(String message) {
+        String normalized = normalize(message);
+
+        if (containsAny(normalized, "랜드마크", "landmark")) {
+            return "landmark";
+        }
+
+        if (containsAny(normalized, "관광지", "대표 관광지", "sightseeing")) {
+            return "sightseeing";
+        }
+
+        if (containsAny(normalized, "볼거리")) {
+            return "things_to_see";
+        }
+
+        if (containsAny(normalized, "가볼만", "attraction")) {
+            return "attraction";
+        }
+
+        return "spot";
     }
 
     public String generateCombinedKey(String destination, String detailArea, Integer days) {

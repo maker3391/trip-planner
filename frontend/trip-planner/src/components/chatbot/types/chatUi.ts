@@ -1,4 +1,4 @@
-export type RecommendationKind = "restaurant" | "stay";
+export type RecommendationKind = "restaurant" | "stay" | "attraction";
 
 export interface RecommendationCardItem {
   id: string;
