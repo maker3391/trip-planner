@@ -1,51 +1,41 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import client from "../api/client";
 import "./CommunityComments.css";
 
-// 🔥 백엔드에서 어떤 이름으로 데이터를 주더라도 다 받을 수 있게 설계
 interface CommentItem {
-  id: number;
-  userId?: number;
-  user_id?: number; 
-  authorId?: number;
-  nickname?: string;
-  userName?: string; 
-  authorNickname?: string;
-  comment?: string;
-  content?: string;
-  createdAt: string;
-  children?: CommentItem[];
-  replies?: CommentItem[]; 
-  isDeleted?: boolean; 
-  deleted?: boolean;   
-}
-
-interface CommunityCommentResponse {
-  result: CommentItem[];
-  totalPages: number;
+    id: number;
+    userId?: number;
+    user_id?: number;
+    authorId?: number;
+    nickname?: string;
+    userName?: string;
+    authorNickname?: string;
+    comment?: string;
+    content?: string;
+    createdAt: string;
+    children?: CommentItem[];
+    replies?: CommentItem[];
 }
 
 interface Props {
-  postId: number;
-  currentUserId: number; 
+    postId: number;
+    currentUserId: number;
+    currentUserRole: string; 
 }
 
-export default function CommunityComments({ postId, currentUserId }: Props) {
+export default function CommunityComments({ postId, currentUserId, currentUserRole }: Props) {
     const [comments, setComments] = useState<CommentItem[]>([]);
-    const [newComment, setNewComment] = useState("");
+    const [newComment, setNewComment] = useState(""); 
     const [replyingTo, setReplyingTo] = useState<number | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
+    const [replyContent, setReplyContent] = useState(""); 
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editContent, setEditContent] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    // 1. 댓글 조회
     const fetchComments = async () => {
         try {
-            const response = await client.get<any>(
-                `/community/posts/${postId}/comments?page=0&size=100`
-            );
-            
+            const response = await client.get<any>(`/community/posts/${postId}/comments?page=0&size=100`);
             const fetchedData = response.data.comments || [];
             setComments(fetchedData);
         } catch (error) {
@@ -53,96 +43,66 @@ export default function CommunityComments({ postId, currentUserId }: Props) {
         }
     };
 
-    useEffect(() => {
-        if (postId) fetchComments();
-    }, [postId]);
+    useEffect(() => { if (postId) fetchComments(); }, [postId]);
 
-    // 2. 등록
-    const handleSubmit = async () => {
+    const handleMainSubmit = async () => {
         if (!newComment.trim() || isSubmitting) return;
-
-        if (!currentUserId || currentUserId === 0) {
-            alert("로그인 후 이용해주세요.");
-            return;
-        }
-
+        if (!currentUserId) return alert("로그인 후 이용해주세요.");
         setIsSubmitting(true);
         try {
-            if (replyingTo) {
-                // 대댓글 API
-                await client.post(
-                    `/community/posts/${postId}/comments/${replyingTo}?userId=${currentUserId}`,
-                    { comment: newComment }
-                );
-            } else {
-                // 일반 댓글 API
-                await client.post(
-                    `/community/posts/${postId}/comments?userId=${currentUserId}`,
-                    { comment: newComment }
-                );
-            }
-
+            await client.post(`/community/posts/${postId}/comments?userId=${currentUserId}`, { comment: newComment });
             setNewComment("");
-            setReplyingTo(null);
-            await fetchComments(); // 등록 후 목록 리로드
-        } catch (error) {
-            alert("댓글 등록에 실패했습니다.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    // 3. 삭제 (🔥 백엔드 컨트롤러에 맞춰 URL 수정됨!)
-    const handleDelete = async (commentId: number) => {
-        if (!window.confirm("정말 삭제하시겠습니까?")) return;
-        try {
-            // 수정된 URL: /community/comments/${commentId}?userId=${currentUserId}
-            await client.delete(`/community/comments/${commentId}?userId=${currentUserId}`);
             await fetchComments();
-        } catch (error) {
-            alert("삭제 권한이 없거나 오류가 발생했습니다.");
-        }
+        } catch (error) { alert("등록 실패"); } finally { setIsSubmitting(false); }
     };
 
-    // 3-1. 수정 완료 처리 (🔥 백엔드에 PUT/PATCH 엔드포인트가 추가되어야 정상 작동함)
+    const handleReplySubmit = async (parentId: number) => {
+        if (!replyContent.trim() || isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            await client.post(`/community/posts/${postId}/comments/${parentId}?userId=${currentUserId}`, { comment: replyContent });
+            setReplyContent("");
+            setReplyingTo(null);
+            await fetchComments();
+        } catch (error) { alert("답글 등록 실패"); } finally { setIsSubmitting(false); }
+    };
+
+    const handleDelete = async (commentId: number) => {
+        if (isDeleting || !window.confirm("정말 영구적으로 삭제하시겠습니까? (대댓글 포함 모두 삭제)")) return;
+        setIsDeleting(true);
+        try {
+            await client.delete(`/community/comments/${commentId}`, { params: { userId: currentUserId } });
+            await fetchComments(); 
+        } catch (error) { alert("삭제 실패"); } finally { setIsDeleting(false); }
+    };
+
     const handleEditSubmit = async (commentId: number) => {
         if (!editContent.trim()) return;
         try {
-            // 주의: 백엔드 CommunityController에는 아직 댓글 수정 API(@PutMapping 등)가 없습니다.
-            // 백엔드 구현 형태에 따라 아래 URL은 변경되어야 합니다.
-            await client.put(`/community/comments/${commentId}?userId=${currentUserId}`, {
-                comment: editContent
-            });
+            await client.put(`/community/comments/${commentId}?userId=${currentUserId}`, { comment: editContent });
             setEditingId(null);
-            setEditContent("");
             await fetchComments();
-        } catch (error) {
-            alert("수정 권한이 없거나 오류가 발생했습니다.");
-        }
+        } catch (error) { alert("수정 실패"); }
     };
-    
-    // 4. 단일 댓글 렌더링 헬퍼 함수
-    const renderCommentCard = (item: CommentItem, isReply: boolean = false) => {
-        // 🔥 논리적 삭제 처리
-        if (item.isDeleted || item.deleted) {
-            return (
-                <div key={item.id} className={`comment-card ${isReply ? "reply" : "root"}`} style={{ padding: '15px', color: '#999', backgroundColor: '#f9f9f9' }}>
-                    <p className="content" style={{ margin: 0, fontStyle: 'italic' }}>삭제된 댓글입니다.</p>
-                </div>
-            );
-        }
 
+    const initiateReply = (item: CommentItem) => {
+        const displayName = item.nickname || item.userName || item.authorNickname || "사용자";
+        setEditingId(null); 
+        setReplyingTo(item.id);
+    };
+
+    // --- 핵심 렌더링 로직 ---
+    const renderCommentCard = (item: CommentItem, isReply: boolean = false) => {
         const displayUserId = item.userId || item.user_id || item.authorId;
         const displayName = item.nickname || item.userName || item.authorNickname || "사용자";
-        const displayContent = item.comment || item.content || "내용이 없습니다.";
-        
+        const displayContent = item.comment || item.content || "";
         const isEditing = editingId === item.id;
+        const isReplying = replyingTo === item.id;
+        const isOwner = displayUserId === currentUserId;
+        const isAdmin = currentUserRole === "ADMIN";
 
         return (
-            <div 
-                key={item.id} 
-                className={`comment-card ${isReply ? "reply" : "root"}`}
-            >
+            <div key={item.id} className={`comment-card ${isReply ? "reply" : "root"}`}>
                 <div className="comment-meta">
                     <span className="author">{displayName}</span>
                     <span className="date">{new Date(item.createdAt).toLocaleString()}</span>
@@ -153,11 +113,11 @@ export default function CommunityComments({ postId, currentUserId }: Props) {
                         <textarea 
                             value={editContent} 
                             onChange={(e) => setEditContent(e.target.value)} 
-                            style={{ width: "100%", minHeight: "60px", marginBottom: "10px" }}
+                            className="inline-textarea"
                         />
-                        <div style={{ display: "flex", gap: "5px" }}>
-                            <button onClick={() => handleEditSubmit(item.id)}>저장</button>
-                            <button onClick={() => { setEditingId(null); setEditContent(""); }}>취소</button>
+                        <div className="button-row">
+                            <button onClick={() => handleEditSubmit(item.id)} className="submit-btn">저장</button>
+                            <button onClick={() => setEditingId(null)}>취소</button>
                         </div>
                     </div>
                 ) : (
@@ -165,38 +125,68 @@ export default function CommunityComments({ postId, currentUserId }: Props) {
                 )}
                 
                 <div className="comment-actions">
-                    {!isReply && !isEditing && (
-                        <button onClick={() => setReplyingTo(item.id)}>답글달기</button>
-                    )}
-                    {displayUserId === currentUserId && !isEditing && (
+                    {!isEditing && (
                         <>
-                            <button onClick={() => { 
-                                setEditingId(item.id); 
-                                setEditContent(displayContent); 
-                            }}>수정</button>
-                            <button onClick={() => handleDelete(item.id)} className="delete-btn">삭제</button>
+                            <button onClick={() => initiateReply(item)}>답글달기</button>
+                            {(isOwner || isAdmin) && (
+                                <>
+                                    {isOwner && (
+                                        <button onClick={() => { setEditingId(item.id); setEditContent(displayContent); setReplyingTo(null); }}>수정</button>
+                                    )}
+                                    <button onClick={() => handleDelete(item.id)} className="delete-btn">삭제</button>
+                                </>
+                            )}
                         </>
                     )}
                 </div>
+
+                {isReplying && (
+                    <div className="reply-input-group">
+                        <textarea 
+                            value={replyContent} 
+                            onChange={(e) => setReplyContent(e.target.value)} 
+                            className="inline-textarea"
+                            autoFocus
+                        />
+                        <div className="button-row">
+                            <button onClick={() => handleReplySubmit(item.id)} className="submit-btn" disabled={isSubmitting}>등록</button>
+                            <button onClick={() => setReplyingTo(null)}>취소</button>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
 
+    // 대댓글을 계층에 상관없이 평면적으로 렌더링하는 재귀 함수
+    const renderRepliesFlattened = (replies: CommentItem[]) => {
+        return replies.map(reply => (
+            <React.Fragment key={reply.id}>
+                {renderCommentCard(reply, true)}
+                {/* 자식의 자식이 있다면 다시 이 함수를 호출 (들여쓰기 수준은 유지됨) */}
+                {(reply.children || reply.replies) && (reply.children || reply.replies)!.length > 0 && (
+                    renderRepliesFlattened(reply.children || reply.replies || [])
+                )}
+            </React.Fragment>
+        ));
+    };
+
     return (
         <div className="community-comments">
-            <h3>댓글</h3>
-
+            <h3 className="comment-count-title">댓글</h3>
             <div className="comment-list">
                 {comments.length === 0 ? (
                     <div className="no-comment">등록된 댓글이 없습니다.</div>
                 ) : (
                     comments.map((parent) => (
                         <div key={parent.id} className="comment-group">
+                            {/* 최상위 부모 댓글 */}
                             {renderCommentCard(parent, false)}
                             
+                            {/* 모든 하위 댓글들을 하나의 컨테이너에 담아 평면적으로 출력 */}
                             {(parent.children || parent.replies) && (parent.children || parent.replies)!.length > 0 && (
                                 <div className="replies-container">
-                                    {(parent.children || parent.replies)!.map(child => renderCommentCard(child, true))}
+                                    {renderRepliesFlattened(parent.children || parent.replies || [])}
                                 </div>
                             )}
                         </div>
@@ -204,23 +194,15 @@ export default function CommunityComments({ postId, currentUserId }: Props) {
                 )}
             </div>
 
-            <div className="comment-form">
-                {replyingTo && (
-                    <div className="reply-indicator">
-                        답글 작성 중... <button onClick={() => setReplyingTo(null)}>취소</button>
-                    </div>
-                )}
+            <div className="comment-form main-form">
                 <div className="input-group">
                     <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        placeholder={replyingTo ? "답글을 입력하세요" : "댓글을 입력하세요"}
+                        placeholder="새로운 댓글을 남겨보세요"
                         disabled={isSubmitting}
                     />
-                    <button 
-                        onClick={handleSubmit} 
-                        disabled={isSubmitting || !newComment.trim()}
-                    >
+                    <button onClick={handleMainSubmit} disabled={isSubmitting || !newComment.trim()}>
                         {isSubmitting ? "등록 중..." : "등록"}
                     </button>
                 </div>

@@ -612,9 +612,8 @@ export default function CommunityReadPage() {
 
                         {/* sessionStorage 대신 me?.id를 우선 활용하도록 수정 */}
                         <CommunityComments 
-                            postId={Number(post?.id)} 
-                            currentUserId={me?.id || Number(sessionStorage.getItem("userId"))} 
-                        />
+                            postId={Number(post?.id)}
+                            currentUserId={me?.id || Number(sessionStorage.getItem("userId"))} currentUserRole={String(me?.role)}                        />
 
                         <hr />
 
