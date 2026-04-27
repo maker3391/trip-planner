@@ -16,6 +16,8 @@ import CommunityReadPage from "../../pages/CommunityReadPage";
 import ForgotPasswordPage from "../../pages/ForgotPasswordPage";
 import ResetPasswordPage from "../../pages/ResetPasswordPage";
 import AdminCSPage from "../cschat/AdminCSPage";
+import AdminPage from "../../pages/AdminPage";
+import AdminRoute from "./AdminRoute";
 
 export default function Router() {
   const [openChatBot, setOpenChatBot] = useState(false);
@@ -35,6 +37,15 @@ export default function Router() {
             <ProtectedRoute>
               <MyPage />
             </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
           }
         />
 

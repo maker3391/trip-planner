@@ -10,6 +10,8 @@ import GuidePopup from "../guide/GuidePopup.tsx";
 import { getMe } from "../api/auth.ts";
 import { getUnreadNotifications, NotificationResponseDto, readNotificationApi } from "../api/Notification.ts";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
+
+// react-hot-toast를 사용 중이라면 임포트 (기존 alert 대체용)
 import toast from "react-hot-toast";
 
 export default function Header() {
@@ -20,10 +22,11 @@ export default function Header() {
   const [openGuidePopup, setOpenGuidePopup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null); // ✅ 추가
 
-  const[notifications, setNotifications] = useState<NotificationResponseDto[]>([]);
-  const[anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [notifications, setNotifications] = useState<NotificationResponseDto[]>([]);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isNotificationOpen = Boolean(anchorEl);
 
   // const match = location.pathname.match(/\d+/);
@@ -32,6 +35,7 @@ export default function Header() {
   const clearAuth = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    setUserRole(null);
   };
 
   useEffect(() => {
@@ -51,6 +55,7 @@ export default function Header() {
       if (!token || token === "undefined") {
         if (isMounted) {
           setIsLoggedIn(false);
+          setUserRole(null);
           setIsCheckingAuth(false);
         }
         return;
@@ -58,15 +63,20 @@ export default function Header() {
 
       try {
         const userData = await getMe(); // ✅ 반환값 받기
+        const user = await getMe();
+
         if (isMounted) {
           setIsLoggedIn(true);
           setCurrentUserId(userData.id); // ✅ userId 저장
+          setUserRole(user.role);
         }
       } catch (error) {
         clearAuth();
+
         if (isMounted) {
           setIsLoggedIn(false);
           setCurrentUserId(null); // ✅ 로그인 실패 시 초기화
+          setUserRole(null);
         }
       } finally {
         if (isMounted) {
@@ -124,7 +134,7 @@ export default function Header() {
         signal: abortController.signal,
         onmessage(ev) {
           if (ev.data.includes("EventStream Created")) return;
-
+          
           try {
             const newNoti = JSON.parse(ev.data);
 
@@ -159,6 +169,7 @@ export default function Header() {
       await readNotificationApi(id);
       setNotifications((prev) => prev.filter((noti) => noti.id !== id));
       setAnchorEl(null);
+
       if (targetUrl) {
         navigate(targetUrl);
       }
@@ -278,19 +289,38 @@ export default function Header() {
 
             {!isCheckingAuth && isLoggedIn ? (
               <>
-                <Button className="header-login-btn" onClick={() => navigate("/mypage")}>
-                  마이페이지
-                </Button>
+                {userRole === "ADMIN" ? (
+                  <Button
+                    className="header-login-btn"
+                    onClick={() => navigate("/admin")}
+                  >
+                    관리자 페이지
+                  </Button>
+                ) : (
+                  <Button
+                    className="header-login-btn"
+                    onClick={() => navigate("/mypage")}
+                  >
+                    마이페이지
+                  </Button>
+                )}
+
                 <Button className="header-login-btn" onClick={handleLogout}>
                   로그아웃
                 </Button>
               </>
             ) : !isCheckingAuth ? (
               <>
-                <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
+                <Button
+                  className="header-login-signup-btn"
+                  onClick={() => navigate("/login")}
+                >
                   로그인
                 </Button>
-                <Button className="header-login-signup-btn" onClick={() => navigate("/signup")}>
+                <Button
+                  className="header-login-signup-btn"
+                  onClick={() => navigate("/signup")}
+                >
                   회원가입
                 </Button>
               </>
@@ -299,8 +329,15 @@ export default function Header() {
         </Toolbar>
       </AppBar>
 
-      <GuidePopup open={openGuidePopup} onClose={() => setOpenGuidePopup(false)} />
-      <TutorialModal open={openTutorial} onClose={() => setOpenTutorial(false)} />
+      <GuidePopup
+        open={openGuidePopup}
+        onClose={() => setOpenGuidePopup(false)}
+      />
+
+      <TutorialModal
+        open={openTutorial}
+        onClose={() => setOpenTutorial(false)}
+      />
     </>
   );
 }
