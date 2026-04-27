@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import toast from "react-hot-toast";
 import "./AdminPage.css";
 
 export default function AdminPage() {
   const [keyword, setKeyword] = useState("");
+  const navigate = useNavigate();
 
   const handleSearch = () => {
     toast.error("회원 검색 API가 아직 구현되지 않았습니다.");
@@ -17,20 +19,29 @@ export default function AdminPage() {
       <main className="admin-page">
         <section className="admin-container">
 
-          {/* 🔥 상단 관리자 카드 */}
           <section className="admin-header-card">
-            <span className="admin-badge">ADMIN</span>
-            <h1>관리자 페이지</h1>
-            <p>회원 정보를 확인하고 서비스 이용 상태를 관리할 수 있습니다.</p>
+            <div className="admin-header-top">
+              <div>
+                <span className="admin-badge">ADMIN</span>
+                <h1>관리자 페이지</h1>
+                <p>회원 정보를 확인하고 서비스 이용 상태를 관리할 수 있습니다.</p>
+              </div>
+
+              <button
+                type="button"
+                className="admin-cs-button"
+                onClick={() => navigate("/admin/cs")}
+              >
+                1:1 문의 관리
+              </button>
+            </div>
           </section>
 
-          {/* 🔥 회원 관리 영역 */}
           <div className="admin-panel">
             <div className="admin-panel-header">
               <h2>회원 관리</h2>
             </div>
 
-            {/* 🔍 검색 */}
             <div className="admin-search-row">
               <input
                 value={keyword}
@@ -42,7 +53,6 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* 📋 테이블 */}
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -65,7 +75,6 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-
           </div>
 
         </section>

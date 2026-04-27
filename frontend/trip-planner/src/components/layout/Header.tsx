@@ -62,12 +62,12 @@ export default function Header() {
       }
 
       try {
-        const userData = await getMe(); // ✅ 반환값 받기
+        const userData = await getMe();
         const user = await getMe();
 
         if (isMounted) {
           setIsLoggedIn(true);
-          setCurrentUserId(userData.id); // ✅ userId 저장
+          setCurrentUserId(userData.id);
           setUserRole(user.role);
         }
       } catch (error) {
@@ -163,6 +163,48 @@ export default function Header() {
 
     return () => abortController.abort();
   }, [isLoggedIn, currentUserId]); // ✅ currentUserId 의존성 추가
+
+  useEffect(() => {
+  if (!isLoggedIn || !currentUserId || userRole !== "ADMIN") return;
+
+  const notiKey = `notificationHistory_${currentUserId}`;
+
+  const handleAdminCSNotification = (event: Event) => {
+    const customEvent = event as CustomEvent<any>;
+    const newNoti = customEvent.detail;
+
+    setNotifications((prev) => {
+      const alreadyExists = prev.some((noti) => noti.id === newNoti.id);
+
+      if (alreadyExists) {
+        return prev;
+      }
+
+      return [newNoti, ...prev];
+    });
+
+    const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
+
+    const alreadySaved = existing.some((noti: any) => noti.id === newNoti.id);
+
+    if (alreadySaved) {
+      return;
+    }
+
+    const updated = [
+      { ...newNoti, receivedAt: new Date().toISOString() },
+      ...existing,
+    ].slice(0, 50);
+
+    localStorage.setItem(notiKey, JSON.stringify(updated));
+  };
+
+  window.addEventListener("admin-cs-notification", handleAdminCSNotification);
+
+  return () => {
+    window.removeEventListener("admin-cs-notification", handleAdminCSNotification);
+  };
+}, [isLoggedIn, currentUserId, userRole]);
 
   const handleReadNotification = async (id: number, targetUrl?: string) => {
     try {
