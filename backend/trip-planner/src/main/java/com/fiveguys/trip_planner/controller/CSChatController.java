@@ -39,7 +39,11 @@ public class CSChatController {
         }
         User currentUser = (User) principal;
 
-        return ResponseEntity.ok(CschatService.createRoom(requestDto, currentUser));
+        ChatRoomResponseDto responseDto = CschatService.createRoom(requestDto, currentUser);
+
+        messagingTemplate.convertAndSend("/sub/chat/admin/new-room", responseDto);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping("/api/cs/rooms")
@@ -50,6 +54,20 @@ public class CSChatController {
     @GetMapping("/api/cs/room/{roomId}/messages")
     public ResponseEntity<List<ChatMessageResponseDto>> getChatHistory(@PathVariable Long roomId) {
         return ResponseEntity.ok(CschatService.getChatHistory(roomId));
+    }
+
+    @GetMapping("/api/cs/my-rooms")
+    public ResponseEntity<List<ChatRoomResponseDto>> getMyRooms() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new RuntimeException("인증 정보가 없습니다.");
+        }
+
+        if (!(auth.getPrincipal() instanceof User currentUser)) {
+            throw new RuntimeException("로그인 사용자 정보가 유효하지 않습니다.");
+        }
+        return ResponseEntity.ok(CschatService.findRoomsByUser(currentUser));
     }
 
 }

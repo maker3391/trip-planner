@@ -1,12 +1,14 @@
 package com.fiveguys.trip_planner.dto;
 
 import com.fiveguys.trip_planner.entity.ChatRoom;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class ChatRoomResponseDto {
     private Long id;
