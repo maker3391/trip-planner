@@ -4,6 +4,15 @@ import Header from "../components/layout/Header";
 import { getMe, updateMe, withdrawApi } from "../components/api/auth.ts";
 import "./MyPage.css";
 import toast from "react-hot-toast"; // toast 임포트 추가
+import axios from "axios";
+
+interface MyPost {
+  id: number;
+  title: string;
+  category: string;
+  createdAt: string;
+  viewCount: number;
+}
 
 interface UserInfo {
   id: number;
@@ -38,8 +47,38 @@ interface NotificationHistory {
 
 
 export default function MyPage() {
+  const [myPosts, setMyPosts] = useState<MyPost[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const navigate = useNavigate();
   const [user, setUser] = useState<UserInfo | null>(null);
+
+  // 내 게시글 가져오기 함수
+  const fetchMyPosts = async () => {
+    try {
+      setIsLoadingPosts(true);
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.get("/api/community/me/posts", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { page: 0, size: 5 } // 최근 5개만 표시
+      });
+      // Page 객체로 오기 때문에 content를 꺼냅니다.
+      setMyPosts(response.data.content);
+    } catch (error) {
+      console.error("내 게시글 로드 실패:", error);
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+    fetchMyPosts(); // 페이지 진입 시 호출
+  }, []);
+
+  // 게시글 클릭 시 이동 핸들러
+  const handlePostClick = (postId: number) => {
+    navigate(`/community/${postId}`); 
+  };
 
   const [basicForm, setBasicForm] = useState<BasicForm>({
     name: "",
@@ -89,34 +128,32 @@ export default function MyPage() {
     }
   };
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
+  // useEffect - user.id 기반으로 키 생성
+useEffect(() => {
+  if (!user?.id) return; // ✅ user 로드 전엔 실행 안 함
 
-  useEffect(() => {
-  // 로컬 스토리지에서 데이터를 읽어와 상태를 업데이트하는 함수
-    const syncNotiHistory = () => {
-      const stored = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
-      setNotiHistory(stored);
-    };
+  const key = `notificationHistory_${user.id}`;
 
-    // 마이페이지 진입 시 최초 실행
-    syncNotiHistory();
+  const syncNotiHistory = () => {
+    const stored = JSON.parse(localStorage.getItem(key) || "[]");
+    setNotiHistory(stored);
+  };
 
-    // 방법 1: 다른 탭/창에서 변경 시 감지 (storage 이벤트)
-    window.addEventListener("storage", (e) => {
-      if (e.key === "notificationHistory") syncNotiHistory();
-    });
+  syncNotiHistory();
 
-    // 방법 2: 같은 창(Header -> MyPage) 실시간 반영을 위한 인터벌
-    // Header가 SSE로 알림을 넣으면 0.5초 안에 감지해서 화면에 뿌려줌
-    const interval = setInterval(syncNotiHistory, 500);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === key) syncNotiHistory();
+  };
 
-    return () => {
-      window.removeEventListener("storage", syncNotiHistory);
-      clearInterval(interval);
-    };
-  }, []);
+  window.addEventListener("storage", handleStorage);
+  const interval = setInterval(syncNotiHistory, 500);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    clearInterval(interval);
+  };
+}, [user?.id]); // ✅ user.id가 세팅된 후 실행
+
   const handleBasicChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setBasicForm((prev) => ({
@@ -281,17 +318,19 @@ export default function MyPage() {
       setIsWithdrawing(false);
     }
   };
-  // 개별 삭제 핸들러
+  // 개별 삭제
   const handleDeleteNoti = (id: number) => {
+    const key = `notificationHistory_${user?.id}`;
     const updated = notiHistory.filter((n) => n.id !== id);
     setNotiHistory(updated);
-    localStorage.setItem("notificationHistory", JSON.stringify(updated));
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
-  // 전체 삭제 핸들러
+  // 전체 삭제
   const handleDeleteAllNoti = () => {
+    const key = `notificationHistory_${user?.id}`;
     setNotiHistory([]);
-    localStorage.removeItem("notificationHistory");
+    localStorage.removeItem(key);
   };
 
 
@@ -314,6 +353,48 @@ export default function MyPage() {
           <p className="mypage-description">
             계정 정보를 확인하고 수정할 수 있습니다.
           </p>
+        </section>
+
+        {/* 🔥 2. 새로 추가되는 '내가 쓴 게시글' 섹션 */}
+        <section className="mypage-edit-card">
+          <div className="mypage-noti-header">
+            <h2 className="mypage-section-title">내가 쓴 게시글</h2>
+            <button 
+              className="mypage-noti-clear-btn" 
+              onClick={() => navigate("/community")} // 커뮤니티 전체보기 등으로 연결
+            >
+              전체보기
+            </button>
+          </div>
+
+          {isLoadingPosts ? (
+            <p className="mypage-noti-empty">불러오는 중...</p>
+          ) : myPosts.length === 0 ? (
+            <p className="mypage-noti-empty">작성한 게시글이 없습니다.</p>
+          ) : (
+            <ul className="mypage-noti-list">
+              {myPosts.map((post) => (
+                <li 
+                  key={post.id} 
+                  className="mypage-noti-item"
+                  onClick={() => handlePostClick(post.id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="mypage-noti-content">
+                    <span className="mypage-noti-msg">
+                      <span style={{ color: "#3b82f6", fontWeight: "bold", marginRight: "8px" }}>
+                        [{post.category}]
+                      </span>
+                      {post.title}
+                    </span>
+                    <span className="mypage-noti-time">
+                      {new Date(post.createdAt).toLocaleDateString()} · 조회수 {post.viewCount}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="mypage-edit-card">

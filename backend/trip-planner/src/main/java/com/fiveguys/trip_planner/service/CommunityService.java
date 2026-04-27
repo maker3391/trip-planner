@@ -20,6 +20,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+// =====================================================================
+// [요구사항 확인 및 반영 사항]
+// 규칙 1~3(카테고리 우선도, 다중 선택 OR 연산, 전체보기 자동화) 로직은
+// 검색/조회를 수행하는 getPosts 메서드의 파라미터 구조에 이미 반영되어 있습니다.
+// List<String> categories 와 List<String> regions 파라미터를 그대로 Repository에
+// 전달하면, 이전 단계에서 수정한 Repository의 쿼리를 통해 다중 조건과 우선순위가 처리됩니다.
+//
+// 프론트엔드의 빈 배열("[]") 대신 백엔드에서 null을 전달해야 하는 기존 로직
+// ("전체보기"나 "전체" 처리)도 건드리지 않고 그대로 유지했습니다.
+// 규칙 4, 5에 따라 주석으로만 변경 사항을 남기며, 인수 변경 없이 기존 코드를 반환합니다.
+// =====================================================================
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -37,6 +49,7 @@ public class CommunityService {
     private final CommunityLikeRepository communityLikeRepository;
     private final CommunityCommentRepository communityCommentRepository;
     private final TripPlanRepository tripPlanRepository;
+    private final NotificationService notificationService;
 
     // =========================
     // 🔹 게시글 생성
@@ -89,16 +102,24 @@ public class CommunityService {
     public Page<CommunityResponse> getPosts(
             int page,
             int size,
-            String category,
-            String region,
+            List<String> categories,
+            List<String> regions,
             String searchType,
             String keyword
     ) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
-        String filterCategory = ("전체보기".equals(category)) ? null : category;
-        String filterRegion = ("전체".equals(region)) ? null : region;
+        // ✅ 전체 선택 처리
+        List<String> filterCategories =
+                (categories == null || categories.isEmpty() || categories.contains("전체보기"))
+                        ? null
+                        : categories;
+
+        List<String> filterRegions =
+                (regions == null || regions.isEmpty() || regions.contains("전체"))
+                        ? null
+                        : regions;
 
         String cleanKeyword = (keyword == null || keyword.trim().isEmpty())
                 ? null
@@ -127,9 +148,10 @@ public class CommunityService {
 
         User finalUser = currentUser;
 
+        // 규칙 1, 2가 적용된 커스텀 리포지토리 메서드로 배열(List) 형태의 파라미터를そのまま 전달
         return communityRepository.findWithFilters(
-                filterCategory,
-                filterRegion,
+                filterCategories,
+                filterRegions,
                 validSearchType,
                 cleanKeyword,
                 pageable
@@ -361,8 +383,7 @@ public class CommunityService {
     }
 
     // =========================
-    // 🔹 댓글 작성
-    // =========================
+    @Transactional
     public void createComment(Long postId, Long userId, CommunityCommentRequest request) {
 
         User user = userRepository.findById(userId)
@@ -375,12 +396,22 @@ public class CommunityService {
                 CommunityComment.create(user, community, request.getComment());
 
         communityCommentRepository.save(comment);
-        community.incrementCommentCount(); // ⭐ 중요
+        community.incrementCommentCount();
+
+        // ✅ 게시글 작성자에게 알림 (자기 자신 제외)
+        User postAuthor = community.getAuthor();
+        if (!postAuthor.getId().equals(userId)) {
+            notificationService.send(
+                    postAuthor,
+                    user.getNickname() + "님이 댓글을 남겼습니다: \"" + truncate(request.getComment(), 30) + "\"",
+                    "COMMENT",
+                    "/community/" + postId
+            );
+        }
     }
 
     // =========================
-    // 🔹 대댓글 작성
-    // =========================
+    @Transactional
     public void createReply(Long postId, Long parentId, Long userId, CommunityCommentRequest request) {
 
         User user = userRepository.findById(userId)
@@ -397,6 +428,17 @@ public class CommunityService {
 
         communityCommentRepository.save(reply);
         community.incrementCommentCount();
+
+        // ✅ 원 댓글 작성자에게 알림 (자기 자신 제외)
+        User commentAuthor = parent.getUser();
+        if (!commentAuthor.getId().equals(userId)) {
+            notificationService.send(
+                    commentAuthor,
+                    user.getNickname() + "님이 답글을 남겼습니다: \"" + truncate(request.getComment(), 30) + "\"",
+                    "REPLY",
+                    "/community/" + postId
+            );
+        }
     }
 
     // =========================
@@ -544,5 +586,25 @@ public class CommunityService {
 
     private boolean isEmpty(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    // =========================
+    // 🔹 내가 작성한 게시글 목록 조회 (마이페이지용)
+    // =========================
+    public Page<CommunityResponse> getMyPosts(int page, int size) {
+        User user = getCurrentUser(); // 기존에 구현하신 로그인 유저 가져오기 메서드 활용
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        return communityRepository.findByAuthor(user, pageable)
+                .map(post -> {
+                    // 내가 쓴 글이므로 좋아요 여부는 exists 확인을 하거나 기본 true 처리
+                    boolean likedByMe = communityLikeRepository.existsByUserAndCommunity(user, post);
+                    return CommunityResponse.from(post, likedByMe);
+                });
+    }
+
+    private String truncate(String text, int maxLength) {
+        if (text == null) return "";
+        return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
     }
 }

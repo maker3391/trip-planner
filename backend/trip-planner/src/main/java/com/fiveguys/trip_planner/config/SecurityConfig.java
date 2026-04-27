@@ -63,7 +63,8 @@ public class SecurityConfig {
                                 "/api/auth/password-reset/**",
                                 "/api/chat",
                                 "/oauth2/**",
-                                "/login/**"
+                                "/login/**",
+                                "/ws-chat/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/community/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/community/image/**").permitAll()

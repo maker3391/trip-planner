@@ -28,6 +28,7 @@ public class AttractionRecommendationService {
     private final AttractionDocumentCollector attractionDocumentCollector;
     private final AttractionFilterService attractionFilterService;
     private final AttractionMapper attractionMapper;
+    private final AttractionSubIntentResolver attractionSubIntentResolver;
 
     public AttractionRecommendationService(RegionResolverService regionResolverService,
                                            RegionAliasResolverService regionAliasResolverService,
@@ -38,7 +39,8 @@ public class AttractionRecommendationService {
                                            AttractionQueryBuilder attractionQueryBuilder,
                                            AttractionDocumentCollector attractionDocumentCollector,
                                            AttractionFilterService attractionFilterService,
-                                           AttractionMapper attractionMapper) {
+                                           AttractionMapper attractionMapper,
+                                           AttractionSubIntentResolver attractionSubIntentResolver) {
         this.regionResolverService = regionResolverService;
         this.regionAliasResolverService = regionAliasResolverService;
         this.recommendationCacheService = recommendationCacheService;
@@ -49,12 +51,15 @@ public class AttractionRecommendationService {
         this.attractionDocumentCollector = attractionDocumentCollector;
         this.attractionFilterService = attractionFilterService;
         this.attractionMapper = attractionMapper;
+        this.attractionSubIntentResolver = attractionSubIntentResolver;
     }
 
     public ChatResponse recommend(ChatRequest request) {
         String message = request.getMessage();
 
         validateRegionStrict(message);
+
+        AttractionSubIntent subIntent = attractionSubIntentResolver.resolve(message);
 
         RegionResolverService.ResolvedRegion resolvedRegion = regionResolverService.resolve(message);
 
@@ -125,7 +130,8 @@ public class AttractionRecommendationService {
                 queryDestination,
                 detailArea,
                 neighborhood,
-                district
+                district,
+                subIntent
         );
 
         List<JsonNode> collectedDocs = attractionDocumentCollector.collectDocuments(queries);
@@ -135,13 +141,15 @@ public class AttractionRecommendationService {
                 queryDestination,
                 detailArea,
                 neighborhood,
-                district
+                district,
+                subIntent
         );
 
         if (items.size() < MIN_FALLBACK_ITEMS) {
             List<String> fallbackQueries = attractionQueryBuilder.buildRelaxedFallbackQueries(
                     queryDestination,
-                    district
+                    district,
+                    subIntent
             );
 
             List<JsonNode> fallbackDocs = attractionDocumentCollector.collectDocuments(fallbackQueries);
@@ -151,9 +159,10 @@ public class AttractionRecommendationService {
             items = attractionMapper.pickTopAttractions(
                     collectedDocs,
                     queryDestination,
-                    "",
-                    "",
-                    district
+                    detailArea,
+                    neighborhood,
+                    district,
+                    subIntent
             );
         }
 
@@ -203,9 +212,9 @@ public class AttractionRecommendationService {
     }
 
     private void validateRegionStrict(String message) {
-        if (!regionResolverService.hasExplicitTopLevelArea(message)) {
+        if (!regionResolverService.hasExplicitSearchableArea(message)) {
             throw new LlmCallException(
-                    "지역명이 모호합니다. 예: 부산 명소 추천, 경주 대표 관광지 추천, 제주 가볼만한 곳 추천"
+                    "지역명을 함께 입력해 주세요. (예: 부산 명소 추천, 경주 대표 관광지 추천, 제주 가볼만한 곳 추천, 서울 랜드마크 추천)"
             );
         }
     }

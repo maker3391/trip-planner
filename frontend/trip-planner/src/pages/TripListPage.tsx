@@ -4,23 +4,22 @@ import Header from "../components/layout/Header";
 import "./TripListPage.css";
 import { useTrips, useGetTrip, useDeleteTrip } from "../components/hooks/useTrip.ts";
 import { TripPlanResponse } from "../types/trip.ts";
-import { useTripStore } from "../components/store/useTripStore.ts";
+// import { useTripStore } from "../components/store/useTripStore.ts";
 import { getJoinedTrips, leaveTripMember } from "../components/api/tripMember.ts";
 
 import MyTripList from "./MyTripList";
 import JoinedTripList from "./JoinedTripList";
 
-// react-hot-toast가 필요하다면 추가하세요 (선택 사항)
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 export default function TripListPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { clearTripData } = useTripStore();
+  // const { clearTripData } = useTripStore();
   const [activeTab, setActiveTab] = useState<"MY" | "JOINED">("MY");
   const [joinedTrips, setJoinedTrips] = useState<TripPlanResponse[]>([]);
 
-  const { data: tripList, isLoading, isError } = useTrips();
+  const { data: tripList} = useTrips();
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   
   const deleteTripMutation = useDeleteTrip();

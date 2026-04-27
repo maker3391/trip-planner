@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import React, { useEffect, useState } from "react";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
 import { CalculatorService } from "../layout/calculator";
 
 interface ActionButtonsProps {
@@ -7,10 +8,12 @@ interface ActionButtonsProps {
   isLoading: boolean;
 }
 
-export default function ActionButtons({ onOpenSaveModal, isLoading }: ActionButtonsProps) {
+export default function ActionButtons({
+  onOpenSaveModal,
+  isLoading,
+}: ActionButtonsProps) {
   const [isCalcOpen, setIsCalcOpen] = useState(false);
 
-  // 외부(계산기 내부의 X 버튼 등)에서 발생한 닫기 이벤트를 감지
   useEffect(() => {
     const handleCloseEvent = () => setIsCalcOpen(false);
     const handleOpenEvent = () => setIsCalcOpen(true);
@@ -27,64 +30,75 @@ export default function ActionButtons({ onOpenSaveModal, isLoading }: ActionButt
   const handleCalculatorToggle = () => {
     if (isCalcOpen) {
       CalculatorService.closeCalculator();
-      // setIsCalcOpen(false); // 이벤트 리스너가 처리하므로 생략 가능하지만 명시적으로 두어도 무방합니다.
-    } else {
-      CalculatorService.openCalculator();
-      // setIsCalcOpen(true);
+      return;
     }
+
+    CalculatorService.openCalculator();
+  };
+
+  const baseButtonStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    width: "138px",
+    height: "46px",
+    padding: "0 18px",
+    borderRadius: "23px",
+    fontWeight: 700,
+    fontSize: "14px",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    boxShadow: "0 4px 14px rgba(0, 0, 0, 0.18)",
+    transition: "all 0.2s ease",
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      <button
-        onClick={onOpenSaveModal}
+      <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '0 20px',
-          height: '46px',
-          backgroundColor: '#1a1a1a',
-          color: 'white',
-          border: 'none',
-          borderRadius: '23px',
-          fontWeight: 'bold',
-          fontSize: '14px',
-          cursor: 'pointer',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          alignItems: "center",
         }}
       >
-        💾 계획 저장
+      <button
+        type="button"
+        onClick={onOpenSaveModal}
+        style={{
+          ...baseButtonStyle,
+          backgroundColor: "#1a1a1a",
+          color: "#fff",
+          border: "1px solid #1a1a1a",
+        }}
+      >
+        <SaveOutlinedIcon style={{ fontSize: "19px" }} />
+        계획 저장
       </button>
 
       <button
         type="button"
         onClick={handleCalculatorToggle}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '0 20px',
-          height: '46px',
-          backgroundColor: isCalcOpen ? '#1a1a1a' : 'white',
-          color: isCalcOpen ? 'white' : '#333',
-          border: '1px solid #ddd',
-          borderRadius: '23px',
-          fontWeight: 'bold',
-          fontSize: '14px',
-          cursor: 'pointer',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-          transition: 'background-color 0.2s, color 0.2s',
+          ...baseButtonStyle,
+          backgroundColor: isCalcOpen ? "#1a1a1a" : "#fff",
+          color: isCalcOpen ? "#fff" : "#333",
+          border: isCalcOpen ? "1px solid #1a1a1a" : "1px solid #e0e0e0",
         }}
       >
-        <ShoppingCartOutlinedIcon style={{ fontSize: '20px' }} />
+        <CalculateOutlinedIcon style={{ fontSize: "20px" }} />
         예산 계산기
       </button>
 
       {isLoading && (
-        <span style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>
+        <span
+          style={{
+            width: "100%",
+            fontSize: "12px",
+            color: "#666",
+            textAlign: "center",
+          }}
+        >
           데이터 로딩 중...
         </span>
       )}
