@@ -9,7 +9,6 @@
   margin: 0 auto;
 }
 
-/* 🔥 상단 관리자 카드 */
 .admin-header-card {
   background: #fff;
   border: 1px solid #f1df9a;
@@ -43,7 +42,6 @@
   font-size: 15px;
 }
 
-/* 🔥 회원 관리 카드 */
 .admin-panel {
   background: #fff;
   border: 1px solid #f1df9a;
@@ -62,7 +60,6 @@
   font-weight: 800;
 }
 
-/* 🔍 검색 */
 .admin-search-row {
   display: flex;
   gap: 10px;
@@ -88,17 +85,19 @@
   height: 44px;
   border: none;
   border-radius: 12px;
-  background: #f5c400;
+  background: linear-gradient(135deg, #ffe066, #f5c400);
   color: #222;
   font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 4px 10px rgba(245, 196, 0, 0.3);
+  transition: all 0.2s ease;
 }
 
 .admin-search-row button:hover {
-  background: #e8b900;
+  background: linear-gradient(135deg, #ffd43b, #e8b900);
+  transform: translateY(-1px);
 }
 
-/* 📋 테이블 */
 .admin-table-wrap {
   overflow-x: auto;
 }
@@ -128,7 +127,6 @@
   padding: 42px 12px !important;
 }
 
-/* 📱 반응형 */
 @media (max-width: 768px) {
   .admin-page {
     padding: 32px 16px 60px;
@@ -147,6 +145,42 @@
   }
 
   .admin-search-row button {
+    width: 100%;
+  }
+}
+
+.admin-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.admin-cs-button {
+  min-width: 140px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffe066, #f5c400);
+  color: #222;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(245, 196, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.admin-cs-button:hover {
+  background: linear-gradient(135deg, #ffd43b, #e8b900);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .admin-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-cs-button {
     width: 100%;
   }
 }

@@ -57,6 +57,12 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "banned_until")
+    private LocalDateTime bannedUntil;
+
+    @Column(name = "ban_reason", length = 255)
+    private String banReason;
+
     public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
         User user = new User();
         user.setEmail(email);

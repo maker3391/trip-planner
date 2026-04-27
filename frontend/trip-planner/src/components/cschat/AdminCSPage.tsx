@@ -6,6 +6,7 @@ import { getCSRooms, CSRoomResponse, getCSMessages } from "../api/csChat";
 import { getMe } from "../api/auth";
 import { ChatMessage } from "../store/csStore";
 import './css/AdminCSPage.css';
+import Header from "../layout/Header";
 
 export default function AdminCSPage() {
   const [rooms, setRooms] = useState<CSRoomResponse[]>([]);
@@ -107,82 +108,85 @@ export default function AdminCSPage() {
   };
 
   return (
-    <div className="admin-cs-container">
-      <div className="admin-cs-sidebar">
-        <h2 className="admin-cs-sidebar-title">
-          접수된 1:1 문의
-        </h2>
-        <List>
-          {rooms.length === 0 ? (
-            <p className="admin-cs-empty-text">대기 중인 문의가 없습니다.</p>
-          ) : (
-            rooms.map((room) => (
-              <div key={room.id}>
-                <ListItem
-                  button
-                  selected={selectedRoom?.id === room.id}
-                  onClick={() => handleSelectRoom(room)}
-                >
-                  <ListItemText 
-                    primary={room.title}
-                    secondary={`${room.userNickname} 님`}
-                  />
-                </ListItem>
-                <Divider />
-              </div>
-            ))
-          )}
-        </List>
-      </div>
+    <>
+      <Header />
+      <div className="admin-cs-container">
+        <div className="admin-cs-sidebar">
+          <h2 className="admin-cs-sidebar-title">
+            접수된 1:1 문의
+          </h2>
+          <List>
+            {rooms.length === 0 ? (
+              <p className="admin-cs-empty-text">대기 중인 문의가 없습니다.</p>
+            ) : (
+              rooms.map((room) => (
+                <div key={room.id}>
+                  <ListItem
+                    button
+                    selected={selectedRoom?.id === room.id}
+                    onClick={() => handleSelectRoom(room)}
+                  >
+                    <ListItemText 
+                      primary={room.title}
+                      secondary={`${room.userNickname} 님`}
+                    />
+                  </ListItem>
+                  <Divider />
+                </div>
+              ))
+            )}
+          </List>
+        </div>
 
-      <div className="admin-cs-chat-area">
-        {selectedRoom ? (
-          <>
-              <h2 className="admin-cs-chat-header">
-                  {selectedRoom.title} ({selectedRoom.userNickname})
-              </h2>
-              
-              <div className="admin-cs-message-list">
-                {messages.map((msg, idx) => {
-                  const isAdmin = msg.senderId === adminId;
-                    return (
-                      <div 
-                        key={idx} 
-                        className={`admin-cs-message-wrapper ${isAdmin ? 'admin' : 'user'}`}
-                      >
-                        <span className="admin-cs-message-sender">
-                          {isAdmin ? '나(관리자)' : msg.senderNickname}
-                        </span>
-                        <div className={`admin-cs-message-bubble ${isAdmin ? 'admin' : 'user'}`}>
-                          {msg.content}
+        <div className="admin-cs-chat-area">
+          {selectedRoom ? (
+            <>
+                <h2 className="admin-cs-chat-header">
+                    {selectedRoom.title} ({selectedRoom.userNickname})
+                </h2>
+                
+                <div className="admin-cs-message-list">
+                  {messages.map((msg, idx) => {
+                    const isAdmin = msg.senderId === adminId;
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`admin-cs-message-wrapper ${isAdmin ? 'admin' : 'user'}`}
+                        >
+                          <span className="admin-cs-message-sender">
+                            {isAdmin ? '나(관리자)' : msg.senderNickname}
+                          </span>
+                          <div className={`admin-cs-message-bubble ${isAdmin ? 'admin' : 'user'}`}>
+                            {msg.content}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-              </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                </div>
 
-              <div className="admin-cs-input-area">
-                  <TextField 
-                    fullWidth 
-                    variant="outlined" 
-                    size="small" 
-                    placeholder="고객에게 보낼 답변을 입력하세요..." 
-                    value={inputMsg}
-                    onChange={(e) => setInputMsg(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  />
-                  <Button variant="contained" disableElevation onClick={handleSendMessage}>
-                    전송
-                  </Button>
-              </div>
-          </>
-        ) : (
-          <div className="admin-cs-empty-chat">
-            <p>왼쪽에서 문의를 선택해주세요.</p>
-          </div>
-        )}
+                <div className="admin-cs-input-area">
+                    <TextField 
+                      fullWidth 
+                      variant="outlined" 
+                      size="small" 
+                      placeholder="고객에게 보낼 답변을 입력하세요..." 
+                      value={inputMsg}
+                      onChange={(e) => setInputMsg(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    />
+                    <Button variant="contained" disableElevation onClick={handleSendMessage}>
+                      전송
+                    </Button>
+                </div>
+            </>
+          ) : (
+            <div className="admin-cs-empty-chat">
+              <p>왼쪽에서 문의를 선택해주세요.</p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  )
+    </>
+  );
 }
