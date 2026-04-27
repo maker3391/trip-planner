@@ -37,6 +37,7 @@ public class CommunityService {
     private final CommunityLikeRepository communityLikeRepository;
     private final CommunityCommentRepository communityCommentRepository;
     private final TripPlanRepository tripPlanRepository;
+    private final NotificationService notificationService;
 
     // =========================
     // 🔹 게시글 생성
@@ -361,8 +362,7 @@ public class CommunityService {
     }
 
     // =========================
-    // 🔹 댓글 작성
-    // =========================
+    @Transactional
     public void createComment(Long postId, Long userId, CommunityCommentRequest request) {
 
         User user = userRepository.findById(userId)
@@ -375,12 +375,22 @@ public class CommunityService {
                 CommunityComment.create(user, community, request.getComment());
 
         communityCommentRepository.save(comment);
-        community.incrementCommentCount(); // ⭐ 중요
+        community.incrementCommentCount();
+
+        // ✅ 게시글 작성자에게 알림 (자기 자신 제외)
+        User postAuthor = community.getAuthor();
+        if (!postAuthor.getId().equals(userId)) {
+            notificationService.send(
+                    postAuthor,
+                    user.getNickname() + "님이 댓글을 남겼습니다: \"" + truncate(request.getComment(), 30) + "\"",
+                    "COMMENT",
+                    "/community/" + postId
+            );
+        }
     }
 
     // =========================
-    // 🔹 대댓글 작성
-    // =========================
+    @Transactional
     public void createReply(Long postId, Long parentId, Long userId, CommunityCommentRequest request) {
 
         User user = userRepository.findById(userId)
@@ -397,6 +407,17 @@ public class CommunityService {
 
         communityCommentRepository.save(reply);
         community.incrementCommentCount();
+
+        // ✅ 원 댓글 작성자에게 알림 (자기 자신 제외)
+        User commentAuthor = parent.getUser();
+        if (!commentAuthor.getId().equals(userId)) {
+            notificationService.send(
+                    commentAuthor,
+                    user.getNickname() + "님이 답글을 남겼습니다: \"" + truncate(request.getComment(), 30) + "\"",
+                    "REPLY",
+                    "/community/" + postId
+            );
+        }
     }
 
     // =========================
@@ -544,5 +565,25 @@ public class CommunityService {
 
     private boolean isEmpty(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    // =========================
+    // 🔹 내가 작성한 게시글 목록 조회 (마이페이지용)
+    // =========================
+    public Page<CommunityResponse> getMyPosts(int page, int size) {
+        User user = getCurrentUser(); // 기존에 구현하신 로그인 유저 가져오기 메서드 활용
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        return communityRepository.findByAuthor(user, pageable)
+                .map(post -> {
+                    // 내가 쓴 글이므로 좋아요 여부는 exists 확인을 하거나 기본 true 처리
+                    boolean likedByMe = communityLikeRepository.existsByUserAndCommunity(user, post);
+                    return CommunityResponse.from(post, likedByMe);
+                });
+    }
+
+    private String truncate(String text, int maxLength) {
+        if (text == null) return "";
+        return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
     }
 }

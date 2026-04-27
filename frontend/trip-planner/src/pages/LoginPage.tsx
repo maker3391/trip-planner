@@ -7,7 +7,7 @@ import LogoIcon from "../assets/icons/logo.png";
 import "./LoginPage.css";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../components/api/auth.ts";
-import toast, {Toaster} from "react-hot-toast"; // Toaster는 전역(Router)에서 관리하므로 삭제
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginRequest>({
@@ -78,7 +78,6 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <Toaster position="bottom-center" reverseOrder={false}/>
       <Header />
 
       <div className="login-page-body">
