@@ -8,7 +8,10 @@ public enum StaySubtype {
     RESORT("resort"),
     GUEST_HOUSE("guesthouse"),
     HANOK("hanok"),
-    POOL_VILLA("poolvilla");
+    POOL_VILLA("poolvilla"),
+    OCEAN_VIEW("oceanview"),
+    EMOTIONAL("emotional"),
+    BUDGET("budget");
 
     private final String value;
 

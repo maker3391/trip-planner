@@ -313,6 +313,27 @@ public class KakaoPlaceQueryBuilder {
                 keywords.add("리조트");
                 keywords.add("숙소");
             }
+            case OCEAN_VIEW -> {
+                keywords.add("오션뷰 숙소");
+                keywords.add("바다뷰 호텔");
+                keywords.add("해변 숙소");
+                keywords.add("오션뷰 호텔");
+                keywords.add("비치 호텔");
+            }
+            case EMOTIONAL -> {
+                keywords.add("감성 숙소");
+                keywords.add("예쁜 숙소");
+                keywords.add("분위기 좋은 숙소");
+                keywords.add("감성 호텔");
+                keywords.add("인스타 감성 숙소");
+            }
+            case BUDGET -> {
+                keywords.add("가성비 숙소");
+                keywords.add("저렴한 호텔");
+                keywords.add("가성비 호텔");
+                keywords.add("저렴한 숙소");
+                keywords.add("모텔");
+            }
             default -> {
                 keywords.add("숙소");
                 keywords.add("숙박");

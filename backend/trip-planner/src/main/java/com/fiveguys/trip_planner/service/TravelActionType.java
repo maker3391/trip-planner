@@ -1,4 +1,9 @@
 package com.fiveguys.trip_planner.service;
 
-public class TravelActionType {
+public enum TravelActionType {
+    EAT,
+    STAY,
+    VISIT,
+    PLAN,
+    UNKNOWN
 }
