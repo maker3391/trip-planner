@@ -10,10 +10,9 @@ import { CommunityResponse, CommunityPageResponse } from "../types/community.ts"
 import CommunityList from "../components/layout/CommunityList.tsx";
 
 const RATING_ENABLED_CATEGORIES = ["후기게시판"];
-const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜"];
 const ADMIN_ONLY_CATEGORIES = ["공지게시판"];
 
-// ✅ 재사용성을 위해 검색 타입 분리
 type SearchOption = 
   | "title"
   | "author"
@@ -25,15 +24,23 @@ type SearchOption =
 
 export const getCommunityPosts = async (
   page = 0,
-  category: string | null = null,
-  region: string | null = null,
+  categories: string[] | null = null,
+  regions: string[] | null = null,
   searchType: SearchOption = null,
   keyword: string | null = null
 ) => {
   const params: any = { page };
 
-  if (category && category !== "전체보기") params.category = category;
-  if (region && region !== "전체") params.region = region;
+  // 규칙 2: 다중선택 배열 전달 처리
+  // 선택된 카테고리 배열을 그대로 params에 할당하여 전송 (백엔드에서 List<String> 형태로 받아 OR 연산)
+  if (categories && !categories.includes("전체보기")) {
+    params.categories = categories;
+  }
+
+  // 기존 코드의 "전체" 문자열 외에, UI상 표시되는 "전체보기"도 예외 처리
+  if (regions && !regions.includes("전체") && !regions.includes("전체보기")) {
+    params.regions = regions;
+  }
 
   if (searchType && keyword) {
     params.searchType = searchType;
@@ -53,19 +60,13 @@ export default function CommunityPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   
-  // 상태 분리: 공지사항과 일반 게시글을 따로 관리합니다.
   const [notices, setNotices] = useState<CommunityResponse[]>([]);
   const [posts, setPosts] = useState<CommunityResponse[]>([]);
   
   const [isNoticeExpanded, setIsNoticeExpanded] = useState(false);
 
-  const [selectedCategory, setSelectedCategory] = useState(
-    navState?.category || "전체보기"
-  );
-
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(
-    navState?.region || "전체"
-  );
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["전체보기"]);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>(["전체보기"]);
 
   const [searchType, setSearchType] = useState<SearchOption>("title");
   const [keyword, setKeyword] = useState("");
@@ -73,18 +74,18 @@ export default function CommunityPage() {
 
   useEffect(() => {
     if (navState) {
-      setSelectedCategory(navState.category || "전체보기");
-      setSelectedRegion(navState.region || "전체");
+      setSelectedCategories(navState.category ? [navState.category] : ["전체보기"]);
+      setSelectedRegions(navState.region ? [navState.region] : ["전체보기"]);
       setPage(0);
       navigate(location.pathname, { replace: true, state: null });
     }
   }, [location.key, location.pathname, navigate, navState]);
 
-  // ✅ 1. 공지사항 전용 Fetch (상단 고정용)
   useEffect(() => {
     const fetchNotices = async () => {
       try {
-        const data: CommunityPageResponse = await getCommunityPosts(0, "공지게시판", null, null, null);
+        // 타입 에러 방지 및 다중선택 룰 적용을 위해 문자열 대신 배열 형태로 ["공지게시판"] 전달
+        const data: CommunityPageResponse = await getCommunityPosts(0, ["공지게시판"], null, null, null);
         
         const noticesWithAuthor = (data?.content || []).map((notice) => ({
           ...notice,
@@ -100,20 +101,19 @@ export default function CommunityPage() {
     fetchNotices();
   }, []);
 
-  // ✅ 2. 일반 게시글 전용 Fetch (하단 리스트용)
   useEffect(() => {
     const fetchPosts = async () => {
       try {
+        // 규칙 1: 카테고리 우선순위는 백엔드 QueryDSL 혹은 로직에서 처리되도록 위임.
+        // 규칙 2: 다중선택 OR 연산을 위해 기존 selectedCategories[0] 형태에서 배열 전체 전달로 변경.
         const data: CommunityPageResponse | undefined = await getCommunityPosts(
           page,
-          selectedCategory,
-          selectedRegion,
+          selectedCategories,
+          selectedRegions,
           searchType,
           activeKeyword || null
         );
 
-        // 🔥 수정됨: 기존의 .filter() 로직을 제거하여 서버에서 온 10개의 데이터를 그대로 출력합니다.
-        // 이렇게 하면 페이징 크기가 일정하게 유지되어 UI가 깨지지 않습니다.
         const postsWithAuthor = (data?.content || []).map((post) => ({
           ...post,
           authorNickname: post.authorNickname || "익명",
@@ -128,11 +128,11 @@ export default function CommunityPage() {
     };
 
     fetchPosts();
-  }, [page, selectedCategory, selectedRegion, searchType, activeKeyword]);
+  }, [page, selectedCategories, selectedRegions, searchType, activeKeyword]);
 
   const handleReset = () => {
-    setSelectedCategory("전체보기");
-    setSelectedRegion("전체");
+    setSelectedCategories(["전체보기"]);
+    setSelectedRegions(["전체보기"]);
     setKeyword("");
     setActiveKeyword("");
     setPage(0);
@@ -194,14 +194,18 @@ export default function CommunityPage() {
       <div className="community-page">
         <div className="community-container">
           <CommunitySidebar
-            selectedCategory={selectedCategory}
-            selectedRegion={selectedRegion}
-            onCategoryChange={(cat) => {
-              setSelectedCategory(cat);
+            selectedCategories={selectedCategories}
+            selectedRegions={selectedRegions}
+            onCategoryChange={(cats) => {
+              // 규칙 3: 토글 지정 취소 시, 배열이 비어있으면(마지막 지정 해제) 자동으로 '전체보기' 지정
+              const newCategories = (!cats || cats.length === 0) ? ["전체보기"] : cats;
+              setSelectedCategories(newCategories);
               setPage(0);
             }}
-            onRegionChange={(reg) => {
-              setSelectedRegion(reg);
+            onRegionChange={(regs) => {
+              // 규칙 3: 토글 지정 취소 시, 배열이 비어있으면(마지막 지정 해제) 자동으로 '전체보기' 지정
+              const newRegions = (!regs || regs.length === 0) ? ["전체보기"] : regs;
+              setSelectedRegions(newRegions);
               setPage(0);
             }}
             onReset={handleReset}

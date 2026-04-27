@@ -30,7 +30,7 @@ export default function LoginPage() {
         ),
         {
           id: "oauth-login-error",
-          duration: 7000,
+          duration: 5000,
         }
       );
 

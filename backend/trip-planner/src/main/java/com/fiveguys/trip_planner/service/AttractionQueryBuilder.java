@@ -166,9 +166,13 @@ public class AttractionQueryBuilder {
             }
             case DRIVE -> {
                 result.add(base + " 드라이브코스");
+                result.add(base + " 드라이브 코스");
                 result.add(base + " 해안도로");
-                result.add(base + " 전망대");
+                result.add(base + " 드라이브 루트");
+                result.add(base + " 드라이브하기 좋은 곳");
                 result.add(base + " 드라이브 명소");
+                result.add(base + " 고개");
+                result.add(base + " 해변 도로");
                 result.add(base + " 가볼만한곳");
             }
             default -> {

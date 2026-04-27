@@ -21,6 +21,7 @@ export interface CombinedRecommendationPayload {
   itineraryContent: string;
   restaurants?: RecommendationPayload;
   stays?: RecommendationPayload;
+  attractions?: RecommendationPayload;
 }
 
 export interface ChatMessage {

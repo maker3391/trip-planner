@@ -76,6 +76,9 @@ public class RecommendationDisplayService {
             case PENSION -> "펜션";
             case MOTEL -> "모텔";
             case HOTEL -> "호텔";
+            case OCEAN_VIEW -> "오션뷰 숙소";
+            case EMOTIONAL -> "감성 숙소";
+            case BUDGET -> "가성비 숙소";
             default -> "숙소";
         };
     }
