@@ -1,14 +1,15 @@
 import { create } from "zustand";
 
 export interface ChatMessage {
-  senderNickname: string;
+  senderId: number;
+  senderNickname?: string;
   content: string;
 }
 
 interface CSInfo {
   roomId: number;
   senderId: number;
-  nickname: string;
+  nickname?: string;
 }
 
 interface CSState {
