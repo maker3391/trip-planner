@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import '../layout/Sidebar.css';
 
 export default function SideListPanel({
@@ -29,7 +30,7 @@ export default function SideListPanel({
       top: '9px',
       left: '5px',
       zIndex: 10,
-      background: 'white',
+      background: '#eef2f7',
       padding: '10px',
       borderRadius: '20px',
       boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
@@ -48,13 +49,19 @@ export default function SideListPanel({
         transition: 'margin-bottom 0.15s ease'
       }}>
         {showContent && (
-          <h3 style={{
-            margin: 0,
-            fontSize: '18px',
-            lineHeight: '32px',
-            whiteSpace: 'nowrap'
-          }}>
-            📍 여행 경로
+          <h3
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              margin: 0,
+              fontSize: "18px",
+              lineHeight: "32px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <AltRouteOutlinedIcon style={{ fontSize: "22px" }} />
+            여행 경로
           </h3>
         )}
 

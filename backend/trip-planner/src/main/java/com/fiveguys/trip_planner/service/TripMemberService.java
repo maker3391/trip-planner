@@ -89,6 +89,20 @@ public class TripMemberService {
         }
 
         tripMember.setRole("MEMBER");
+
+        // ✅ 수락된 사용자에게 알림 전송
+        String targetUrl = "/trip-list";
+        Optional<Community> communityOpt = communityRepository.findFirstByTripPlan(tripPlan);
+        if (communityOpt.isPresent()) {
+            targetUrl = "/community/" + communityOpt.get().getId();
+        }
+
+        notificationService.send(
+                tripMember.getUser(),
+                "[" + tripPlan.getTitle() + "] 여행 참가 신청이 수락되었습니다.",
+                "TRIP_JOIN_ACCEPT",
+                targetUrl
+        );
     }
 
     @Transactional

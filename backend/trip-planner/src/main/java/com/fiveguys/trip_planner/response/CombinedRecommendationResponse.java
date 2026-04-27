@@ -17,33 +17,35 @@ public class CombinedRecommendationResponse {
     @Schema(description = "숙소 추천 결과")
     private List<RecommendationItemResponse> stays = new ArrayList<>();
 
+    @Schema(description = "명소/관광지 추천 결과")
+    private List<RecommendationItemResponse> attractions = new ArrayList<>();
+
     @Schema(description = "복합 추천에서 맛집 카드 제목")
     private String restaurantDisplayTitle;
 
     @Schema(description = "복합 추천에서 숙소 카드 제목")
     private String stayDisplayTitle;
 
+    @Schema(description = "복합 추천에서 명소/관광지 카드 제목")
+    private String attractionDisplayTitle;
+
     public CombinedRecommendationResponse() {
     }
 
     public CombinedRecommendationResponse(RecommendationContentResponse itinerary,
                                           List<RecommendationItemResponse> restaurants,
-                                          List<RecommendationItemResponse> stays) {
-        this.itinerary = itinerary;
-        this.restaurants = restaurants;
-        this.stays = stays;
-    }
-
-    public CombinedRecommendationResponse(RecommendationContentResponse itinerary,
-                                          List<RecommendationItemResponse> restaurants,
                                           List<RecommendationItemResponse> stays,
+                                          List<RecommendationItemResponse> attractions,
                                           String restaurantDisplayTitle,
-                                          String stayDisplayTitle) {
+                                          String stayDisplayTitle,
+                                          String attractionDisplayTitle) {
         this.itinerary = itinerary;
         this.restaurants = restaurants;
         this.stays = stays;
+        this.attractions = attractions;
         this.restaurantDisplayTitle = restaurantDisplayTitle;
         this.stayDisplayTitle = stayDisplayTitle;
+        this.attractionDisplayTitle = attractionDisplayTitle;
     }
 
     public RecommendationContentResponse getItinerary() {
@@ -70,6 +72,14 @@ public class CombinedRecommendationResponse {
         this.stays = stays;
     }
 
+    public List<RecommendationItemResponse> getAttractions() {
+        return attractions;
+    }
+
+    public void setAttractions(List<RecommendationItemResponse> attractions) {
+        this.attractions = attractions;
+    }
+
     public String getRestaurantDisplayTitle() {
         return restaurantDisplayTitle;
     }
@@ -84,5 +94,13 @@ public class CombinedRecommendationResponse {
 
     public void setStayDisplayTitle(String stayDisplayTitle) {
         this.stayDisplayTitle = stayDisplayTitle;
+    }
+
+    public String getAttractionDisplayTitle() {
+        return attractionDisplayTitle;
+    }
+
+    public void setAttractionDisplayTitle(String attractionDisplayTitle) {
+        this.attractionDisplayTitle = attractionDisplayTitle;
     }
 }

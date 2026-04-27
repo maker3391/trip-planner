@@ -175,6 +175,26 @@ public class KakaoPlaceScoringService {
             case GUEST_HOUSE -> haystack.contains("게스트하우스");
             case HANOK -> haystack.contains("한옥");
             case POOL_VILLA -> haystack.contains("풀빌라");
+            case OCEAN_VIEW -> haystack.contains("오션뷰")
+                    || haystack.contains("바다뷰")
+                    || haystack.contains("해변")
+                    || haystack.contains("비치")
+                    || haystack.contains("호텔")
+                    || haystack.contains("리조트")
+                    || haystack.contains("펜션");
+
+            case EMOTIONAL -> haystack.contains("감성")
+                    || haystack.contains("스테이")
+                    || haystack.contains("호텔")
+                    || haystack.contains("펜션")
+                    || haystack.contains("게스트하우스")
+                    || haystack.contains("한옥");
+
+            case BUDGET -> haystack.contains("호텔")
+                    || haystack.contains("모텔")
+                    || haystack.contains("게스트하우스")
+                    || haystack.contains("숙박")
+                    || haystack.contains("숙소");
             default -> isAnyStayPlace(doc);
         };
     }
@@ -264,6 +284,23 @@ public class KakaoPlaceScoringService {
                 }
                 case POOL_VILLA -> {
                     if (placeName.contains("풀빌라") || category.contains("풀빌라")) score += 45;
+                }
+                case OCEAN_VIEW -> {
+                    if (placeName.contains("오션뷰") || placeName.contains("바다뷰")) score += 60;
+                    if (placeName.contains("해변") || placeName.contains("비치")) score += 35;
+                    if (category.contains("호텔") || category.contains("리조트") || category.contains("펜션")) score += 25;
+                }
+                case EMOTIONAL -> {
+                    if (placeName.contains("감성")) score += 55;
+                    if (placeName.contains("스테이")) score += 35;
+                    if (placeName.contains("한옥")) score += 25;
+                    if (category.contains("호텔") || category.contains("펜션") || category.contains("게스트하우스")) score += 20;
+                }
+                case BUDGET -> {
+                    if (placeName.contains("가성비") || placeName.contains("저렴")) score += 50;
+                    if (category.contains("모텔")) score += 35;
+                    if (category.contains("호텔")) score += 25;
+                    if (category.contains("게스트하우스")) score += 25;
                 }
                 default -> {
                     if (category.contains("호텔")) score += 25;
