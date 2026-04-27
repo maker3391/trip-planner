@@ -308,4 +308,16 @@ public class CommunityController {
         communityService.deleteComment(commentId, userId);
         return ResponseEntity.ok(Map.of("success", true));
     }
+
+    // =========================
+    // 🔹 내가 작성한 글 목록 조회 (마이페이지 전용)
+    // =========================
+    @Operation(summary = "내가 쓴 글 조회", description = "현재 로그인한 유저가 작성한 게시글 목록을 가져옵니다.")
+    @GetMapping("/me/posts")
+    public ResponseEntity<Page<CommunityResponse>> getMyPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(communityService.getMyPosts(page, size));
+    }
 }

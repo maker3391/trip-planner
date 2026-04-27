@@ -8,7 +8,6 @@ import "./LoginPage.css";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../components/api/auth.ts";
 import toast from "react-hot-toast";
-import axios from "axios";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginRequest>({

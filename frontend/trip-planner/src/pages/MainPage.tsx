@@ -15,7 +15,6 @@ import {
 } from "../components/hooks/useTrip";
 
 // 계산기 관련 임포트
-import { CalculatorService } from "../components/layout/calculator";
 import Calculator from "../components/layout/Calculator.tsx";
 
 import "./MainPage.css";
@@ -287,7 +286,7 @@ export default function MainPage() {
       />
 
       {/* 계산기 컴포넌트: tripId가 null(신규여행)이어도 항상 렌더링되어야 클릭 시 열립니다. */}
-      <Calculator tripId={targetTripId || 0} />
+      <Calculator/>
     </div>
   );
 }

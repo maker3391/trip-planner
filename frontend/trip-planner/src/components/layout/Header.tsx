@@ -10,6 +10,8 @@ import GuidePopup from "../guide/GuidePopup.tsx";
 import { getMe } from "../api/auth.ts";
 import { getUnreadNotifications, NotificationResponseDto, readNotificationApi } from "../api/Notification.ts";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
+
+// react-hot-toast를 사용 중이라면 임포트 (기존 alert 대체용)
 import toast from "react-hot-toast";
 
 export default function Header() {
@@ -21,10 +23,14 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // ✅ 추가
 
   const [notifications, setNotifications] = useState<NotificationResponseDto[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isNotificationOpen = Boolean(anchorEl);
+
+  // const match = location.pathname.match(/\d+/);
+  // const currentTripId = match ? parseInt(match[0], 10) : 1;
 
   const clearAuth = () => {
     localStorage.removeItem("accessToken");
@@ -35,7 +41,6 @@ export default function Header() {
   useEffect(() => {
     const today = new Date().toLocaleDateString("sv-SE");
     const hideGuidePopupDate = localStorage.getItem("hideGuidePopupDate");
-
     if (hideGuidePopupDate !== today) {
       setOpenGuidePopup(true);
     }
@@ -57,10 +62,12 @@ export default function Header() {
       }
 
       try {
+        const userData = await getMe(); // ✅ 반환값 받기
         const user = await getMe();
 
         if (isMounted) {
           setIsLoggedIn(true);
+          setCurrentUserId(userData.id); // ✅ userId 저장
           setUserRole(user.role);
         }
       } catch (error) {
@@ -68,6 +75,7 @@ export default function Header() {
 
         if (isMounted) {
           setIsLoggedIn(false);
+          setCurrentUserId(null); // ✅ 로그인 실패 시 초기화
           setUserRole(null);
         }
       } finally {
@@ -86,31 +94,31 @@ export default function Header() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !currentUserId) return; // ✅ currentUserId도 체크
+
+    const notiKey = `notificationHistory_${currentUserId}`; // ✅ 유저별 키
 
     const fetchNotifications = async () => {
       try {
         const data = await getUnreadNotifications();
         setNotifications(data);
 
-        const existing = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
-
-        const newItems = data
-          .filter((serverNoti) => !existing.some((hist: any) => hist.id === serverNoti.id))
-          .map((noti) => ({
-            ...noti,
-            receivedAt: noti.createdAt || new Date().toISOString(),
-          }));
+        const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
+        const newItems = data.filter(
+          (serverNoti) => !existing.some((hist: any) => hist.id === serverNoti.id)
+        ).map(noti => ({
+          ...noti,
+          receivedAt: noti.createdAt || new Date().toISOString()
+        }));
 
         if (newItems.length > 0) {
           const updated = [...newItems, ...existing].slice(0, 50);
-          localStorage.setItem("notificationHistory", JSON.stringify(updated));
+          localStorage.setItem(notiKey, JSON.stringify(updated)); // ✅ 유저별 키로 저장
         }
       } catch (error) {
         console.error("알림 목록 조회 실패:", error);
       }
     };
-
     fetchNotifications();
 
     const token = localStorage.getItem("accessToken");
@@ -126,20 +134,20 @@ export default function Header() {
         signal: abortController.signal,
         onmessage(ev) {
           if (ev.data.includes("EventStream Created")) return;
-
+          
           try {
             const newNoti = JSON.parse(ev.data);
 
             toast(newNoti.message, { icon: "🔔", duration: 3000 });
             setNotifications((prev) => [newNoti, ...prev]);
 
-            const existing = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
+            const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
             const updated = [
               { ...newNoti, receivedAt: new Date().toISOString() },
               ...existing,
             ].slice(0, 50);
+            localStorage.setItem(notiKey, JSON.stringify(updated)); // ✅ 유저별 키로 저장
 
-            localStorage.setItem("notificationHistory", JSON.stringify(updated));
           } catch (error) {
             console.error("알림 데이터 파싱 오류:", error);
           }
@@ -154,12 +162,11 @@ export default function Header() {
     connectSSE();
 
     return () => abortController.abort();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, currentUserId]); // ✅ currentUserId 의존성 추가
 
   const handleReadNotification = async (id: number, targetUrl?: string) => {
     try {
       await readNotificationApi(id);
-
       setNotifications((prev) => prev.filter((noti) => noti.id !== id));
       setAnchorEl(null);
 
@@ -182,6 +189,7 @@ export default function Header() {
     } finally {
       clearAuth();
       setIsLoggedIn(false);
+      setCurrentUserId(null); // ✅ 로그아웃 시 초기화
       toast.success("로그아웃되었습니다.");
       navigate("/login");
     }
@@ -189,25 +197,21 @@ export default function Header() {
 
   const handleTripListClick = () => {
     if (isCheckingAuth) return;
-
     if (!isLoggedIn) {
       toast.error("로그인 후 이용 가능합니다.");
       navigate("/login");
       return;
     }
-
     navigate("/trip-list");
   };
 
   const handleCommunityClick = () => {
     if (isCheckingAuth) return;
-
     if (!isLoggedIn) {
       toast.error("로그인 후 이용 가능합니다.");
       navigate("/login");
       return;
     }
-
     navigate("/community");
   };
 
@@ -245,7 +249,13 @@ export default function Header() {
                   anchorEl={anchorEl}
                   open={isNotificationOpen}
                   onClose={() => setAnchorEl(null)}
-                  PaperProps={{ className: "notification-menu-paper" }}
+                  slotProps={{
+                    paper: {
+                      className: "notification-menu-paper",
+                      style: { pointerEvents: "auto" }
+                    }
+                  }}
+                  disableScrollLock  // ✅ 이것만 추가해도 스크롤 막힘은 해결됨
                 >
                   {notifications.length > 0 && (
                     <MenuItem
