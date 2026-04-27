@@ -5,29 +5,56 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fa5301cc-2a84-4764-976a-61f81e28a936" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules/trip-planner.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/trip-planner.main.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/controller/CommunityController.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/controller/CommunityController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/repository/CommunityRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/repository/CommunityRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CommunityService.java" beforeDir="false" afterPath="$PROJECT_DIR$/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CommunityService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/trip/ActionButtons.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/trip/ActionButtons.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/LoginPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/LoginPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MainPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/MyPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/SignupPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/SignupPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/TripListPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/pages/TripListPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Sidebar.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Sidebar.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/layout/Sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/trip-planner/src/components/map/SideListPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/trip-planner/src/components/map/SideListPanel.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$/trip-planner">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="trip-planner" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;maker3391&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/korit-12-1team-fiveguys/trip-planner.git&quot;,
+    &quot;accountId&quot;: &quot;1840d3a6-0350-4d1f-94b1-0816925f8a3d&quot;
+  }
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0
 }</component>
@@ -39,23 +66,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.C:/Users/user/Desktop/trip-planner/backend/trip-planner.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;Spring Boot.TripPlannerApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;develop&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;reference.projectsettings.compiler.javacompiler&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.C:/Users/user/Desktop/trip-planner/backend/trip-planner.executor": "Run",
+    "Gradle.trip-planner 빌드.executor": "Run",
+    "Gradle.소스 다운로드.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "Spring Boot.TripPlannerApplication.executor": "Run",
+    "git-widget-placeholder": "develop",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/cbh/trip-planner/backend",
+    "settings.editor.selected.configurable": "reference.projectsettings.compiler.javacompiler"
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+        <option value="bundled-jdk-30f59d01ecdd-26cb7f24e5b0-intellij.indexing.shared.core-IU-253.29346.138" />
       </set>
     </attachedChunks>
   </component>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Luggage } from "lucide-react";
 import "./Sidebar.css";
 
 interface SidebarProps {
@@ -45,13 +45,15 @@ export default function Sidebar({ onSearch }: SidebarProps) {
 
       <div className="sidebar-content" aria-hidden={isCollapsed}>
         <div className="sidebar-intro">
-          <div className="sidebar-illustration">🧳</div>
+          <div className="sidebar-illustration" aria-hidden="true">
+            <Luggage size={54} strokeWidth={1.9} />
+          </div>
 
-          <h3 className="sidebar-heading">어디로 떠나볼까요?</h3>
+          <h3 className="sidebar-heading">여행 경로를 만들어 보세요</h3>
 
           <p className="sidebar-description">
-            가까운 출발 지점을 선택하세요 <br />
-            다음으로, 꼭 가봐야 할 명소를 추가하고 꿈꾸던 여행을 계획해 보세요
+            출발지나 여행지를 검색해 주세요 선택한 장소를 기준으로 여행
+            경로를 만들 수 있어요
           </p>
         </div>
 

@@ -11,10 +11,14 @@ function App() {
       }}
     >
       <Toaster
-        position="bottom-center"
+        position="top-right"
         reverseOrder={false}
         toastOptions={{
-          duration: 7000,
+          duration: 3000,
+        }}
+        containerStyle={{
+          top: 80,     
+          right: 20,   
         }}
       />
       <Router />
