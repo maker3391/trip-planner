@@ -1,6 +1,7 @@
 application-secrets.properties
 
 .idea/
+*.iml
 
 HELP.md
 .gradle

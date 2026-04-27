@@ -1,4 +1,4 @@
-import { AppBar, Toolbar, Button, Badge, Menu, MenuItem, Typography, Box } from "@mui/material";
+import { AppBar, Toolbar, Button, Badge, Menu, MenuItem, Typography } from "@mui/material";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -10,8 +10,6 @@ import GuidePopup from "../guide/GuidePopup.tsx";
 import { getMe } from "../api/auth.ts";
 import { getUnreadNotifications, NotificationResponseDto, readNotificationApi } from "../api/Notification.ts";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-
-// react-hot-toast를 사용 중이라면 임포트 (기존 alert 대체용)
 import toast from "react-hot-toast";
 
 export default function Header() {
@@ -22,16 +20,14 @@ export default function Header() {
   const [openGuidePopup, setOpenGuidePopup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // ✅ 추가
 
   const[notifications, setNotifications] = useState<NotificationResponseDto[]>([]);
   const[anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isNotificationOpen = Boolean(anchorEl);
 
-  // 현재 페이지가 메인 페이지인지 확인 (경로가 "/" 인 경우)
-  const isMainPage = location.pathname === "/";
-
-  const match = location.pathname.match(/\d+/);
-  const currentTripId = match ? parseInt(match[0], 10) : 1;
+  // const match = location.pathname.match(/\d+/);
+  // const currentTripId = match ? parseInt(match[0], 10) : 1;
 
   const clearAuth = () => {
     localStorage.removeItem("accessToken");
@@ -41,7 +37,6 @@ export default function Header() {
   useEffect(() => {
     const today = new Date().toLocaleDateString("sv-SE");
     const hideGuidePopupDate = localStorage.getItem("hideGuidePopupDate");
-
     if (hideGuidePopupDate !== today) {
       setOpenGuidePopup(true);
     }
@@ -62,14 +57,16 @@ export default function Header() {
       }
 
       try {
-        await getMe();
+        const userData = await getMe(); // ✅ 반환값 받기
         if (isMounted) {
           setIsLoggedIn(true);
+          setCurrentUserId(userData.id); // ✅ userId 저장
         }
       } catch (error) {
         clearAuth();
         if (isMounted) {
           setIsLoggedIn(false);
+          setCurrentUserId(null); // ✅ 로그인 실패 시 초기화
         }
       } finally {
         if (isMounted) {
@@ -87,27 +84,26 @@ export default function Header() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !currentUserId) return; // ✅ currentUserId도 체크
+
+    const notiKey = `notificationHistory_${currentUserId}`; // ✅ 유저별 키
 
     const fetchNotifications = async () => {
       try {
         const data = await getUnreadNotifications();
         setNotifications(data);
 
-        // ✅ [추가] 서버에서 가져온 미확인 알림들을 히스토리에 병합
-        const existing = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
-        
-        // 중복 제거 (이미 히스토리에 있는 ID는 제외)
+        const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
         const newItems = data.filter(
           (serverNoti) => !existing.some((hist: any) => hist.id === serverNoti.id)
         ).map(noti => ({
           ...noti,
-          receivedAt: noti.createdAt || new Date().toISOString() // 시간 데이터 없으면 현재시간
+          receivedAt: noti.createdAt || new Date().toISOString()
         }));
 
         if (newItems.length > 0) {
           const updated = [...newItems, ...existing].slice(0, 50);
-          localStorage.setItem("notificationHistory", JSON.stringify(updated));
+          localStorage.setItem(notiKey, JSON.stringify(updated)); // ✅ 유저별 키로 저장
         }
       } catch (error) {
         console.error("알림 목록 조회 실패:", error);
@@ -128,22 +124,19 @@ export default function Header() {
         signal: abortController.signal,
         onmessage(ev) {
           if (ev.data.includes("EventStream Created")) return;
-          
+
           try {
             const newNoti = JSON.parse(ev.data);
 
             toast(newNoti.message, { icon: "🔔", duration: 3000 });
-
-            // 실시간 뱃지용
             setNotifications((prev) => [newNoti, ...prev]);
 
-            // ↓ 이 부분 추가 - MyPage 히스토리에 즉시 저장
-            const existing = JSON.parse(localStorage.getItem("notificationHistory") || "[]");
+            const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
             const updated = [
               { ...newNoti, receivedAt: new Date().toISOString() },
               ...existing,
             ].slice(0, 50);
-            localStorage.setItem("notificationHistory", JSON.stringify(updated));
+            localStorage.setItem(notiKey, JSON.stringify(updated)); // ✅ 유저별 키로 저장
 
           } catch (error) {
             console.error("알림 데이터 파싱 오류:", error);
@@ -159,17 +152,13 @@ export default function Header() {
     connectSSE();
 
     return () => abortController.abort();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, currentUserId]); // ✅ currentUserId 의존성 추가
 
   const handleReadNotification = async (id: number, targetUrl?: string) => {
     try {
-      await readNotificationApi(id); // 서버에 읽음 알림
-      
-      // ✅ 헤더 알림 목록(뱃지 숫자)에서만 제거
+      await readNotificationApi(id);
       setNotifications((prev) => prev.filter((noti) => noti.id !== id));
       setAnchorEl(null);
-
-      // 여기서 localStorage를 건드리지 마! 그래야 MyPage 기록이 보존돼.
       if (targetUrl) {
         navigate(targetUrl);
       }
@@ -189,6 +178,7 @@ export default function Header() {
     } finally {
       clearAuth();
       setIsLoggedIn(false);
+      setCurrentUserId(null); // ✅ 로그아웃 시 초기화
       toast.success("로그아웃되었습니다.");
       navigate("/login");
     }
@@ -230,7 +220,6 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
-
             {!isCheckingAuth && isLoggedIn && (
               <>
                 <span className="header-icon">
@@ -249,26 +238,27 @@ export default function Header() {
                   anchorEl={anchorEl}
                   open={isNotificationOpen}
                   onClose={() => setAnchorEl(null)}
-                  PaperProps={{className: "notification-menu-paper"}}
+                  slotProps={{
+                    paper: {
+                      className: "notification-menu-paper",
+                      style: { pointerEvents: "auto" }
+                    }
+                  }}
+                  disableScrollLock  // ✅ 이것만 추가해도 스크롤 막힘은 해결됨
                 >
                   {notifications.length > 0 && (
                     <MenuItem
                       onClick={async () => {
-                        // 1. 서버 API 호출
                         await Promise.all(notifications.map((n) => readNotificationApi(n.id)));
-                        
-                        // 2. 헤더 상태 비우기 (뱃지 사라짐)
-                        setNotifications([]); 
+                        setNotifications([]);
                         setAnchorEl(null);
-                        
-                        // 💡 saveToHistory 호출 절대 금지! (이미 SSE 받을 때 저장됐음)
                       }}
                       className="notification-mark-all"
                     >
                       전체 읽음
                     </MenuItem>
                   )}
-                     
+
                   {notifications.length === 0 ? (
                     <MenuItem disabled>새로운 알림이 없습니다.</MenuItem>
                   ) : (
@@ -288,10 +278,7 @@ export default function Header() {
 
             {!isCheckingAuth && isLoggedIn ? (
               <>
-                <Button
-                  className="header-login-btn"
-                  onClick={() => navigate("/mypage")}
-                >
+                <Button className="header-login-btn" onClick={() => navigate("/mypage")}>
                   마이페이지
                 </Button>
                 <Button className="header-login-btn" onClick={handleLogout}>
@@ -300,16 +287,10 @@ export default function Header() {
               </>
             ) : !isCheckingAuth ? (
               <>
-                <Button
-                  className="header-login-signup-btn"
-                  onClick={() => navigate("/login")}
-                >
+                <Button className="header-login-signup-btn" onClick={() => navigate("/login")}>
                   로그인
                 </Button>
-                <Button
-                  className="header-login-signup-btn"
-                  onClick={() => navigate("/signup")}
-                >
+                <Button className="header-login-signup-btn" onClick={() => navigate("/signup")}>
                   회원가입
                 </Button>
               </>
@@ -318,15 +299,8 @@ export default function Header() {
         </Toolbar>
       </AppBar>
 
-      <GuidePopup
-        open={openGuidePopup}
-        onClose={() => setOpenGuidePopup(false)}
-      />
-
-      <TutorialModal
-        open={openTutorial}
-        onClose={() => setOpenTutorial(false)}
-      />
+      <GuidePopup open={openGuidePopup} onClose={() => setOpenGuidePopup(false)} />
+      <TutorialModal open={openTutorial} onClose={() => setOpenTutorial(false)} />
     </>
   );
 }

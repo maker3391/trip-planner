@@ -133,4 +133,9 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     void updateViewCount(@Param("postId") Long postId);
 
     Optional<Community> findFirstByTripPlan(TripPlan tripPlan);
+
+    // =========================
+    // 🔥 마이페이지 전용: 내가 쓴 글 조회
+    // =========================
+        Page<Community> findByAuthor(com.fiveguys.trip_planner.entity.User author, Pageable pageable);
 }

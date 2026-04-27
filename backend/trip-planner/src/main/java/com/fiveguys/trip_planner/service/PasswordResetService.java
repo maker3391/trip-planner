@@ -30,9 +30,7 @@ public class PasswordResetService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
 
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            throw new IllegalArgumentException("소셜 로그인 계정은 비밀번호 재설정을 사용할 수 없습니다.");
-        }
+        validateLocalAccountForPasswordReset(user);
 
         String token = UUID.randomUUID().toString();
 
@@ -72,13 +70,28 @@ public class PasswordResetService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            redisTemplate.delete("reset_token:" + token);
-            throw new IllegalArgumentException("소셜 로그인 계정은 비밀번호 재설정을 사용할 수 없습니다.");
-        }
+        validateLocalAccountForPasswordReset(user);
 
         user.setPassword(passwordEncoder.encode(newPassword));
 
         redisTemplate.delete("reset_token:" + token);
+    }
+
+    private void validateLocalAccountForPasswordReset(User user) {
+        String provider = user.getProvider();
+
+        if (provider == null || provider.isBlank()) {
+            return;
+        }
+
+        throw new IllegalArgumentException(buildProviderResetMessage(provider));
+    }
+
+    private String buildProviderResetMessage(String provider) {
+        return switch (provider) {
+            case "google" -> "Google 로그인 계정은 비밀번호 재설정을 사용할 수 없습니다.";
+            case "kakao" -> "Kakao 로그인 계정은 비밀번호 재설정을 사용할 수 없습니다.";
+            default -> "소셜 로그인 계정은 비밀번호 재설정을 사용할 수 없습니다.";
+        };
     }
 }

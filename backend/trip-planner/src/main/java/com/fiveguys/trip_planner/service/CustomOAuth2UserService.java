@@ -132,16 +132,17 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     private User createOAuthUserIfEmailNotUsed(OAuth2UserInfo userInfo) {
-        if (userInfo.email() != null
-                && !userInfo.email().isBlank()
-                && userRepository.existsByEmail(userInfo.email())) {
-            throw new OAuth2AuthenticationException(
-                    new OAuth2Error(
-                            "email_already_registered",
-                            "이미 이메일 회원가입으로 가입된 계정입니다. 이메일과 비밀번호로 로그인해주세요.",
-                            null
-                    )
-            );
+        if (userInfo.email() != null && !userInfo.email().isBlank()) {
+            userRepository.findByEmail(userInfo.email())
+                    .ifPresent(existingUser -> {
+                        throw new OAuth2AuthenticationException(
+                                new OAuth2Error(
+                                        "email_already_registered",
+                                        buildProviderConflictMessage(existingUser.getProvider()),
+                                        null
+                                )
+                        );
+                    });
         }
 
         return createNewOAuthUser(userInfo);
@@ -159,8 +160,26 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         userRepository.findByEmail(email)
                 .filter(user -> !user.getId().equals(currentUser.getId()))
                 .ifPresent(user -> {
-                    throw new OAuth2AuthenticationException("이미 다른 계정에서 사용 중인 이메일입니다.");
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error(
+                                    "email_already_registered",
+                                    buildProviderConflictMessage(user.getProvider()),
+                                    null
+                            )
+                    );
                 });
+    }
+
+    private String buildProviderConflictMessage(String provider) {
+        if (provider == null || provider.isBlank()) {
+            return "이미 이메일 회원가입으로 가입된 계정입니다. 이메일과 비밀번호로 로그인해주세요.";
+        }
+
+        return switch (provider) {
+            case "google" -> "이미 Google 로그인으로 가입된 계정입니다. Google 로그인을 이용해주세요.";
+            case "kakao" -> "이미 Kakao 로그인으로 가입된 계정입니다. Kakao 로그인을 이용해주세요.";
+            default -> "이미 다른 로그인 방식으로 가입된 계정입니다. 기존 로그인 방식을 이용해주세요.";
+        };
     }
 
     private User createNewOAuthUser(OAuth2UserInfo userInfo) {
