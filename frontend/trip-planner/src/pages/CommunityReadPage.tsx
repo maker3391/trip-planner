@@ -36,7 +36,7 @@ export const getMe = async () => {
 };
 
 const RATING_ENABLED_CATEGORIES = ["후기게시판"];
-const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜 공유"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜"];
 
 
 export default function CommunityReadPage() {
@@ -58,8 +58,8 @@ export default function CommunityReadPage() {
     const [me, setMe] = useState<{ id: number; role?: string } | null>(null);
     const [members, setMembers] = useState<TripMemberResponse[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState("전체보기");
-    const [selectedRegion, setSelectedRegion] = useState<string | null>("전체");
+    const [selectedCategories, setSelectedCategories] = useState<string[]>(["전체보기"]);
+    const [selectedRegions, setSelectedRegions] = useState<string[]>(["전체보기"]);
     const [isNoticeExpanded, setIsNoticeExpanded] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -114,7 +114,8 @@ export default function CommunityReadPage() {
     useEffect(() => {
         const fetchNotices = async () => {
             try {
-                const data: CommunityPageResponse = await getCommunityPosts(0, "공지게시판", null, null, null);
+                // 타입 에러 방지 및 다중선택 룰 적용을 위해 문자열 대신 배열 형태로 전달
+                const data: CommunityPageResponse = await getCommunityPosts(0, ["공지게시판"], null, null, null);
                 const noticesWithAuthor = (data?.content || []).map((notice) => ({
                     ...notice,
                     authorNickname: notice.authorNickname || "관리자",
@@ -142,10 +143,12 @@ export default function CommunityReadPage() {
 
     const fetchPosts = async (pageNumber: number = 0) => {
         try {
+            // 규칙 1, 2 적용: 기존의 selectedCategories[0], selectedRegions[0]와 같이 단일 요소를 보내던 것에서
+            // 다중선택 배열 전체를 전달하여 백엔드에서 OR 연산 및 우선순위 처리가 되도록 수정했습니다.
             const data: CommunityPageResponse | undefined = await getCommunityPosts(
                 pageNumber,
-                selectedCategory,
-                selectedRegion
+                selectedCategories,
+                selectedRegions
             );
 
             setPosts(data?.content || []);
@@ -157,7 +160,7 @@ export default function CommunityReadPage() {
 
     useEffect(() => {
         fetchPosts(page);
-    }, [page, selectedCategory, selectedRegion]);
+    }, [page, selectedCategories, selectedRegions]);
 
     const fetchTripMembers = async (tripId: number) => {
         try {
@@ -264,8 +267,8 @@ export default function CommunityReadPage() {
     };
 
     const handleReset = () => {
-        setSelectedCategory("전체보기");
-        setSelectedRegion("전체");
+        setSelectedCategories(["전체보기"]);
+        setSelectedRegions(["전체보기"]);
         setPage(0);
     };
 
@@ -338,14 +341,18 @@ export default function CommunityReadPage() {
             <div className="community-page">
                 <div className="community-container">
                     <CommunitySidebar
-                        selectedCategory={selectedCategory}
-                        selectedRegion={selectedRegion}
-                        onCategoryChange={(cat) => {
-                            setSelectedCategory(cat);
+                        selectedCategories={selectedCategories}
+                        selectedRegions={selectedRegions}
+                        onCategoryChange={(cats) => {
+                            // 규칙 3: 토글 지정 취소 시, 배열이 비어있으면 자동으로 '전체보기' 지정
+                            const newCategories = (!cats || cats.length === 0) ? ["전체보기"] : cats;
+                            setSelectedCategories(newCategories);
                             setPage(0);
                         }}
-                        onRegionChange={(reg) => {
-                            setSelectedRegion(reg);
+                        onRegionChange={(regs) => {
+                            // 규칙 3: 토글 지정 취소 시, 배열이 비어있으면 자동으로 '전체보기' 지정
+                            const newRegions = (!regs || regs.length === 0) ? ["전체보기"] : regs;
+                            setSelectedRegions(newRegions);
                             setPage(0);
                         }}
                         onReset={handleReset}
@@ -358,7 +365,7 @@ export default function CommunityReadPage() {
                                     <label>분류</label>
                                     <div>{post?.category}</div>
                                 </div>
-                                {PLAN_SHARE_ENABLED_CATEGORIES.includes(post?.category || "") && (
+                                {PLAN_SHARE_ENABLED_CATEGORIES.includes(post?.category || "") || RATING_ENABLED_CATEGORIES.includes(post?.category || "") && post?.region !== "미정" && (
                                     <div className="form-group">
                                         <label>지역</label>
                                         <div>{post?.region}</div>
@@ -370,7 +377,7 @@ export default function CommunityReadPage() {
                                 {post?.category &&
                                     PLAN_SHARE_ENABLED_CATEGORIES.includes(post.category) && (
                                         <div className="route-display">
-                                            <strong>경로:</strong> {post.departure} <ArrowRightAltIcon />{" "}
+                                            <strong>경로:</strong> {post?.departure} <ArrowRightAltIcon />{" "}
                                             {post.arrival}
                                         </div>
                                     )}
@@ -612,7 +619,7 @@ export default function CommunityReadPage() {
                         {/* sessionStorage 대신 me?.id를 우선 활용하도록 수정 */}
                         <CommunityComments 
                             postId={Number(post?.id)}
-                            currentUserId={me?.id || Number(sessionStorage.getItem("userId"))} currentUserRole={String(me?.role)}                        />
+                            currentUserId={me?.id || Number(sessionStorage.getItem("userId"))} currentUserRole={String(me?.role)}                       />
 
                         <hr />
 

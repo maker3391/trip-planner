@@ -1,15 +1,8 @@
 package com.fiveguys.trip_planner.service;
 
-import com.fiveguys.trip_planner.dto.ChatMessageRequestDto;
-import com.fiveguys.trip_planner.dto.ChatMessageResponseDto;
-import com.fiveguys.trip_planner.dto.ChatRoomRequestDto;
-import com.fiveguys.trip_planner.dto.ChatRoomResponseDto;
-import com.fiveguys.trip_planner.entity.ChatMessage;
-import com.fiveguys.trip_planner.entity.ChatRoom;
-import com.fiveguys.trip_planner.entity.User;
-import com.fiveguys.trip_planner.repository.ChatMessageRepository;
-import com.fiveguys.trip_planner.repository.ChatRoomRepository;
-import com.fiveguys.trip_planner.repository.UserRepository;
+import com.fiveguys.trip_planner.dto.*;
+import com.fiveguys.trip_planner.entity.*;
+import com.fiveguys.trip_planner.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +12,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CSChatService {
 
     private final ChatRoomRepository chatRoomRepository;
@@ -72,6 +66,13 @@ public class CSChatService {
     public List<ChatMessageResponseDto> getChatHistory(Long roomId) {
         return chatMessageRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId).stream()
                 .map(ChatMessageResponseDto::from)
+                .collect(Collectors.toList());
+    }
+
+    public List<ChatRoomResponseDto> findRoomsByUser(User user) {
+        List<ChatRoom> rooms = chatRoomRepository.findByUserOrderByCreatedAtDesc(user);
+        return rooms.stream()
+                .map(ChatRoomResponseDto::from)
                 .collect(Collectors.toList());
     }
 }

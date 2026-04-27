@@ -1,17 +1,17 @@
 import { useEffect, useState, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Box, TextField, Button, Typography, Paper, List, ListItem, ListItemText } from '@mui/material';
 import { useCSStore } from '../store/csStore';
+import './css/CSChatWindow.css'
 
 
 interface CSChatWindowProps {
     roomId: number;
     senderId: number;
-    nickname: string;
+    onBack: () => void;
 }
 
-export default function CSChatWindow({ roomId, senderId, nickname }: CSChatWindowProps) {
+export default function CSChatWindow({ roomId, senderId, onBack}: CSChatWindowProps) {
     const { messages, addMessage, clearCsInfo } = useCSStore();
     const [inputMsg, setInputMsg] = useState('');
     const [connected, setConnected] = useState(false);
@@ -81,45 +81,59 @@ export default function CSChatWindow({ roomId, senderId, nickname }: CSChatWindo
     }, [roomId, addMessage]);
 
     return (
-        <Paper elevation={3} sx={{ width: 400, height: 600, display: 'flex', flexDirection: 'column', p: 2 }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1 }}>
-                <Typography variant="h6">1:1 문의 채팅방 (방 번호: {roomId})</Typography>
-                <Typography variant="caption" color={connected ? 'success.main' : 'error.main'}>
-                    {connected ? '🟢 연결됨' : '🔴 연결 끊어짐'}
-                </Typography>
-            </Box>
+        <div className="cs-chat-container">
+            <div className="cs-chat-header">
+                <div className="cs-chat-header-left">
+                    <button 
+                        className="cs-chat-back-btn"
+                        onClick={onBack} 
+                        title="AI 챗봇으로 돌아가기"
+                    >
+                        ⬅️
+                    </button>
+                    <div>
+                        <h3 className="cs-chat-title">1:1 문의 채팅방 (방 번호: {roomId})</h3>
+                        <span className={`cs-chat-status ${connected ? 'connected' : 'disconnected'}`}>
+                            {connected ? '🟢 연결됨' : '🔴 연결 끊어짐'}
+                        </span>
+                    </div>
+                </div>
+                <button className="cs-chat-end-btn" onClick={handleEndChat}>
+                    상담 종료
+                </button>
+            </div>
 
-            <Button variant="outlined" color="error" size="small" onClick={handleEndChat}>
-              상담 종료
-            </Button>
-            <List sx={{ flexGrow: 1, overflow: 'auto', mb: 2, bgcolor: '#f5f5f5', borderRadius: 1, p: 1 }}>
-                {messages.map((msg, index) => (
-                    <ListItem key={index} sx={{ justifyContent: msg.senderNickname === nickname ? 'flex-end' : 'flex-start' }}>
-                        <Paper sx={{ p: 1.5, maxWidth: '80%', bgcolor: msg.senderNickname === nickname ? '#e3f2fd' : '#ffffff' }}>
-                            <ListItemText 
-                                primary={<Typography variant="subtitle2" color="primary">{msg.senderNickname}</Typography>}
-                                secondary={msg.content} 
-                            />
-                        </Paper>
-                    </ListItem>
-                ))}
+            <div className="cs-chat-messages">
+                {messages.map((msg, idx) => {
+                    const isMe = msg.senderId === senderId;
+                    
+                    return (
+                        <div key={idx} className={`cs-chat-msg-wrapper ${isMe ? 'me' : 'other'}`}>
+                            <span className="cs-chat-sender">
+                                {isMe ? '나' : (msg.senderNickname || '관리자')}
+                            </span>
+                            <div className={`cs-chat-bubble ${isMe ? 'me' : 'other'}`}>
+                                {msg.content}
+                            </div>
+                        </div>
+                    );
+                })}
                 <div ref={messagesEndRef} />
-            </List>
+            </div>
 
-            <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField 
-                    fullWidth 
-                    size="small" 
+            <div className="cs-chat-input-area">
+                <input 
+                    className="cs-chat-input"
+                    type="text"
                     placeholder="메시지를 입력하세요..." 
                     value={inputMsg}
                     onChange={(e) => setInputMsg(e.target.value)}
-                    onKeyPress={(e) => { if (e.key === 'Enter') sendMessage(); }}
-                    disabled={!connected}
+                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                 />
-                <Button variant="contained" onClick={sendMessage} disabled={!connected}>
+                <button className="cs-chat-send-btn" onClick={sendMessage}>
                     전송
-                </Button>
-            </Box>
-        </Paper>
+                </button>
+            </div>
+        </div>
     );
 }
