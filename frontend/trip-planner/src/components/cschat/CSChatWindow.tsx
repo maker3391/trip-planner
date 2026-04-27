@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
-import { Box, TextField, Button, Typography, Paper, List, ListItem, ListItemText } from '@mui/material';
-import { useCSStore } from '../store/csStore';
-
+import { useEffect, useState, useRef } from "react";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+import { useCSStore } from "../store/csStore";
+import toast from "react-hot-toast";
 
 interface CSChatWindowProps {
     roomId: number;
@@ -11,41 +10,51 @@ interface CSChatWindowProps {
     nickname: string;
 }
 
-export default function CSChatWindow({ roomId, senderId, nickname }: CSChatWindowProps) {
+export default function CSChatWindow({
+    roomId,
+    senderId,
+    nickname,
+}: CSChatWindowProps) {
     const { messages, addMessage, clearCsInfo } = useCSStore();
-    const [inputMsg, setInputMsg] = useState('');
+    const [inputMsg, setInputMsg] = useState("");
     const [connected, setConnected] = useState(false);
-    
+
     const stompClient = useRef<Client | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
     const sendMessage = () => {
-        if (inputMsg.trim() !== '' && stompClient.current?.connected) {
-            const chatMessage = {
-                roomId: roomId,
-                senderId: senderId,
-                content: inputMsg,
-            };
-            
-            stompClient.current.publish({
-                destination: '/pub/chat/message',
-                body: JSON.stringify(chatMessage),
-            });
-            setInputMsg('');
+        if (!inputMsg.trim()) return;
+
+        if (!stompClient.current?.connected) {
+            toast.error("상담 서버와 연결되지 않았습니다.");
+            return;
         }
+
+        const chatMessage = {
+            roomId,
+            senderId,
+            content: inputMsg,
+        };
+
+        stompClient.current.publish({
+            destination: "/pub/chat/message",
+            body: JSON.stringify(chatMessage),
+        });
+
+        setInputMsg("");
     };
 
     const handleEndChat = () => {
-        if (window.confirm("상담을 완전히 종료하시겠습니까? (대화 내용이 사라집니다)")) {
-            if (stompClient.current) {
-                stompClient.current.deactivate();
-            }
-            clearCsInfo(); 
+        if (stompClient.current) {
+            stompClient.current.deactivate();
         }
+
+        clearCsInfo();
+        toast.success("상담이 종료되었습니다.");
     };
 
     useEffect(() => {
@@ -54,19 +63,24 @@ export default function CSChatWindow({ roomId, senderId, nickname }: CSChatWindo
 
     useEffect(() => {
         const client = new Client({
-            webSocketFactory: () => new SockJS('http://localhost:8080/ws-chat'),
+            webSocketFactory: () => new SockJS("http://localhost:8080/ws-chat"),
             debug: (str) => console.log(str),
             reconnectDelay: 5000,
             onConnect: () => {
                 setConnected(true);
+
                 client.subscribe(`/sub/chat/room/${roomId}`, (message) => {
                     const receivedMsg = JSON.parse(message.body);
                     addMessage(receivedMsg);
                 });
             },
+            onDisconnect: () => {
+                setConnected(false);
+            },
             onStompError: (frame) => {
-                console.error('Broker reported error: ' + frame.headers['message']);
-                console.error('Additional details: ' + frame.body);
+                console.error("Broker reported error: " + frame.headers["message"]);
+                console.error("Additional details: " + frame.body);
+                setConnected(false);
             },
         });
 
@@ -81,45 +95,93 @@ export default function CSChatWindow({ roomId, senderId, nickname }: CSChatWindo
     }, [roomId, addMessage]);
 
     return (
-        <Paper elevation={3} sx={{ width: 400, height: 600, display: 'flex', flexDirection: 'column', p: 2 }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1 }}>
-                <Typography variant="h6">1:1 문의 채팅방 (방 번호: {roomId})</Typography>
-                <Typography variant="caption" color={connected ? 'success.main' : 'error.main'}>
-                    {connected ? '🟢 연결됨' : '🔴 연결 끊어짐'}
-                </Typography>
-            </Box>
+        <div className="cs-chat-window">
+            <div className="cs-chat-info">
+                <div>
+                    <p className="cs-chat-title">1:1 상담</p>
+                    <p className="cs-chat-room">문의 번호 #{roomId}</p>
+                </div>
 
-            <Button variant="outlined" color="error" size="small" onClick={handleEndChat}>
-              상담 종료
-            </Button>
-            <List sx={{ flexGrow: 1, overflow: 'auto', mb: 2, bgcolor: '#f5f5f5', borderRadius: 1, p: 1 }}>
-                {messages.map((msg, index) => (
-                    <ListItem key={index} sx={{ justifyContent: msg.senderNickname === nickname ? 'flex-end' : 'flex-start' }}>
-                        <Paper sx={{ p: 1.5, maxWidth: '80%', bgcolor: msg.senderNickname === nickname ? '#e3f2fd' : '#ffffff' }}>
-                            <ListItemText 
-                                primary={<Typography variant="subtitle2" color="primary">{msg.senderNickname}</Typography>}
-                                secondary={msg.content} 
-                            />
-                        </Paper>
-                    </ListItem>
-                ))}
+                <span
+                    className={
+                        connected
+                            ? "cs-status connected"
+                            : "cs-status disconnected"
+                    }
+                >
+                    {connected ? "연결됨" : "연결 끊김"}
+                </span>
+            </div>
+
+            <div className="cs-chat-notice">
+                상담원이 확인 후 순차적으로 답변드립니다.
+            </div>
+
+            <div className="cs-chat-body">
+                {messages.length === 0 ? (
+                    <div className="cs-empty-message">
+                        상담원 연결이 요청되었습니다.
+                        <br />
+                        문의 내용을 남겨주세요.
+                    </div>
+                ) : (
+                    messages.map((msg, index) => {
+                        const isMine = msg.senderNickname === nickname;
+
+                        return (
+                            <div
+                                key={index}
+                                className={
+                                    isMine
+                                        ? "cs-message mine"
+                                        : "cs-message other"
+                                }
+                            >
+                                <div className="cs-message-bubble">
+                                    {!isMine && (
+                                        <span className="cs-message-name">
+                                            {msg.senderNickname}
+                                        </span>
+                                    )}
+                                    <p>{msg.content}</p>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+
                 <div ref={messagesEndRef} />
-            </List>
+            </div>
 
-            <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField 
-                    fullWidth 
-                    size="small" 
-                    placeholder="메시지를 입력하세요..." 
+            <div className="cs-chat-actions">
+                <button
+                    type="button"
+                    className="cs-end-button"
+                    onClick={handleEndChat}
+                >
+                    상담 종료
+                </button>
+            </div>
+
+            <div className="cs-chat-input-area">
+                <input
                     value={inputMsg}
                     onChange={(e) => setInputMsg(e.target.value)}
-                    onKeyPress={(e) => { if (e.key === 'Enter') sendMessage(); }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") sendMessage();
+                    }}
+                    placeholder="메시지를 입력하세요..."
                     disabled={!connected}
                 />
-                <Button variant="contained" onClick={sendMessage} disabled={!connected}>
+
+                <button
+                    type="button"
+                    onClick={sendMessage}
+                    disabled={!connected || !inputMsg.trim()}
+                >
                     전송
-                </Button>
-            </Box>
-        </Paper>
+                </button>
+            </div>
+        </div>
     );
 }
