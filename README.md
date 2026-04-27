@@ -151,18 +151,32 @@ trip-planner/
 │   ├── public/
 │   └── src/
 │       ├── components/      # 공통 컴포넌트
+│       │    ├── agree/      # 개인정보 이용동의서
+│       │    ├── api/        # API 호출 함수
+│       │    ├── chatbot/    # AI 챗봇
+│       │    ├── cschat/     # 관리자 문의 (WebSocket)
+│       │    ├── guide/      # 서비스 이용 가이드
+│       │    ├── hooks/      # 커스텀 훅 (React Query 등)
+│       │    ├── layout/     # 헤더, 푸터 등 레이아웃 컴포넌트
+│       │    ├── map/        # 여행 계획용 지도 페이지 컴포넌트
+│       │    ├── router/     # 라우팅 설정
+│       │    ├── store/      # 전역 상태 관리
+│       │    └── trip/       # 메인 페이지 버튼
 │       ├── pages/           # 페이지 컴포넌트
-│       ├── hooks/           # 커스텀 훅 (React Query)
-│       ├── api/             # API 호출 함수
-│       └── styles/          # 전역 스타일
+│       ├── styles/          # 전역 스타일
+│       └── types/           # TypeScript 타입 정의
 │
 └── backend/
     └── src/main/java/
+        ├── client/          # 외부 API 클라이언트 (AI, 지도 등)
+        ├── config/          # 설정 파일 (Security, WebSocket 등)
         ├── controller/      # REST API 컨트롤러
-        ├── service/         # 비즈니스 로직
-        ├── repository/      # DB 접근 계층
+        ├── dto/             # 데이터 전송 객체
         ├── entity/          # JPA 엔티티
-        └── config/          # 설정 파일 (Security, WebSocket 등)
+        ├── exception/       # 커스텀 예외 처리
+        ├── repository/      # DB 접근 계층
+        ├── response/        # 공통 응답 형식
+        └── service/         # 비즈니스 로직        
 ```
 
 <br>
