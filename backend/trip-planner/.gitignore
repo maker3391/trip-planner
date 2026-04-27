@@ -1,7 +1,5 @@
 application-secrets.properties
 
-.idea/
-*.iml
 
 HELP.md
 .gradle
@@ -23,7 +21,6 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
-.idea/
 *.iws
 *.ipr
 out/

@@ -198,7 +198,7 @@ export default function Header() {
   const handleTripListClick = () => {
     if (isCheckingAuth) return;
     if (!isLoggedIn) {
-      toast.error("로그인 후 이용 가능합니다.");
+      toast.error("로그인 후 이용 가능합니다.", { id: "community-auth" });
       navigate("/login");
       return;
     }
@@ -208,7 +208,7 @@ export default function Header() {
   const handleCommunityClick = () => {
     if (isCheckingAuth) return;
     if (!isLoggedIn) {
-      toast.error("로그인 후 이용 가능합니다.");
+      toast.error("로그인 후 이용 가능합니다.", { id: "community-auth" });
       navigate("/login");
       return;
     }
