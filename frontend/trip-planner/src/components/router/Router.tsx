@@ -15,6 +15,7 @@ import ChatBotModal from "../chatbot/ChatBotModal";
 import CommunityReadPage from "../../pages/CommunityReadPage";
 import ForgotPasswordPage from "../../pages/ForgotPasswordPage";
 import ResetPasswordPage from "../../pages/ResetPasswordPage";
+import AdminCSPage from "../cschat/AdminCSPage";
 
 export default function Router() {
   const [openChatBot, setOpenChatBot] = useState(false);
@@ -48,6 +49,15 @@ export default function Router() {
           element={
             <ProtectedRoute>
               <TripListPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/cs"
+          element={
+            <ProtectedRoute>
+              <AdminCSPage />
             </ProtectedRoute>
           }
         />

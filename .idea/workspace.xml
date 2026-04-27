@@ -6,7 +6,20 @@
   <component name="ChangeListManager">
     <list default="true" id="7a7fd5fb-a842-4416-9b5c-c9fd9e6f56df" name="변경" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+<<<<<<< Updated upstream
       <change beforePath="$PROJECT_DIR$/backend/trip-planner/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/trip-planner/src/main/resources/application.properties" afterDir="false" />
+=======
+      <change beforePath="$PROJECT_DIR$/backend/trip-planner/src/main/java/com/fiveguys/trip_planner/controller/CSChatController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/trip-planner/src/main/java/com/fiveguys/trip_planner/controller/CSChatController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/ChatRoomResponseDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/trip-planner/src/main/java/com/fiveguys/trip_planner/dto/ChatRoomResponseDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/trip-planner/src/main/java/com/fiveguys/trip_planner/repository/ChatRoomRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/trip-planner/src/main/java/com/fiveguys/trip_planner/repository/ChatRoomRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CSChatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/trip-planner/src/main/java/com/fiveguys/trip_planner/service/CSChatService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/trip-planner/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/trip-planner/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/trip-planner/src/components/api/csChat.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/trip-planner/src/components/api/csChat.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/trip-planner/src/components/chatbot/ChatBotModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/trip-planner/src/components/chatbot/ChatBotModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/trip-planner/src/components/cschat/CSChatWindow.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/trip-planner/src/components/cschat/CSChatWindow.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/trip-planner/src/components/router/Router.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/trip-planner/src/components/router/Router.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/trip-planner/src/components/store/csStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/trip-planner/src/components/store/csStore.ts" afterDir="false" />
+>>>>>>> Stashed changes
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,8 +42,8 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/Karas02000/trip-planner.git&quot;,
-    &quot;accountId&quot;: &quot;b66ee007-e5e5-499d-b08f-7bdfc555cd2c&quot;
+    &quot;url&quot;: &quot;https://github.com/korit-12-1team-fiveguys/trip-planner.git&quot;,
+    &quot;accountId&quot;: &quot;ca07bd41-5012-44f3-8ae1-5317306dd858&quot;
   }
 }</component>
   <component name="McpProjectServerCommands">
@@ -48,11 +61,20 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+<<<<<<< Updated upstream
+=======
+    "Gradle.trip-planner 빌드.executor": "Run",
+    "Gradle.trip-planner.executor": "Run",
+>>>>>>> Stashed changes
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
+<<<<<<< Updated upstream
+=======
+    "Spring Boot.TripPlannerApplication.executor": "Run",
+>>>>>>> Stashed changes
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "develop",
     "junie.onboarding.icon.badge.shown": "true",
@@ -65,7 +87,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.31033.145" />
+        <option value="bundled-jdk-30f59d01ecdd-26cb7f24e5b0-intellij.indexing.shared.core-IU-253.29346.138" />
       </set>
     </attachedChunks>
   </component>
@@ -78,5 +100,16 @@
       <updated>1774848342464</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>
