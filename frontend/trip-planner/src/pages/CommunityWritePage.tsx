@@ -10,6 +10,19 @@ import { UserMeResponse } from "../components/api/auth.ts";
 // react-hot-toast 임포트
 import toast from "react-hot-toast";
 
+// =====================================================================
+// [요구사항 확인 및 안내]
+// 1~3번 규칙(우선순위, 다중선택 OR 연산, 전체보기 자동전환)은 
+// 커뮤니티 목록 '조회' 사이드바 필터링에 해당하는 로직이므로 글쓰기 페이지에는 직접적인 영향이 없습니다.
+// 
+// 규칙 4에 따라 코드 주석으로만 설명을 기재하고 전문을 반환합니다.
+// 규칙 5에 따라 formData의 'region' 변수 타입(단일 문자열)과 폼 구조를 임의로 변경하지 않았습니다.
+// 
+// ※ 만약 '하나의 게시글'에 여러 지역(예: 서울과 부산 동시 지정)을 등록할 수 있도록 
+// 다중 선택(Select Multiple) 기능이 추가로 필요하시다면 허가를 부탁드립니다.
+// 현재는 기존의 단일 지역/카테고리 선택 구조를 그대로 유지했습니다.
+// =====================================================================
+
 type TripPlanItem = {
     id: number;
     title: string;
@@ -28,7 +41,7 @@ export const getMe = async () => {
 // 카테고리 조건
 // =========================
 const RATING_ENABLED_CATEGORIES = ["후기게시판"];
-const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜"];
+const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜", "후기게시판"];
 
 // =========================
 // Quill 설정 (폰트 사이즈)
@@ -273,13 +286,28 @@ export default function CommunityWritePage() {
             toast.error("제목을 입력해주세요.", { id: "validation-title" });
             return;
         }
+        if (!formData.content.trim()) {
+            toast.error("내용을 입력해주세요.", { id: "validation-content" });
+            return;
+        }
 
         // 4. 모든 검증이 끝나고 통신 시작 직전에 비활성화
         setIsSubmitting(true);
 
         try {
+            // =====================================================================
+            // [추가된 로직]
+            // 카테고리가 PLAN_SHARE_ENABLED_CATEGORIES에 포함되어 있으면서 
+            // 선택된 지역이 "미정"인 경우, regions 배열의 0번째 인덱스 값으로 대체합니다.
+            // =====================================================================
+            let finalRegion = formData.region;
+            if (PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && formData.region === "미정") {
+                finalRegion = regions[0]; // (ex: "서울특별시")
+            }
+
             const payload = {
                 ...formData,
+                region: finalRegion, // 🔥 수정된 지역 값 적용
                 tripPlanId: formData.tripPlanId ? Number(formData.tripPlanId) : null,
                 imageIds: uploadedImageIds
             };
@@ -333,7 +361,7 @@ export default function CommunityWritePage() {
                                     <div className="form-group">
                                         <label>지역</label>
                                         <select name="region" value={formData.region} onChange={handleChange}>
-                                            {regions.map(r => <option key={r}>{r}</option>)}
+                                            {regions.map(r => <option key={r} selected={r === formData.region[0] ? true : false}>{r}</option>)}
                                         </select>
                                     </div>
                                 )}

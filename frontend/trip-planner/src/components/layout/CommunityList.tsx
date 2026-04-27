@@ -2,6 +2,16 @@ import React from "react";
 import { CommunityResponse } from "../../types/community.ts";
 import "./CommunityList.css";
 
+// =====================================================================
+// [요구사항 확인 및 안내]
+// 전달해주신 CommunityList.tsx 코드는 목록을 렌더링하는 순수 UI 컴포넌트입니다.
+// 요청하신 1~3번 규칙(카테고리 우선도, 다중선택 OR 연산, 전체보기 자동 전환)은 
+// 데이터를 호출하는 부모 컴포넌트(CommunityPage 등)와 API 요청 단계에서 처리되므로,
+// 현재 이 리스트 컴포넌트 내부에는 로직 변경이 필요하지 않습니다.
+// 
+// 규칙 4와 5에 따라 기존 변수명과 인수 개수를 완벽히 유지하며, 전문을 그대로 반환합니다.
+// =====================================================================
+
 type Props = {
     posts: CommunityResponse[];
     notices: CommunityResponse[];
