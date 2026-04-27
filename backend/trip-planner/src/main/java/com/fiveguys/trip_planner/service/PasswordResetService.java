@@ -6,7 +6,6 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {
+
     private final JavaMailSender mailSender;
     private final StringRedisTemplate redisTemplate;
     private final UserRepository userRepository;
@@ -27,8 +27,10 @@ public class PasswordResetService {
 
     @Transactional
     public void sendResetLink(String email) {
-        userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+
+        validateLocalAccountForPasswordReset(user);
 
         String token = UUID.randomUUID().toString();
 
@@ -40,7 +42,6 @@ public class PasswordResetService {
 
             helper.setTo(email);
             helper.setSubject("[TPlanner] 비밀번호 재설정 안내입니다.");
-
             helper.setFrom("tndnjs981102@gmail.com", "TPlanner");
 
             String resetLink = "http://localhost:5173/reset-password?token=" + token;
@@ -62,15 +63,35 @@ public class PasswordResetService {
     public void resetPassword(String token, String newPassword) {
         String email = redisTemplate.opsForValue().get("reset_token:" + token);
 
-        if(email == null) {
+        if (email == null) {
             throw new IllegalArgumentException("만료되었거나 유효하지 않은 토큰입니다.");
         }
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        validateLocalAccountForPasswordReset(user);
+
         user.setPassword(passwordEncoder.encode(newPassword));
 
         redisTemplate.delete("reset_token:" + token);
+    }
+
+    private void validateLocalAccountForPasswordReset(User user) {
+        String provider = user.getProvider();
+
+        if (provider == null || provider.isBlank()) {
+            return;
+        }
+
+        throw new IllegalArgumentException(buildProviderResetMessage(provider));
+    }
+
+    private String buildProviderResetMessage(String provider) {
+        return switch (provider) {
+            case "google" -> "Google 로그인 계정은 비밀번호 재설정을 사용할 수 없습니다.";
+            case "kakao" -> "Kakao 로그인 계정은 비밀번호 재설정을 사용할 수 없습니다.";
+            default -> "소셜 로그인 계정은 비밀번호 재설정을 사용할 수 없습니다.";
+        };
     }
 }

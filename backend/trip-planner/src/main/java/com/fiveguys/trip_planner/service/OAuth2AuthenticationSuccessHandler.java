@@ -35,7 +35,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         String providerId = (String) oAuth2User.getAttributes().get("providerId");
 
         if (provider == null || provider.isBlank() || providerId == null || providerId.isBlank()) {
-            response.sendRedirect("http://localhost:5173/login?error=oauth2_user_not_found");
+            response.sendRedirect("http://localhost:5173/login?error=oauth2&message="
+                    + URLEncoder.encode("소셜 사용자 정보를 찾을 수 없습니다.", StandardCharsets.UTF_8));
             return;
         }
 

@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.security.oauth2.core.OAuth2Error;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         User user = userRepository.findByProviderAndProviderId(userInfo.provider(), userInfo.providerId())
                 .map(existingUser -> updateExistingOAuthUser(existingUser, userInfo))
-                .orElseGet(() -> handleOAuthUserCreateOrLink(userInfo));
+                .orElseGet(() -> createOAuthUserIfEmailNotUsed(userInfo));
 
         Map<String, Object> normalizedAttributes = new HashMap<>(attributes);
         normalizedAttributes.put("email", userInfo.email());
@@ -115,6 +116,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     private User updateExistingOAuthUser(User user, OAuth2UserInfo userInfo) {
+        validateEmailNotUsedByAnotherUser(user, userInfo.email());
+
         if (userInfo.email() != null && !userInfo.email().isBlank()) {
             user.setEmail(userInfo.email());
         }
@@ -128,30 +131,55 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         return userRepository.save(user);
     }
 
-    private User handleOAuthUserCreateOrLink(OAuth2UserInfo userInfo) {
+    private User createOAuthUserIfEmailNotUsed(OAuth2UserInfo userInfo) {
         if (userInfo.email() != null && !userInfo.email().isBlank()) {
-            return userRepository.findByEmail(userInfo.email())
-                    .map(existingUser -> connectExistingUser(existingUser, userInfo))
-                    .orElseGet(() -> createNewOAuthUser(userInfo));
+            userRepository.findByEmail(userInfo.email())
+                    .ifPresent(existingUser -> {
+                        throw new OAuth2AuthenticationException(
+                                new OAuth2Error(
+                                        "email_already_registered",
+                                        buildProviderConflictMessage(existingUser.getProvider()),
+                                        null
+                                )
+                        );
+                    });
         }
 
         return createNewOAuthUser(userInfo);
     }
 
-    private User connectExistingUser(User user, OAuth2UserInfo userInfo) {
-        user.setProvider(userInfo.provider());
-        user.setProviderId(userInfo.providerId());
-        user.setName(userInfo.name());
-
-        if (userInfo.email() != null && !userInfo.email().isBlank()) {
-            user.setEmail(userInfo.email());
+    private void validateEmailNotUsedByAnotherUser(User currentUser, String email) {
+        if (email == null || email.isBlank()) {
+            return;
         }
 
-        if (user.getNickname() == null || user.getNickname().isBlank()) {
-            user.setNickname(generateUniqueNickname(userInfo.name()));
+        if (email.equals(currentUser.getEmail())) {
+            return;
         }
 
-        return userRepository.save(user);
+        userRepository.findByEmail(email)
+                .filter(user -> !user.getId().equals(currentUser.getId()))
+                .ifPresent(user -> {
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error(
+                                    "email_already_registered",
+                                    buildProviderConflictMessage(user.getProvider()),
+                                    null
+                            )
+                    );
+                });
+    }
+
+    private String buildProviderConflictMessage(String provider) {
+        if (provider == null || provider.isBlank()) {
+            return "이미 이메일 회원가입으로 가입된 계정입니다. 이메일과 비밀번호로 로그인해주세요.";
+        }
+
+        return switch (provider) {
+            case "google" -> "이미 Google 로그인으로 가입된 계정입니다. Google 로그인을 이용해주세요.";
+            case "kakao" -> "이미 Kakao 로그인으로 가입된 계정입니다. Kakao 로그인을 이용해주세요.";
+            default -> "이미 다른 로그인 방식으로 가입된 계정입니다. 기존 로그인 방식을 이용해주세요.";
+        };
     }
 
     private User createNewOAuthUser(OAuth2UserInfo userInfo) {

@@ -2,9 +2,11 @@ import logo from "../../../assets/icons/tplanner2.png";
 
 interface ChatHeaderProps {
   onClose: () => void;
+  chatMode: "AI" | "CS";
+  onToggleMode: () => void;
 }
 
-export default function ChatHeader({ onClose }: ChatHeaderProps) {
+export default function ChatHeader({ onClose, chatMode, onToggleMode }: ChatHeaderProps) {
   return (
     <div className="chatbot-header">
       <div className="chatbot-title-row">
@@ -13,6 +15,15 @@ export default function ChatHeader({ onClose }: ChatHeaderProps) {
           alt="T Planner Logo"
           className="chatbot-title-logo"
         />
+        <button
+          onClick={onToggleMode}
+          style={{
+            padding: '4px 8px', fontSize: '12px', borderRadius: '4px',
+            border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer'
+          }}
+        >
+          {chatMode === "AI" ? "🙋‍♂️ 상담원 연결" : "🤖 AI 챗봇"}
+        </button>
       </div>
 
       <button

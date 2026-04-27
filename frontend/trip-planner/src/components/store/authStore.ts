@@ -2,17 +2,17 @@ import { create } from "zustand";
 import { client } from "../api/client.ts"
 
 type AuthState = {
-  isLogin: boolean;
-  token: string | null;
-  login: (token: string) => void;
-  logout: () => void;
+    isLogin: boolean;
+    token: string | null;
+    login: (token: string) => void;
+    logout: () => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
-  isLogin: false,
-  token: null,
-  login: (token: string) => set({ isLogin: true, token }),
-  logout: () => set({ isLogin: false, token: null }),
+    isLogin: false,
+    token: null,
+    login: (token: string) => set({ isLogin: true, token }),
+    logout: () => set({ isLogin: false, token: null }),
 }));
 
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";

@@ -40,19 +40,37 @@ public class AuthService {
         String normalizedPhone = normalizePhone(request.phone());
 
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-        if(withdrawnUserRepository.existsByEmailAndWithdrawnAtAfter(request.email(), thirtyDaysAgo)) {
+
+        if (withdrawnUserRepository.existsByEmailAndWithdrawnAtAfter(request.email(), thirtyDaysAgo)) {
             throw new IllegalArgumentException("탈퇴 후 30일이 지나지 않아 해당 이메일로 가입할 수 없습니다.");
         }
-        if(withdrawnUserRepository.existsByNicknameAndWithdrawnAtAfter(normalizedNickname, thirtyDaysAgo)) {
+
+        if (withdrawnUserRepository.existsByNicknameAndWithdrawnAtAfter(normalizedNickname, thirtyDaysAgo)) {
             throw new IllegalArgumentException("해당 닉네임을 사용할 수 없습니다.");
         }
-        if(normalizedPhone != null && withdrawnUserRepository.existsByPhoneAndWithdrawnAtAfter(normalizedPhone, thirtyDaysAgo)) {
+
+        if (normalizedPhone != null && withdrawnUserRepository.existsByPhoneAndWithdrawnAtAfter(normalizedPhone, thirtyDaysAgo)) {
             throw new IllegalArgumentException("탈퇴 후 30일이 지나지 않아 해당 전화번호를 사용할 수 없습니다.");
         }
 
-        if (userRepository.existsByEmail(request.email())) {
-            throw new DuplicateEmailException("이미 사용중인 이메일입니다.");
-        }
+        userRepository.findByEmail(request.email())
+                .ifPresent(existingUser -> {
+                    String provider = existingUser.getProvider();
+
+                    if (provider == null || provider.isBlank()) {
+                        throw new DuplicateEmailException("이미 가입된 이메일입니다.");
+                    }
+
+                    if ("google".equals(provider)) {
+                        throw new DuplicateEmailException("이미 Google 로그인으로 가입된 이메일입니다. Google 로그인을 이용해주세요.");
+                    }
+
+                    if ("kakao".equals(provider)) {
+                        throw new DuplicateEmailException("이미 Kakao 로그인으로 가입된 이메일입니다. Kakao 로그인을 이용해주세요.");
+                    }
+
+                    throw new DuplicateEmailException("이미 다른 로그인 방식으로 가입된 이메일입니다.");
+                });
 
         if (userRepository.existsByNickname(normalizedNickname)) {
             throw new DuplicateNicknameException("이미 사용중인 닉네임입니다.");
@@ -89,7 +107,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new InvalidLoginException("이메일 또는 비밀번호가 틀렸습니다."));
 
-        if("DELETED".equals(user.getStatus())) {
+        if ("DELETED".equals(user.getStatus())) {
             throw new InvalidLoginException("탈퇴한 회원입니다.");
         }
 
@@ -276,7 +294,7 @@ public class AuthService {
         WithdrawnUser withdrawnUser = new WithdrawnUser(user.getEmail(), user.getNickname(), user.getPhone());
         withdrawnUserRepository.save(withdrawnUser);
 
-        String uuid = UUID.randomUUID().toString().substring(0,8);
+        String uuid = UUID.randomUUID().toString().substring(0, 8);
 
         user.setEmail("deleted_" + uuid + "@" + user.getId());
         user.setNickname("탈퇴자_" + uuid);

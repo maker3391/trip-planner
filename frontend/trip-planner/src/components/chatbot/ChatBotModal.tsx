@@ -1,10 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "./ChatBot.css";
 import ChatHeader from "./components/ChatHeader";
 import ChatInput from "./components/ChatInput";
 import ChatMessageList from "./components/ChatMessageList";
 import useChatScroll from "./hooks/useChatScroll";
 import useChatMessages from "./hooks/useChatMessages";
+import CSChatWindow from "../cschat/CSChatWindow";
+import { getMe } from "../api/auth";
+import { createCSRoom } from "../api/csChat";
+import { useCSStore } from "../store/csStore";
 
 interface ChatBotModalProps {
   open: boolean;
@@ -15,6 +19,10 @@ export default function ChatBotModal({
   open,
   onClose,
 }: ChatBotModalProps) {
+  const [chatMode, setChatMode] = useState<"AI" | "CS">("AI");
+  const { csInfo, setCsInfo } = useCSStore();
+  const [isSwitching, setIsSwitching] = useState(false);
+
   const {
     messages,
     input,
@@ -48,35 +56,87 @@ export default function ChatBotModal({
     await sendMessage(input);
   };
 
+  const handleToggleMode = async () => {
+    if (chatMode === "AI") {
+      if (csInfo) {
+        setChatMode("CS");
+        return;
+      }
+      setIsSwitching(true);
+      try {
+        const me = await getMe();
+        const newRoom = await createCSRoom({
+          title: `${me.nickname || me.name}님의 1:1 문의`,
+          content: "상담원 연결을 요청했습니다."
+        });
+        setCsInfo({
+          roomId: newRoom.id,
+          senderId: me.id,
+          nickname: me.nickname || me.name || "고객"
+        });
+        setChatMode("CS");
+      } catch (error) {
+        console.error(error);
+        alert("상담원 연결을 위해 먼저 로그인을 해주세요.");
+      } finally {
+        setIsSwitching(false);
+      }
+    } else {
+      setChatMode("AI");
+    }
+  };
+
   if (!open) return null;
 
   return (
     <div className="chatbot-overlay">
       <div className="chatbot-modal">
-        <ChatHeader onClose={onClose} />
-
-        <ChatMessageList
-          messages={messages}
-          isLoading={isLoading}
-          typingMessageId={typingMessageId}
-          animatedMessageIds={animatedMessageIds}
-          chatBodyRef={chatBodyRef}
-          onTypingProgress={maybeAutoScrollToBottom}
-          onTypingEnd={handleTypingEnd}
-          onScroll={handleBodyScroll}
-          onWheelCapture={handleWheelCapture}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          showScrollToBottomButton={showScrollToBottomButton}
-          onScrollToBottom={enableAutoScrollAndJumpToBottom}
+        <ChatHeader 
+          onClose={onClose} 
+          chatMode={chatMode}
+          onToggleMode={handleToggleMode}
         />
 
-        <ChatInput
-          value={input}
-          isLoading={isLoading}
-          onChange={setInput}
-          onSend={handleSend}
-        />
+        {isSwitching ? (
+          <div style={{flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+            <p>상담원과 연결 중입니다...</p>
+          </div>
+        ) : (
+          chatMode === "AI" ? (
+            <>
+              <ChatMessageList
+                messages={messages}
+                isLoading={isLoading}
+                typingMessageId={typingMessageId}
+                animatedMessageIds={animatedMessageIds}
+                chatBodyRef={chatBodyRef}
+                onTypingProgress={maybeAutoScrollToBottom}
+                onTypingEnd={handleTypingEnd}
+                onScroll={handleBodyScroll}
+                onWheelCapture={handleWheelCapture}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                showScrollToBottomButton={showScrollToBottomButton}
+                onScrollToBottom={enableAutoScrollAndJumpToBottom}
+              />
+
+              <ChatInput
+                value={input}
+                isLoading={isLoading}
+                onChange={setInput}
+                onSend={handleSend}
+              />
+            </>
+          ) : (
+            csInfo && (
+              <CSChatWindow 
+                roomId={csInfo?.roomId}
+                senderId={csInfo?.senderId}
+                nickname={csInfo?.nickname}
+              />
+            )
+          )
+      )}
       </div>
     </div>
   );

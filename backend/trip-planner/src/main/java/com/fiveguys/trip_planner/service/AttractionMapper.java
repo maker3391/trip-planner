@@ -30,6 +30,22 @@ public class AttractionMapper {
                                                                String detailArea,
                                                                String neighborhood,
                                                                String district) {
+        return pickTopAttractions(
+                docs,
+                destination,
+                detailArea,
+                neighborhood,
+                district,
+                AttractionSubIntent.GENERAL
+        );
+    }
+
+    public List<RecommendationItemResponse> pickTopAttractions(List<JsonNode> docs,
+                                                               String destination,
+                                                               String detailArea,
+                                                               String neighborhood,
+                                                               String district,
+                                                               AttractionSubIntent subIntent) {
         List<ScoredPlace> scoredPlaces = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
 
@@ -61,7 +77,15 @@ public class AttractionMapper {
                 continue;
             }
 
-            int score = attractionScoringService.score(doc, destination, detailArea, neighborhood, district);
+            int score = attractionScoringService.score(
+                    doc,
+                    destination,
+                    detailArea,
+                    neighborhood,
+                    district,
+                    subIntent
+            );
+
             scoredPlaces.add(new ScoredPlace(name, address, placeUrl, category, score));
         }
 

@@ -111,6 +111,14 @@
     padding: 30px 20px;
 }
 
+/* 본문 내 이미지 크기 제한 */
+.PostContent img {
+    max-width: 100%;  /* 부모 요소의 너비를 넘지 않도록 제한 */
+    height: auto;     /* 가로 길이에 맞춰 세로 비율 유지 */
+    display: block;   /* 이미지 하단에 미세한 공백 제거 및 레이아웃 정렬 */
+    margin: 10px 0;   /* 이미지 위아래 적절한 여백 (선택 사항) */
+}
+
 .ql-editor {
     font-size: 15px;
     line-height: 1.8;
