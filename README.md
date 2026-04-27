@@ -216,7 +216,7 @@ trip-planner/
 | 게시글 수정 | `PUT` | /api/community/posts/{id} | CommunityRequest |
 | 게시글 삭제 | `DELETE` | /api/community/posts/{id} | - |
  
-### 🤖 4. AI & 장소 검색 API (AI & Place API)
+### 🤖 4. 챗봇AI & 장소 검색 API (AI & Place API)
  
 | 기능 | Method | Endpoint | 요청 |
 |------|--------|----------|------|
@@ -224,15 +224,15 @@ trip-planner/
 | 구글 장소 검색 | `GET` | /api/google-places | keyword (Query) |
 | 시스템 장소 등록 | `POST` | /api/places | PlaceRequestDto |
  
-### 📊 5. 경비 및 대시보드 API (Dashboard)
+### 📊 5. 여행 예산 관리
  
 | 기능 | Method | Endpoint | 요청 |
 |------|--------|----------|------|
-| 경비 요약 조회 | `GET` | /api/trips/{id}/expenses/summary | - |
-| 경비 전체 조회 | `GET` | /api/trips/{id}/expenses | - |
-| 경비 항목 추가 | `POST` | /api/trips/{id}/expenses | ExpenseRequest |
-| 경비 항목 수정 | `PUT` | /api/expenses/{expenseId} | ExpenseRequest |
-| 경비 항목 삭제 | `DELETE` | /api/expenses/{expenseId} | - |
+| 비용 요약 조회 | `GET` | /api/trips/{id}/expenses/summary | - |
+| 비용 전체 조회 | `GET` | /api/trips/{id}/expenses | - |
+| 비용 항목 추가 | `POST` | /api/trips/{id}/expenses | ExpenseRequest |
+| 비용 항목 수정 | `PUT` | /api/expenses/{expenseId} | ExpenseRequest |
+| 비용 항목 삭제 | `DELETE` | /api/expenses/{expenseId} | - |
  
 ### 👥 6. 여행 멤버 관리 (Trip Member API)
  
