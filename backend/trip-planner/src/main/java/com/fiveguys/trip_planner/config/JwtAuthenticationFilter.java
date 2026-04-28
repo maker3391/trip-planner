@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Collections;
 
 @Component
@@ -56,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             User user = userRepository.findById(userId).orElse(null);
 
             if (user != null) {
-                if ("BANNED".equals(user.getStatus())) {
+                if (user.getBannedUntil() != null && user.getBannedUntil().isAfter(LocalDateTime.now())) {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403 Forbidden
                     response.setCharacterEncoding("UTF-8");
                     response.setContentType("application/json");

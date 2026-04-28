@@ -111,12 +111,9 @@ public class AuthService {
             throw new InvalidLoginException("탈퇴한 회원입니다.");
         }
 
-        if ("BANNED".equals(user.getStatus())) {
-            String banMessage = "이용이 정지된 계정입니다.";
-            if (user.getBannedUntil() != null) {
-                banMessage = "이용이 정지된 계정입니다. (정지 기간: ~" + user.getBannedUntil().toString().replace("T", " ") + ")";
-            }
-            throw new InvalidLoginException(banMessage);
+        if (user.getBannedUntil() != null && user.getBannedUntil().isAfter(LocalDateTime.now())) {
+            throw new InvalidLoginException("이용이 정지된 계정입니다. (정지 기간: ~"
+                    + user.getBannedUntil().toString().replace("T", " ") + ")");
         }
 
         if (user.getPassword() == null) {
