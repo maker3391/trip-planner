@@ -1,5 +1,130 @@
+// import { Routes, Route, useLocation } from "react-router-dom";
+// import { useEffect, useState } from "react";
+
+// import MainPage from "../../pages/MainPage";
+// import LoginPage from "../../pages/LoginPage";
+// import SignupPage from "../../pages/SignupPage";
+// import MyPage from "../../pages/MyPage";
+// import OAuth2CallbackPage from "../../pages/OAuth2CallbackPage";
+// import CommunityPage from "../../pages/CommunityPage";
+// import CommunityWritePage from "../../pages/CommunityWritePage";
+// import TripListPage from "../../pages/TripListPage";
+// import ProtectedRoute from "./ProtectedRoute";
+// import ChatBotButton from "../chatbot/ChatBotButton";
+// import ChatBotModal from "../chatbot/ChatBotModal";
+// import CommunityReadPage from "../../pages/CommunityReadPage";
+// import ForgotPasswordPage from "../../pages/ForgotPasswordPage";
+// import ResetPasswordPage from "../../pages/ResetPasswordPage";
+// import AdminCSPage from "../cschat/AdminCSPage";
+// import AdminPage from "../../pages/AdminPage";
+// import AdminRoute from "./AdminRoute";
+// import AdminCSNotifier from "../cschat/AdminCSNotifier";
+// import { getMe } from "../api/auth";
+
+// export default function Router() {
+//   const [openChatBot, setOpenChatBot] = useState(false);
+//   const [userRole, setUserRole] = useState<string | null>(null);
+//   const location = useLocation();
+
+//   const isAdmin = userRole === "ADMIN" || userRole === "ROLE_ADMIN";
+//   const showChatBot = !isAdmin;
+
+//   useEffect(() => {
+//     const checkUserRole = async () => {
+//       const token = localStorage.getItem("accessToken");
+
+//       if (!token || token === "undefined") {
+//         setUserRole(null);
+//         return;
+//       }
+
+//       try {
+//         const user = await getMe();
+//         setUserRole(user.role);
+//       } catch (error) {
+//         setUserRole(null);
+//       }
+//     };
+
+//     checkUserRole();
+//   }, [location.pathname]);
+
+//   useEffect(() => {
+//     if (isAdmin) {
+//       setOpenChatBot(false);
+//     }
+//   }, [isAdmin]);
+
+//   return (
+//     <>
+//       <AdminCSNotifier />
+
+//       <Routes>
+//         <Route path="/" element={<MainPage />} />
+//         <Route path="/login" element={<LoginPage />} />
+//         <Route path="/signup" element={<SignupPage />} />
+//         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+//         <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+//         <Route
+//           path="/mypage"
+//           element={
+//             <ProtectedRoute>
+//               <MyPage />
+//             </ProtectedRoute>
+//           }
+//         />
+
+//         <Route
+//           path="/admin"
+//           element={
+//             <AdminRoute>
+//               <AdminPage />
+//             </AdminRoute>
+//           }
+//         />
+
+//         <Route path="/community" element={<CommunityPage />} />
+//         <Route path="/community/write" element={<CommunityWritePage />} />
+//         <Route path="/community/write/:id" element={<CommunityWritePage />} />
+//         <Route path="/community/:id" element={<CommunityReadPage />} />
+//         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+
+//         <Route
+//           path="/trip-list"
+//           element={
+//             <ProtectedRoute>
+//               <TripListPage />
+//             </ProtectedRoute>
+//           }
+//         />
+
+//         <Route
+//           path="/admin/cs"
+//           element={
+//             <AdminRoute>
+//               <AdminCSPage />
+//             </AdminRoute>
+//           }
+//         />
+//       </Routes>
+
+//       {showChatBot && (
+//         <>
+//           <ChatBotButton onClick={() => setOpenChatBot((prev) => !prev)} />
+
+//           <ChatBotModal
+//             open={openChatBot}
+//             onClose={() => setOpenChatBot(false)}
+//           />
+//         </>
+//       )}
+//     </>
+//   );
+// }
+
 import { Routes, Route, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import MainPage from "../../pages/MainPage";
 import LoginPage from "../../pages/LoginPage";
@@ -19,77 +144,106 @@ import AdminCSPage from "../cschat/AdminCSPage";
 import AdminPage from "../../pages/AdminPage";
 import AdminRoute from "./AdminRoute";
 import AdminCSNotifier from "../cschat/AdminCSNotifier";
+import { getMe } from "../api/auth";
 
 export default function Router() {
-  const [openChatBot, setOpenChatBot] = useState(false);
-  const location = useLocation();
+    const [openChatBot, setOpenChatBot] = useState(false);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const location = useLocation();
 
-  const hideChatBot = location.pathname.startsWith("/admin/cs");
+    const isAdmin = userRole === "ADMIN" || userRole === "ROLE_ADMIN";
+    const showChatBot = !isAdmin;
 
-  return (
-    <>
-      <AdminCSNotifier />
+    useEffect(() => {
+        const checkUserRole = async () => {
+            const token = localStorage.getItem("accessToken");
 
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+            if (!token || token === "undefined") {
+                setUserRole(null);
+                return;
+            }
 
-        <Route
-          path="/mypage"
-          element={
-            <ProtectedRoute>
-              <MyPage />
-            </ProtectedRoute>
-          }
-        />
+            try {
+                const user = await getMe();
+                setUserRole(user.role);
+            } catch (error) {
+                setUserRole(null);
+            }
+        };
 
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminPage />
-            </AdminRoute>
-          }
-        />
+        checkUserRole();
+    }, [location.pathname]);
 
-        <Route path="/community" element={<CommunityPage />} />
-        <Route path="/community/write" element={<CommunityWritePage />} />
-        <Route path="/community/write/:id" element={<CommunityWritePage />} />
-        <Route path="/community/:id" element={<CommunityReadPage />} />
-        <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+    useEffect(() => {
+        if (isAdmin) {
+            setOpenChatBot(false);
+        }
+    }, [isAdmin]);
 
-        <Route
-          path="/trip-list"
-          element={
-            <ProtectedRoute>
-              <TripListPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/cs"
-          element={
-            <AdminRoute>
-              <AdminCSPage />
-            </AdminRoute>
-          }
-        />
-      </Routes>
-
-      {!hideChatBot && (
+    return (
         <>
-          <ChatBotButton onClick={() => setOpenChatBot((prev) => !prev)} />
+            {isAdmin && <AdminCSNotifier />}
 
-          <ChatBotModal
-            open={openChatBot}
-            onClose={() => setOpenChatBot(false)}
-          />
+            <Routes>
+                <Route path="/" element={<MainPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+                <Route
+                    path="/mypage"
+                    element={
+                        <ProtectedRoute>
+                            <MyPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin"
+                    element={
+                        <AdminRoute>
+                            <AdminPage />
+                        </AdminRoute>
+                    }
+                />
+
+                <Route path="/community" element={<CommunityPage />} />
+                <Route path="/community/write" element={<CommunityWritePage />} />
+                <Route path="/community/write/:id" element={<CommunityWritePage />} />
+                <Route path="/community/:id" element={<CommunityReadPage />} />
+                <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+
+                <Route
+                    path="/trip-list"
+                    element={
+                        <ProtectedRoute>
+                            <TripListPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/cs"
+                    element={
+                        <AdminRoute>
+                            <AdminCSPage />
+                        </AdminRoute>
+                    }
+                />
+            </Routes>
+
+            {showChatBot && (
+                <>
+                    <ChatBotButton onClick={() => setOpenChatBot((prev) => !prev)} />
+
+                    <ChatBotModal
+                        open={openChatBot}
+                        onClose={() => setOpenChatBot(false)}
+                    />
+                </>
+            )}
         </>
-      )}
-    </>
-  );
+    );
 }
