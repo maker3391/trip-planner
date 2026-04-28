@@ -58,6 +58,11 @@ public class ChatService {
 
     public ChatResponse chat(ChatRequest request) {
         String message = request.getMessage();
+
+        if (isMeaninglessInput(message)) {
+            throw new LlmCallException("요청을 이해하지 못했습니다");
+        }
+
         String intent = intentResolverService.resolve(message);
 
         if ("COMBINED_RECOMMENDATION".equals(intent)) {
@@ -93,7 +98,6 @@ public class ChatService {
             if (!shouldRetryItinerary(e)) {
                 throw e;
             }
-
             adjusted = buildValidatedItineraryDraft(message, context);
         }
 
@@ -101,6 +105,24 @@ public class ChatService {
         recommendationCacheService.put(cacheKey, response);
 
         return response;
+    }
+
+    private boolean isMeaninglessInput(String message) {
+        if (message == null || message.isBlank()) {
+            return true;
+        }
+
+        String trimmed = message.trim();
+
+        if (trimmed.length() <= 2) {
+            return true;
+        }
+
+        if (!trimmed.matches(".*[가-힣a-zA-Z0-9].*")) {
+            return true;
+        }
+
+        return false;
     }
 
     private RecommendationDraft buildValidatedItineraryDraft(String message,
