@@ -15,11 +15,15 @@ export interface BanRequest {
   reason: string;
 }
 
-export const getAllUsers = async (): Promise<AdminUserResponse[]> => {
+export const getAdminUsers = async (): Promise<AdminUserResponse[]> => {
   const response = await client.get<AdminUserResponse[]>("/admin/users");
   return response.data;
 };
 
-export const banUser = async (userId: number, data: BanRequest): Promise<void> => {
-  await client.post(`/admin/user/${userId}/ban`, data);
+export const banUserApi = async (
+  userId: number,
+  data: BanRequest
+): Promise<string> => {
+  const response = await client.post<string>(`/admin/user/${userId}/ban`, data);
+  return response.data;
 };
