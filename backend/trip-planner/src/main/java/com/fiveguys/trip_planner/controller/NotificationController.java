@@ -38,4 +38,14 @@ public class NotificationController {
     public void readNotification(@PathVariable Long id) {
         notificationService.readNotification(id);
     }
+
+    @GetMapping("/history")
+    public List<NotificationResponseDto> getAllNotifications(@AuthenticationPrincipal User user) {
+        return notificationService.getAllNotifications(user);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteNotification(@PathVariable Long id) {
+        notificationService.deleteNotification(id);
+    }
 }

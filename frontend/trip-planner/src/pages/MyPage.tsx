@@ -5,6 +5,7 @@ import { getMe, updateMe, withdrawApi } from "../components/api/auth.ts";
 import "./MyPage.css";
 import toast from "react-hot-toast"; // toast 임포트 추가
 import axios from "axios";
+import { getAllNotifications, deleteNotificationApi } from "../components/api/Notification.ts";
 
 interface MyPost {
   id: number;
@@ -70,9 +71,11 @@ export default function MyPage() {
     }
   };
 
+  // useEffect에서 호출
   useEffect(() => {
     fetchUser();
-    fetchMyPosts(); // 페이지 진입 시 호출
+    fetchMyPosts(); //페이지 진입시 호출
+    fetchNotiHistory(); // 추가
   }, []);
 
   // 게시글 클릭 시 이동 핸들러
@@ -128,31 +131,20 @@ export default function MyPage() {
     }
   };
 
-  // useEffect - user.id 기반으로 키 생성
-useEffect(() => {
-  if (!user?.id) return; // ✅ user 로드 전엔 실행 안 함
-
-  const key = `notificationHistory_${user.id}`;
-
-  const syncNotiHistory = () => {
-    const stored = JSON.parse(localStorage.getItem(key) || "[]");
-    setNotiHistory(stored);
+  // fetchUser 아래에 추가
+  const fetchNotiHistory = async () => {
+    try {
+      const data = await getAllNotifications();
+      setNotiHistory(data.map(n => ({
+        id: n.id,
+        message: n.message,
+        targetUrl: n.targetUrl,
+        receivedAt: n.createdAt,
+      })));
+    } catch (error) {
+      console.error("알림 히스토리 조회 실패:", error);
+    }
   };
-
-  syncNotiHistory();
-
-  const handleStorage = (e: StorageEvent) => {
-    if (e.key === key) syncNotiHistory();
-  };
-
-  window.addEventListener("storage", handleStorage);
-  const interval = setInterval(syncNotiHistory, 500);
-
-  return () => {
-    window.removeEventListener("storage", handleStorage);
-    clearInterval(interval);
-  };
-}, [user?.id]); // ✅ user.id가 세팅된 후 실행
 
   const handleBasicChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -318,19 +310,25 @@ useEffect(() => {
       setIsWithdrawing(false);
     }
   };
-  // 개별 삭제
-  const handleDeleteNoti = (id: number) => {
-    const key = `notificationHistory_${user?.id}`;
-    const updated = notiHistory.filter((n) => n.id !== id);
-    setNotiHistory(updated);
-    localStorage.setItem(key, JSON.stringify(updated));
+
+  // handleDeleteNoti 교체
+  const handleDeleteNoti = async (id: number) => {
+    try {
+      await deleteNotificationApi(id);
+      setNotiHistory(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error("알림 삭제 실패:", error);
+    }
   };
 
-  // 전체 삭제
-  const handleDeleteAllNoti = () => {
-    const key = `notificationHistory_${user?.id}`;
-    setNotiHistory([]);
-    localStorage.removeItem(key);
+  // handleDeleteAllNoti 교체
+  const handleDeleteAllNoti = async () => {
+    try {
+      await Promise.all(notiHistory.map(n => deleteNotificationApi(n.id)));
+      setNotiHistory([]);
+    } catch (error) {
+      console.error("전체 알림 삭제 실패:", error);
+    }
   };
 
 
@@ -339,6 +337,8 @@ useEffect(() => {
     user?.name?.trim() ||
     user?.email?.split("@")[0] ||
     "사용자";
+
+  const userNickname = user?.nickname || "사용자닉네임";
 
   return (
     <div className="mypage">
@@ -361,7 +361,12 @@ useEffect(() => {
             <h2 className="mypage-section-title">내가 쓴 게시글</h2>
             <button 
               className="mypage-noti-clear-btn" 
-              onClick={() => navigate("/community")} // 커뮤니티 전체보기 등으로 연결
+              onClick={() => navigate("/community", { 
+                state: { 
+                  searchType: "author", 
+                  keyword: userNickname 
+                } 
+              })}
             >
               전체보기
             </button>
