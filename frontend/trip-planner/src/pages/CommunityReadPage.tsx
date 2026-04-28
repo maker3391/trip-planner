@@ -56,6 +56,7 @@ export default function CommunityReadPage() {
 
     const [totalPages, setTotalPages] = useState(0);
     const [liked, setLiked] = useState(false);
+<<<<<<< Updated upstream
     const [me, setMe] = useState<{ id: number; role?: string } | null>(null);
     const [members, setMembers] = useState<TripMemberResponse[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
@@ -63,6 +64,12 @@ export default function CommunityReadPage() {
     const [selectedRegions, setSelectedRegions] = useState<string[]>(["전체보기"]);
     const [isNoticeExpanded, setIsNoticeExpanded] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+=======
+    const [me, setMe] = useState<{ id: number } | null>(null);
+
+    const [selectedCategory, setSelectedCategory] = useState("전체보기");
+    const [selectedRegion, setSelectedRegion] = useState<string | null>("전체");
+>>>>>>> Stashed changes
 
     const renderRouteOrRating = (post: CommunityResponse) => {
         if (post.category && RATING_ENABLED_CATEGORIES.includes(post.category)) {
