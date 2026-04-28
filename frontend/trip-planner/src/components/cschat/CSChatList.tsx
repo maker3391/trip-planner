@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getMyCSRooms, CSRoomResponse } from '../api/csChat';
+import { getMyCSRooms, deleteCSRoom, CSRoomResponse } from './types/csChat';
 import './css/CSChatList.css';
 
 interface CSChatListProps {
@@ -14,17 +14,18 @@ export default function CSChatList({ onBack, onEnterRoom, onCreateNew }: CSChatL
     const [isCreating, setIsCreating] = useState(false);
     const [newTitle, setNewTitle] = useState("");
 
+    const fetchRooms = async () => {
+        try {
+            const rooms = await getMyCSRooms();
+            setMyRooms(rooms);
+        } catch (error) {
+            console.error("문의 내역을 불러오지 못했습니다.", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchRooms = async () => {
-            try {
-                const rooms = await getMyCSRooms();
-                setMyRooms(rooms);
-            } catch (error) {
-                console.error("문의 내역을 불러오지 못했습니다.", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchRooms();
     }, []);
 
@@ -34,6 +35,18 @@ export default function CSChatList({ onBack, onEnterRoom, onCreateNew }: CSChatL
             return;
         }
         onCreateNew(newTitle); 
+    };
+
+    const handleDelete = async (e: React.MouseEvent, roomId: number) => {
+        e.stopPropagation();
+        if (window.confirm("이 상담 내역을 목록에서 지우시겠습니까?")) {
+            try {
+                await deleteCSRoom(roomId);
+                fetchRooms();
+            } catch (error) {
+                alert("삭제 처리에 실패했습니다.");
+            }
+        }
     };
 
     return (
@@ -56,8 +69,16 @@ export default function CSChatList({ onBack, onEnterRoom, onCreateNew }: CSChatL
                                 <p>방 번호: {room.id} | {new Date(room.createdAt).toLocaleDateString()}</p>
                             </div>
                             <div className="cs-list-status">
-                                {room.status === 'WAITING' ? '대기중' : '진행중'}
+                                {room.status === 'WAITING' ? '대기중' : room.status === 'CLOSED' ? '종료됨' : '진행중'}
                             </div>
+                            {room.status === 'CLOSED' && (
+                                <button 
+                                    className="cs-list-delete-btn" 
+                                    onClick={(e) => handleDelete(e, room.id)}
+                                >
+                                    삭제
+                                </button>
+                            )}
                         </div>
                     ))
                 )}

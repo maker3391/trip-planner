@@ -8,7 +8,7 @@ import useChatMessages from "./hooks/useChatMessages";
 import CSChatWindow from "../cschat/CSChatWindow";
 import CSChatList from "../cschat/CSChatList";
 import { getMe } from "../api/auth";
-import { createCSRoom, CSRoomResponse } from "../api/csChat";
+import { createCSRoom, CSRoomResponse } from "../cschat/types/csChat";
 import { useCSStore } from "../store/csStore";
 
 interface ChatBotModalProps {
