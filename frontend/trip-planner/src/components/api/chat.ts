@@ -39,8 +39,10 @@ export interface CombinedRecommendationResponse {
   itinerary?: CombinedItineraryResponse | null;
   restaurants?: RecommendationItem[];
   stays?: RecommendationItem[];
+  attractions?: RecommendationItem[];
   restaurantDisplayTitle?: string;
   stayDisplayTitle?: string;
+  attractionDisplayTitle?: string;
 }
 
 export interface ChatRequest {

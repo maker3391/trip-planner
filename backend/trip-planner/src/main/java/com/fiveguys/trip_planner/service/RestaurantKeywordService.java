@@ -164,7 +164,11 @@ public class RestaurantKeywordService {
         addIfContains(value, result, "회", "횟집");
         addIfContains(value, result, "횟집", "횟집");
         addIfContains(value, result, "사시미", "사시미");
+        addIfContains(value, result, "라면", "라멘");
         addIfContains(value, result, "라멘", "라멘");
+        addIfContains(value, result, "샌드위치", "샌드위치");
+        addIfContains(value, result, "핫도그", "핫도그");
+        addIfContains(value, result, "컵라면", "라멘");
         addIfContains(value, result, "우동", "우동");
         addIfContains(value, result, "소바", "소바");
         addIfContains(value, result, "돈까스", "돈까스");
@@ -205,6 +209,7 @@ public class RestaurantKeywordService {
         addIfContains(value, result, "분식", "분식");
         addIfContains(value, result, "라볶이", "라볶이");
         addIfContains(value, result, "오뎅", "오뎅");
+        addIfContains(value, result, "어묵", "오뎅");
         addIfContains(value, result, "토스트", "토스트");
 
         addIfContains(value, result, "치킨", "치킨");
@@ -226,6 +231,13 @@ public class RestaurantKeywordService {
         addIfContains(value, result, "호프", "호프");
         addIfContains(value, result, "와인바", "와인바");
         addIfContains(value, result, "칵테일바", "칵테일바");
+
+        if (value.contains("야식")) {
+            result.add("야식");
+        }
+        if (value.contains("간식")) {
+            result.add("간식");
+        }
 
         return new ArrayList<>(result);
     }
@@ -344,6 +356,29 @@ public class RestaurantKeywordService {
                 addVariants(result, "횟집", "회", "회 맛집", "횟집 추천", "일식");
                 break;
             case "라멘":
+                addVariants(result, "라멘", "라면", "라멘 맛집", "라면 맛집", "일식");
+                break;
+            case "샌드위치":
+                addVariants(result, "샌드위치", "샌드위치 맛집", "브런치", "카페");
+                break;
+            case "핫도그":
+                addVariants(result, "핫도그", "핫도그 맛집", "간식");
+                break;
+            case "야식":
+                addVariants(result, "야식", "늦게까지 하는 식당", "24시간 식당", "치킨", "분식");
+                break;
+            case "간식":
+                addVariants(result, "간식", "분식", "토스트", "핫도그", "디저트");
+                break;
+            case "아침식사":
+                addVariants(result, "아침식사", "조식", "백반", "국밥", "브런치");
+                break;
+            case "점심식사":
+                addVariants(result, "점심식사", "백반", "한식", "맛집");
+                break;
+            case "저녁식사":
+                addVariants(result, "저녁식사", "한식", "고기집", "맛집");
+                break;
             case "우동":
             case "소바":
             case "돈까스":
@@ -527,6 +562,20 @@ public class RestaurantKeywordService {
                 return "hoetjip";
             case "라멘":
                 return "ramen";
+            case "샌드위치":
+                return "sandwich";
+            case "핫도그":
+                return "hotdog";
+            case "야식":
+                return "night";
+            case "간식":
+                return "snack";
+            case "아침식사":
+                return "breakfast";
+            case "점심식사":
+                return "lunch";
+            case "저녁식사":
+                return "dinner";
             case "우동":
                 return "udon";
             case "소바":
@@ -624,6 +673,35 @@ public class RestaurantKeywordService {
         }
         if (value.contains("회 한접시")) {
             result.add("횟집");
+        }
+        if (value.contains("라면 먹고 싶") || value.contains("라면 땡")) {
+            result.add("라멘");
+        }
+        if (value.contains("간단히 먹") || value.contains("가볍게 먹")) {
+            result.add("간식");
+        }
+        if (value.contains("늦게 먹") || value.contains("밤에 먹")) {
+            result.add("야식");
+        }
+        if (value.contains("아침")) {
+            result.add("국밥");
+            result.add("해장국");
+            result.add("백반");
+            result.add("브런치");
+        }
+
+        if (value.contains("점심")) {
+            result.add("백반");
+            result.add("국수");
+            result.add("덮밥");
+            result.add("칼국수");
+        }
+
+        if (value.contains("저녁")) {
+            result.add("고기집");
+            result.add("삼겹살");
+            result.add("치킨");
+            result.add("회");
         }
     }
 

@@ -27,6 +27,11 @@ public class CSChatService {
         User sender = userRepository.findById(requestDto.getSenderId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
 
+        if ("WAITING".equals(room.getStatus()) &&
+                ("ADMIN".equals(sender.getRole()) || "ROLE_ADMIN".equals(sender.getRole()))) {
+            room.updateStatus("IN_PROGRESS");
+        }
+
         ChatMessage message = ChatMessage.builder()
                 .chatRoom(room)
                 .sender(sender)
@@ -70,9 +75,28 @@ public class CSChatService {
     }
 
     public List<ChatRoomResponseDto> findRoomsByUser(User user) {
-        List<ChatRoom> rooms = chatRoomRepository.findByUserOrderByCreatedAtDesc(user);
+        List<ChatRoom> rooms = chatRoomRepository.findByUserAndDeletedByUserFalseOrderByCreatedAtDesc(user);
         return rooms.stream()
                 .map(ChatRoomResponseDto::from)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void closeRoom(Long roomId) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
+        room.updateStatus("CLOSED");
+    }
+
+    @Transactional
+    public void deleteRoomByUser(Long roomId, User user) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
+
+        if (!room.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("삭제 권한이 없습니다.");
+        }
+
+        room.markAsDeletedByUser();
     }
 }

@@ -58,6 +58,11 @@ public class ChatService {
 
     public ChatResponse chat(ChatRequest request) {
         String message = request.getMessage();
+
+        if (isMeaninglessInput(message)) {
+            throw new LlmCallException("요청을 이해하지 못했습니다");
+        }
+
         String intent = intentResolverService.resolve(message);
 
         if ("COMBINED_RECOMMENDATION".equals(intent)) {
@@ -73,6 +78,11 @@ public class ChatService {
         }
 
         ItineraryRequestContext context = itineraryRequestResolverService.resolve(message);
+
+        if (context.getDays() <= 0 || context.getDays() > 7) {
+            throw new IllegalArgumentException("여행 일정은 최대 7일까지 추천 가능합니다");
+        }
+
         String cacheKey = cacheKeyGenerator.generate(context);
 
         ChatResponse cached = recommendationCacheService.get(cacheKey);
@@ -83,13 +93,12 @@ public class ChatService {
         RecommendationDraft adjusted;
 
         try {
-            adjusted = buildValidatedItineraryDraft(message, context, false);
+            adjusted = buildValidatedItineraryDraft(message, context);
         } catch (LlmCallException e) {
             if (!shouldRetryItinerary(e)) {
                 throw e;
             }
-
-            adjusted = buildValidatedItineraryDraft(message, context, true);
+            adjusted = buildValidatedItineraryDraft(message, context);
         }
 
         ChatResponse response = toResponse(message, adjusted);
@@ -98,10 +107,27 @@ public class ChatService {
         return response;
     }
 
+    private boolean isMeaninglessInput(String message) {
+        if (message == null || message.isBlank()) {
+            return true;
+        }
+
+        String trimmed = message.trim();
+
+        if (trimmed.length() <= 2) {
+            return true;
+        }
+
+        if (!trimmed.matches(".*[가-힣a-zA-Z0-9].*")) {
+            return true;
+        }
+
+        return false;
+    }
+
     private RecommendationDraft buildValidatedItineraryDraft(String message,
-                                                             ItineraryRequestContext context,
-                                                             boolean expandedScope) {
-        ItineraryOnlyDraft itineraryOnlyDraft = openAiClient.generateItineraryDayPlans(context, expandedScope);
+                                                             ItineraryRequestContext context) {
+        ItineraryOnlyDraft itineraryOnlyDraft = openAiClient.generateItineraryDayPlans(context);
 
         RecommendationDraft rawDraft = new RecommendationDraft();
         rawDraft.setIntent("TRAVEL_ITINERARY");

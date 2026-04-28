@@ -301,9 +301,12 @@ const formatCombinedResponses = (
     responses.push(
       createRecommendationFormattedResponse(
         "restaurant",
-        combined?.restaurants ?? [],
-        safeText(combined?.restaurantDisplayTitle) ||
-          buildFallbackRecommendationTitle(safeText(data.destination), "restaurant")
+        combined.restaurants,
+        safeText(combined.restaurantDisplayTitle) ||
+          buildFallbackRecommendationTitle(
+            safeText(data.destination),
+            "restaurant"
+          )
       )
     );
   }
@@ -312,9 +315,23 @@ const formatCombinedResponses = (
     responses.push(
       createRecommendationFormattedResponse(
         "stay",
-        combined?.stays ?? [],
-        safeText(combined?.stayDisplayTitle) ||
+        combined.stays,
+        safeText(combined.stayDisplayTitle) ||
           buildFallbackRecommendationTitle(safeText(data.destination), "stay")
+      )
+    );
+  }
+
+  if (isNonEmptyArray(combined?.attractions)) {
+    responses.push(
+      createRecommendationFormattedResponse(
+        "attraction",
+        combined.attractions,
+        safeText(combined.attractionDisplayTitle) ||
+          buildFallbackRecommendationTitle(
+            safeText(data.destination),
+            "attraction"
+          )
       )
     );
   }

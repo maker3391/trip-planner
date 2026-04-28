@@ -54,7 +54,17 @@ public class AttractionMapper {
                 continue;
             }
 
-            if (!attractionFilterService.isLocationRelevant(doc, destination, detailArea, neighborhood, district)) {
+            boolean isRelevant = attractionFilterService.isLocationRelevant(
+                    doc, destination, detailArea, neighborhood, district
+            );
+
+            if (!isRelevant && StringUtils.hasText(detailArea)) {
+                isRelevant = attractionFilterService.isLocationRelevant(
+                        doc, destination, null, neighborhood, district
+                );
+            }
+
+            if (!isRelevant) {
                 continue;
             }
 

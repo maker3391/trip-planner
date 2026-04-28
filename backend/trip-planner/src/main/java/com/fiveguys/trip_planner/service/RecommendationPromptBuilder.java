@@ -29,40 +29,12 @@ public class RecommendationPromptBuilder {
                 - each day has exactly 2 places
                 - no explanation
                 - do not use places outside the allowed destination scope
-                """ + scopeRule + detailRule + """
+                - places within the same day must be geographically close to each other
+                - avoid repeating the same type of place in consecutive days
+                - each day should form a natural travel flow
+                - do not repeat the same place across different days
+                - prefer well-known landmarks, attractions, markets, parks, and beaches
 
-                Destination:
-                %s
-
-                Days:
-                %d
-                """.formatted(context.getDestination(), context.getDays());
-    }
-
-    public String buildExpandedItineraryPrompt(ItineraryRequestContext context) {
-        String detailRule = buildDetailRule(context.getDetailArea());
-        String scopeRule = buildScopeRule(context.getDestination());
-
-        return """
-                Return JSON only.
-
-                {
-                  "dayPlans": [
-                    {
-                      "day": 1,
-                      "places": ["string", "string"]
-                    }
-                  ]
-                }
-
-                Rules:
-                - use Korean place names only
-                - output only real place names
-                - each day has exactly 2 places
-                - no explanation
-                - do not use places outside the allowed destination scope
-                - for small cities or counties, include nearby 읍/면/동 단위 명소 within the same city or county
-                - do not leave any day empty
                 """ + scopeRule + detailRule + """
 
                 Destination:
@@ -91,6 +63,15 @@ public class RecommendationPromptBuilder {
         }
 
         String compact = destination.replaceAll("\\s+", "");
+
+        if (compact.equals("서울") || compact.equals("서울특별시")) {
+            return """
+        
+                    Allowed scope:
+                    - use only places in 서울
+                    - do not use places outside 서울
+                    """;
+        }
 
         if (compact.equals("경상북도")) {
             return """

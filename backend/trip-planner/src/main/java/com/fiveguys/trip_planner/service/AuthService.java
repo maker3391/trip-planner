@@ -111,6 +111,11 @@ public class AuthService {
             throw new InvalidLoginException("탈퇴한 회원입니다.");
         }
 
+        if (user.getBannedUntil() != null && user.getBannedUntil().isAfter(LocalDateTime.now())) {
+            throw new InvalidLoginException("이용이 정지된 계정입니다. (정지 기간: ~"
+                    + user.getBannedUntil().toString().replace("T", " ") + ")");
+        }
+
         if (user.getPassword() == null) {
             throw new InvalidLoginException("소셜 로그인으로 가입한 계정입니다.");
         }
@@ -153,6 +158,10 @@ public class AuthService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 정보를 찾을 수 없습니다."));
+
+        if (user.getBannedUntil() != null && user.getBannedUntil().isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("이용이 정지된 계정입니다. 토큰을 갱신할 수 없습니다.");
+        }
 
         String newAccessToken = jwtTokenProvider.createAccessToken(user);
         String newRefreshToken = jwtTokenProvider.createRefreshToken(user);

@@ -53,7 +53,7 @@ export default function useChatMessages() {
       console.error("챗봇 API 호출 실패:", error);
 
       const errorMessage = createAssistantMessage(
-        extractChatErrorMessage(error),
+        extractChatErrorMessage(error, trimmed),
         "error"
       );
 

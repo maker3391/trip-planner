@@ -256,11 +256,32 @@ public class AttractionScoringService {
                 }
             }
             case DRIVE -> {
-                if (AttractionTextHelper.containsKeyword(name, "해안도로", "드라이브", "전망대", "해변", "대교", "고개", "항구", "포구", "해수욕장")) {
-                    score += 24;
+                if (AttractionTextHelper.containsKeyword(name,
+                        "해안도로", "드라이브", "드라이브코스", "도로", "고개")) {
+                    score += 35;
                 }
-                if (AttractionTextHelper.containsKeyword(category, "해안도로", "드라이브코스", "전망대", "해변", "항구", "해수욕장")) {
-                    score += 14;
+
+                if (AttractionTextHelper.containsKeyword(category,
+                        "해안도로", "드라이브코스")) {
+                    score += 28;
+                }
+
+                if (AttractionTextHelper.containsKeyword(name,
+                        "해변", "해수욕장", "대교", "항구", "포구")) {
+                    score += 16;
+                }
+
+                if (AttractionTextHelper.containsKeyword(category,
+                        "해변", "해수욕장", "항구")) {
+                    score += 10;
+                }
+
+                if (AttractionTextHelper.containsKeyword(name, "전망대")) {
+                    score += 6;
+                }
+
+                if (AttractionTextHelper.containsKeyword(category, "전망대")) {
+                    score += 4;
                 }
             }
             default -> {

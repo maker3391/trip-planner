@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.security.oauth2.core.OAuth2Error;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,18 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         User user = userRepository.findByProviderAndProviderId(userInfo.provider(), userInfo.providerId())
                 .map(existingUser -> updateExistingOAuthUser(existingUser, userInfo))
                 .orElseGet(() -> createOAuthUserIfEmailNotUsed(userInfo));
+
+        if (user.getBannedUntil() != null && user.getBannedUntil().isAfter(LocalDateTime.now())) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("banned_user", "이용이 정지된 계정입니다.", null)
+            );
+        }
+
+        if ("DELETED".equals(user.getStatus())) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("deleted_user", "탈퇴한 회원입니다.", null)
+            );
+        }
 
         Map<String, Object> normalizedAttributes = new HashMap<>(attributes);
         normalizedAttributes.put("email", userInfo.email());

@@ -8,6 +8,7 @@ import "./LoginPage.css";
 import { useNavigate } from "react-router-dom";
 import { loginApi } from "../components/api/auth.ts";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginRequest>({
@@ -18,25 +19,34 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+  const storedMessage = sessionStorage.getItem("authErrorMessage");
 
-    const oauthError = params.get("error");
-    const oauthMessage = params.get("message");
+  if (storedMessage) {
+    toast.error(storedMessage, {
+      id: "auth-error",
+      duration: 5000,
+    });
 
-    if (oauthError || oauthMessage) {
-      toast.error(
-        decodeURIComponent(
-          oauthMessage || "소셜 로그인에 실패했습니다."
-        ),
-        {
-          id: "oauth-login-error",
-          duration: 7000,
-        }
-      );
+    sessionStorage.removeItem("authErrorMessage");
+  }
 
-      window.history.replaceState({}, "", "/login");
-    }
-  }, []);
+  const params = new URLSearchParams(window.location.search);
+
+  const oauthError = params.get("error");
+  const oauthMessage = params.get("message");
+
+  if (oauthError || oauthMessage) {
+    toast.error(
+      decodeURIComponent(oauthMessage || "소셜 로그인에 실패했습니다."),
+      {
+        id: "oauth-login-error",
+        duration: 5000,
+      }
+    );
+
+    window.history.replaceState({}, "", "/login");
+  }
+}, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -46,9 +56,10 @@ export default function LoginPage() {
     }));
   };
 
-  const handleLoginFailure = (status?: number) => {
-    let message = "로그인에 실패했습니다. 다시 시도해주세요.";
+  const handleLoginFailure = (status?: number, serverMessage?: string) => {
+  let message = serverMessage || "로그인에 실패했습니다. 다시 시도해주세요.";
 
+  if (!serverMessage) {
     switch (status) {
       case 400:
         message = "잘못된 요청입니다. 입력한 정보를 확인해주세요.";
@@ -62,9 +73,10 @@ export default function LoginPage() {
       default:
         message = "로그인에 실패했습니다. 다시 시도해주세요.";
     }
+  }
 
-    toast.error(message, { id: "login-error", duration: 5000 });
-  };
+  toast.error(message, { id: "login-error", duration: 5000 });
+};
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -79,7 +91,11 @@ export default function LoginPage() {
       navigate("/");
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        handleLoginFailure(error.response?.status);
+        const data = error.response?.data;
+        const serverMessage =
+          typeof data === "string" ? data : data?.message;
+
+        handleLoginFailure(error.response?.status, serverMessage);
       } else {
         handleLoginFailure();
       }

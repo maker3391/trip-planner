@@ -1,2 +1,22 @@
+# Node
 node_modules/
 **/node_modules/
+
+.idea/
+*.iws
+*.iml
+# IntelliJ 
+.idea/
+**/.idea/
+*.iml
+*.iws
+*.ipr
+
+# Gradle / Backend
+.gradle/
+build/
+**/build/
+
+# Secrets
+application-secrets.properties
+**/application-secrets.properties
