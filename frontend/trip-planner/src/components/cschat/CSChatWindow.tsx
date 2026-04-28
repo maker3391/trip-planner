@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useCSStore } from '../store/csStore';
-import './css/CSChatWindow.css'
-
+import { closeCSRoom } from './types/csChat'; 
+import './css/CSChatWindow.css';
 
 interface CSChatWindowProps {
     roomId: number;
@@ -39,12 +39,20 @@ export default function CSChatWindow({ roomId, senderId, onBack}: CSChatWindowPr
         }
     };
 
-    const handleEndChat = () => {
-        if (window.confirm("상담을 완전히 종료하시겠습니까? (대화 내용이 사라집니다)")) {
-            if (stompClient.current) {
-                stompClient.current.deactivate();
+    const handleEndChat = async () => {
+        if (window.confirm("상담을 종료하시겠습니까? (종료 후에도 목록에서 내역을 확인할 수 있습니다)")) {
+            try {
+                await closeCSRoom(roomId);
+                
+                if (stompClient.current) {
+                    stompClient.current.deactivate();
+                }
+                clearCsInfo(); 
+                onBack(); 
+            } catch (error) {
+                console.error("상담 종료 실패:", error);
+                alert("상담 종료 처리에 실패했습니다.");
             }
-            clearCsInfo(); 
         }
     };
 
@@ -87,7 +95,7 @@ export default function CSChatWindow({ roomId, senderId, onBack}: CSChatWindowPr
                     <button 
                         className="cs-chat-back-btn"
                         onClick={onBack} 
-                        title="AI 챗봇으로 돌아가기"
+                        title="AI 챗봇 혹은 목록으로 돌아가기"
                     >
                         ⬅️
                     </button>

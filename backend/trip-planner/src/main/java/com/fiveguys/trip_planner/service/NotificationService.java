@@ -78,4 +78,20 @@ public class NotificationService {
 
         notification.markAsRead();
     }
+
+    @Transactional(readOnly = true)
+    public List<NotificationResponseDto> getAllNotifications(User user) {
+        List<Notification> notifications = notificationRepository
+                .findAllByReceiverOrderByCreatedAtDesc(user);
+        return notifications.stream()
+                .map(NotificationResponseDto::fromEntity)
+                .toList();
+    }
+
+    @Transactional
+    public void deleteNotification(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
+        notificationRepository.delete(notification);
+    }
 }

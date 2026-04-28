@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { List, ListItem, ListItemText, Divider, TextField, Button } from "@mui/material";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
-import { getCSRooms, CSRoomResponse, getCSMessages } from "../api/csChat";
+import { getCSRooms, CSRoomResponse, getCSMessages } from "./types/csChat";
 import { getMe } from "../api/auth";
 import { ChatMessage } from "../store/csStore";
 import './css/AdminCSPage.css';

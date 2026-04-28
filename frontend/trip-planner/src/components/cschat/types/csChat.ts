@@ -1,4 +1,4 @@
-import client from "./client";
+import client from "../../api/client";
 
 export interface CSRoomRequest {
   title: string;
@@ -36,5 +36,15 @@ export const getMyCSRooms = async (): Promise<CSRoomResponse[]> => {
 
 export const getCSMessages = async (roomId: number): Promise<ChatMessageResponse[]> => {
   const response = await client.get<ChatMessageResponse[]>(`/cs/room/${roomId}/messages`);
+  return response.data;
+};
+
+export const closeCSRoom = async (roomId: number) => {
+  const response = await client.patch(`/cs/room/${roomId}/close`);
+  return response.data;
+};
+
+export const deleteCSRoom = async (roomId: number) => {
+  const response = await client.patch(`/cs/room/${roomId}/delete`);
   return response.data;
 };
