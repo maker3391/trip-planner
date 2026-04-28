@@ -740,7 +740,11 @@ public class RegionResolverService {
                 .trim();
 
         normalized = normalized
-                .replaceAll("(공항|국제공항)", " 공항")
+                .replaceAll("(맛집|음식점|식당|밥집|카페|디저트|베이커리|빵집)", " $1")
+                .replaceAll("(숙소|숙박|호텔|모텔|펜션|리조트|게스트하우스|호스텔|민박|풀빌라|한옥스테이)", " $1")
+                .replaceAll("(명소|관광지|볼거리|랜드마크|핫플|핫플레이스)", " $1")
+                .replaceAll("(일정|코스|여행|플랜|동선|루트)", " $1")
+                .replaceAll("(국제공항|공항)", " 공항")
                 .replaceAll("(터미널)", " 터미널")
                 .replaceAll("(역)", " 역");
 

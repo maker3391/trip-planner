@@ -224,12 +224,16 @@ public class AttractionRecommendationService {
                                            String neighborhood,
                                            String district) {
 
+        if (StringUtils.hasText(detailArea)) {
+            return detailArea;
+        }
+
         if (StringUtils.hasText(neighborhood)) {
-            return AttractionTextHelper.joinDistinctLocation(destination, neighborhood);
+            return neighborhood;
         }
 
         if (StringUtils.hasText(district) && !AttractionTextHelper.isCityOrCounty(district)) {
-            return AttractionTextHelper.joinDistinctLocation(destination, district);
+            return district;
         }
 
         return destination;
