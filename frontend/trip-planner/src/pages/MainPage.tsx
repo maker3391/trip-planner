@@ -21,6 +21,7 @@ import "./MainPage.css";
 import toast from "react-hot-toast";
 
 export default function MainPage() {
+  // MainPage.tsx
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -52,6 +53,10 @@ export default function MainPage() {
   const { data: tripData, isLoading: isTripLoading } = useGetTrip(targetTripId);
   const createTripMutation = useCreateTrip();
   const updateTripMutation = useUpdateTrip(targetTripId);
+
+  // readOnly 상태 읽기
+  const isReadOnly = (location.state as { tripId?: number; readOnly?: boolean })?.readOnly ?? false;
+
 
   useEffect(() => {
     const state = location.state as { tripId?: number };
@@ -245,10 +250,12 @@ export default function MainPage() {
                   : toast.error("장소를 추가해주세요.", { id: "add-place" })
               }
               isLoading={isTripLoading}
+              isReadOnly={isReadOnly}  // ✅ 추가
             />
           </div>
           <div style={{ width: "100%", height: "100%" }}>
             <MyMapApp
+              isReadOnly={isReadOnly}
               searchKeyword={searchKeyword}
               setSearchResults={setSearchResults}
               openSearchModal={openSearchModal}
@@ -286,7 +293,7 @@ export default function MainPage() {
       />
 
       {/* 계산기 컴포넌트: tripId가 null(신규여행)이어도 항상 렌더링되어야 클릭 시 열립니다. */}
-      <Calculator/>
+      <Calculator readOnly={isReadOnly} /> 
     </div>
   );
 }

@@ -7,7 +7,7 @@ import '../layout/Sidebar.css';
 export default function SideListPanel({
   isCollapsed, setIsCollapsed, path, setPath, selectedIdx, setSelectedIdx,
   pinColor, setPinColor, selectedPinColor, setSelectedPinColor, lineColor, setLineColor,
-  showLines, setShowLines, showAllMemos, setShowAllMemos, handleDeletePin, reConnectAll
+  showLines, setShowLines, handleDeletePin, reConnectAll, isReadOnly = false,
 }: any) {
   const [showContent, setShowContent] = useState(!isCollapsed);
 
@@ -81,60 +81,37 @@ export default function SideListPanel({
 
       {showContent && (
         <div>
-          <div style={{
-            background: '#fcfcfc',
-            border: '1px solid #f0f0f0',
-            borderRadius: '12px',
-            padding: '15px',
-            marginBottom: '15px'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: '15px',
-              gap: '10px'
-            }}>
-              <ColorPicker label="기본 핀" value={pinColor} onChange={setPinColor} />
-              <ColorPicker label="선택 핀" value={selectedPinColor} onChange={setSelectedPinColor} />
-              <ColorPicker label="경로 선" value={lineColor} onChange={setLineColor} />
+          {/* 색상 변경 - readOnly면 숨김 */}
+          {!isReadOnly && (
+            <div style={{ background: '#fcfcfc', border: '1px solid #f0f0f0', borderRadius: '12px', padding: '15px', marginBottom: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', gap: '10px' }}>
+                <ColorPicker label="기본 핀" value={pinColor} onChange={setPinColor} />
+                <ColorPicker label="선택 핀" value={selectedPinColor} onChange={setSelectedPinColor} />
+                <ColorPicker label="경로 선" value={lineColor} onChange={setLineColor} />
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => setShowLines(!showLines)} style={{ flex: 1, padding: '8px', fontSize: '11px', cursor: 'pointer', background: '#fff', border: '1px solid #ddd', borderRadius: '6px' }}>
+                  {showLines ? "선 숨기기" : "선 보이기"}
+                </button>
+              </div>
             </div>
+          )}
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => setShowLines(!showLines)}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  background: '#fff',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px'
-                }}
-              >
-                {showLines ? "선 숨기기" : "선 보이기"}
-              </button>
-            </div>
-          </div>
-
-          <button
-            onClick={handleDeletePin}
-            disabled={selectedIdx === null}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '10px',
-              marginBottom: '10px',
-              background: selectedIdx !== null ? '#fff2f0' : '#f5f5f5',
-              color: selectedIdx !== null ? '#ff4d4f' : '#ccc',
-              border: '1px solid #ffa39e',
-              fontSize: '13px',
-              fontWeight: 'bold',
-              cursor: selectedIdx !== null ? 'pointer' : 'default'
-            }}
-          >
-            선택된 핀 삭제
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={handleDeletePin}
+              disabled={selectedIdx === null}
+              style={{
+                width: '100%', padding: '12px', borderRadius: '10px', marginBottom: '10px',
+                background: selectedIdx !== null ? '#fff2f0' : '#f5f5f5',
+                color: selectedIdx !== null ? '#ff4d4f' : '#ccc',
+                border: '1px solid #ffa39e', fontSize: '13px', fontWeight: 'bold',
+                cursor: selectedIdx !== null ? 'pointer' : 'default'
+              }}
+            >
+              선택된 핀 삭제
+            </button>
+          )}
 
           <DragDropContext onDragEnd={(result) => {
             if (!result.destination) return;
@@ -160,7 +137,7 @@ export default function SideListPanel({
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          {...provided.dragHandleProps}
+                          {...(!isReadOnly ? provided.dragHandleProps : {})}
                           onClick={() => setSelectedIdx(i)}
                           style={{
                             ...provided.draggableProps.style,
@@ -201,27 +178,20 @@ export default function SideListPanel({
             </Droppable>
           </DragDropContext>
 
-          <button
-            onClick={() => {
-              if (confirm("초기화 하시겠습니까?")) {
-                setPath([]);
-                setSelectedIdx(null);
-              }
-            }}
-            style={{
-              marginTop: '15px',
-              width: '100%',
-              padding: '12px',
-              borderRadius: '10px',
-              background: '#333',
-              color: '#fff',
-              border: 'none',
-              fontSize: '13px',
-              cursor: 'pointer'
-            }}
-          >
-            전체 초기화
-          </button>
+          {/* 전체 초기화 - readOnly면 숨김 */}
+          {!isReadOnly && (
+            <button
+              onClick={() => {
+                if (confirm("초기화 하시겠습니까?")) {
+                  setPath([]);
+                  setSelectedIdx(null);
+                }
+              }}
+              style={{ marginTop: '15px', width: '100%', padding: '12px', borderRadius: '10px', background: '#333', color: '#fff', border: 'none', fontSize: '13px', cursor: 'pointer' }}
+            >
+              전체 초기화
+            </button>
+          )}
         </div>
       )}
     </div>

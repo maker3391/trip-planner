@@ -155,7 +155,7 @@ export default function MyPage() {
   };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target;q
     setPasswordForm((prev) => ({
       ...prev,
       [name]: value,

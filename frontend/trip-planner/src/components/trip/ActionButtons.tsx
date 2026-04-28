@@ -8,11 +8,13 @@ import { getMe } from "../api/auth"; // ✅ Header와 동일한 방식
 interface ActionButtonsProps {
   onOpenSaveModal: () => void;
   isLoading: boolean;
+  isReadOnly?: boolean;  // ✅ 추가
 }
 
 export default function ActionButtons({
   onOpenSaveModal,
   isLoading,
+  isReadOnly = false,
 }: ActionButtonsProps) {
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ 추가
@@ -87,19 +89,22 @@ export default function ActionButtons({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
-      <button
-        type="button"
-        onClick={handleSaveClick}
-        style={{
-          ...baseButtonStyle,
-          backgroundColor: "#1a1a1a",
-          color: "#fff",
-          border: "1px solid #1a1a1a",
-        }}
-      >
-        <SaveOutlinedIcon style={{ fontSize: "19px" }} />
-        계획 저장
-      </button>
+      {/* ✅ readOnly이면 저장 버튼 숨김 */}
+      {!isReadOnly && (
+        <button
+          type="button"
+          onClick={handleSaveClick}
+          style={{
+            ...baseButtonStyle,
+            backgroundColor: "#1a1a1a",
+            color: "#fff",
+            border: "1px solid #1a1a1a",
+          }}
+        >
+          <SaveOutlinedIcon style={{ fontSize: "19px" }} />
+          계획 저장
+        </button>
+      )}
 
       <button
         type="button"

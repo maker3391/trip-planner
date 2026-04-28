@@ -5,6 +5,7 @@ export default function DetailPanel({
   path,
   setPath,
   onClose,
+  isReadOnly = false,
 }: any) {
   if (selectedIdx === null || !path[selectedIdx]) return null;
   const point = path[selectedIdx];
@@ -194,13 +195,12 @@ export default function DetailPanel({
             value={point.customTitle || ""}
             onChange={(e) => updateSelectedPoint("customTitle", e.target.value)}
             placeholder="예: 점심 식사, 카페 방문"
+            readOnly={isReadOnly}  // ✅
             style={{
-              width: "100%",
-              padding: "10px 12px",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              fontSize: "14px",
-              boxSizing: "border-box",
+              width: "100%", padding: "10px 12px", border: "1px solid #ddd",
+              borderRadius: "8px", fontSize: "14px", boxSizing: "border-box",
+              background: isReadOnly ? "#f5f5f5" : "white",  // ✅ 시각적 표시
+              cursor: isReadOnly ? "not-allowed" : "text",
             }}
           />
         </div>
@@ -221,20 +221,18 @@ export default function DetailPanel({
             type="number"
             min={1}
             value={point.dayNumber ?? 1}
-            onChange={(e) =>
-              updateSelectedPoint("dayNumber", Number(e.target.value))
-            }
-            style={{
+            onChange={(e) => updateSelectedPoint("dayNumber", Number(e.target.value))}
+            readOnly={isReadOnly}  // ✅
+            style={{ 
               width: "100%",
               padding: "10px 12px",
               border: "1px solid #ddd",
               borderRadius: "8px",
               fontSize: "14px",
-              boxSizing: "border-box",
-            }}
+              boxSizing: "border-box", 
+              background: isReadOnly ? "#f5f5f5" : "white", cursor: isReadOnly ? "not-allowed" : "text" }}
           />
-        </div>
-
+        </div>      
         <div
           style={{
             display: "grid",
@@ -265,7 +263,7 @@ export default function DetailPanel({
                 border: "1px solid #ddd",
                 borderRadius: "8px",
                 fontSize: "14px",
-                boxSizing: "border-box",
+                boxSizing: "border-box",background: isReadOnly ? "#f5f5f5" : "white", cursor: isReadOnly ? "not-allowed" : "text" 
               }}
             />
           </div>
@@ -292,7 +290,7 @@ export default function DetailPanel({
                 border: "1px solid #ddd",
                 borderRadius: "8px",
                 fontSize: "14px",
-                boxSizing: "border-box",
+                boxSizing: "border-box", background: isReadOnly ? "#f5f5f5" : "white", cursor: isReadOnly ? "not-allowed" : "text"
               }}
             />
           </div>
@@ -327,7 +325,7 @@ export default function DetailPanel({
               border: "1px solid #ddd",
               borderRadius: "8px",
               fontSize: "14px",
-              boxSizing: "border-box",
+              boxSizing: "border-box", background: isReadOnly ? "#f5f5f5" : "white", cursor: isReadOnly ? "not-allowed" : "text"
             }}
           />
         </div>
@@ -347,12 +345,12 @@ export default function DetailPanel({
         <LocalMemoEditor
           initialMemo={point.memo || ""}
           onSave={(newMemo) => {
+            if (isReadOnly) return;  // ✅
             setPath((prev: any[]) =>
-              prev.map((p, i) =>
-                i === selectedIdx ? { ...p, memo: newMemo } : p
-              )
+              prev.map((p, i) => i === selectedIdx ? { ...p, memo: newMemo } : p)
             );
           }}
+          isReadOnly={isReadOnly}  // ✅ LocalMemoEditor도 prop 받아야 함
         />
       </div>
     </div>
