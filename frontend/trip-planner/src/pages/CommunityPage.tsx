@@ -27,35 +27,29 @@ export const getCommunityPosts = async (
   categories: string[] | null = null,
   regions: string[] | null = null,
   searchType: SearchOption = null,
-  keyword: string | null = null
+  keyword: string | null = null,
+  signal?: AbortSignal // ✅ 추가
 ) => {
   const params: any = { page };
 
-  // 규칙 2: 다중선택 배열 전달 처리
-  // 선택된 카테고리 배열을 그대로 params에 할당하여 전송 (백엔드에서 List<String> 형태로 받아 OR 연산)
   if (categories && !categories.includes("전체보기")) {
     params.categories = categories;
   }
-
-  // 기존 코드의 "전체" 문자열 외에, UI상 표시되는 "전체보기"도 예외 처리
   if (regions && !regions.includes("전체") && !regions.includes("전체보기")) {
     params.regions = regions;
   }
-
   if (searchType && keyword) {
     params.searchType = searchType;
     params.keyword = keyword;
   }
 
-  const response = await client.get("/community/posts", { params });
+  const response = await client.get("/community/posts", { params, signal }); // ✅ signal 추가
   return response.data;
 };
 
 export default function CommunityPage() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const navState = location.state as { category?: string; region?: string } | null;
 
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -72,14 +66,33 @@ export default function CommunityPage() {
   const [keyword, setKeyword] = useState("");
   const [activeKeyword, setActiveKeyword] = useState("");
 
+  const [isNavStateApplied, setIsNavStateApplied] = useState(false);
+
+  const navState = location.state as { 
+  category?: string; 
+  region?: string; 
+  searchType?: SearchOption; // 추가 (상단에 선언한 SearchOption 타입을 재사용)
+  keyword?: string;          // 추가
+  } | null;
+
+  // 첫 번째 useEffect 수정: 외부(마이페이지 등)에서 넘어온 상태값 처리
+  
   useEffect(() => {
-    if (navState) {
-      setSelectedCategories(navState.category ? [navState.category] : ["전체보기"]);
-      setSelectedRegions(navState.region ? [navState.region] : ["전체보기"]);
-      setPage(0);
-      navigate(location.pathname, { replace: true, state: null });
+    if (!navState || isNavStateApplied) return;
+
+    setIsNavStateApplied(true);
+
+    setSelectedCategories(navState.category ? [navState.category] : ["전체보기"]);
+    setSelectedRegions(navState.region ? [navState.region] : ["전체보기"]);
+
+    if (navState.searchType && navState.keyword) {
+      setSearchType(navState.searchType);
+      setKeyword(navState.keyword);
+      setActiveKeyword(navState.keyword);
     }
-  }, [location.key, location.pathname, navigate, navState]);
+
+    setPage(0);
+  }, [navState]); // ✅ setTimeout + navigate 제거, 플래그로 중복 실행 방지
 
   useEffect(() => {
     const fetchNotices = async () => {
@@ -102,16 +115,17 @@ export default function CommunityPage() {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController(); // ✅ 추가
+
     const fetchPosts = async () => {
       try {
-        // 규칙 1: 카테고리 우선순위는 백엔드 QueryDSL 혹은 로직에서 처리되도록 위임.
-        // 규칙 2: 다중선택 OR 연산을 위해 기존 selectedCategories[0] 형태에서 배열 전체 전달로 변경.
         const data: CommunityPageResponse | undefined = await getCommunityPosts(
           page,
           selectedCategories,
           selectedRegions,
           searchType,
-          activeKeyword || null
+          activeKeyword || null,
+          controller.signal // ✅ 추가
         );
 
         const postsWithAuthor = (data?.content || []).map((post) => ({
@@ -121,13 +135,16 @@ export default function CommunityPage() {
 
         setPosts(postsWithAuthor);
         setTotalPages(data?.totalPages || 0);
-      } catch (error) {
+      } catch (error: any) {
+        if (error?.name === "CanceledError" || error?.name === "AbortError") return; // ✅ 취소 에러 무시
         console.error("게시글 불러오기 실패:", error);
         setPosts([]);
       }
     };
 
     fetchPosts();
+
+    return () => controller.abort(); // ✅ 다음 effect 실행 전 이전 요청 취소
   }, [page, selectedCategories, selectedRegions, searchType, activeKeyword]);
 
   const handleReset = () => {
@@ -139,7 +156,16 @@ export default function CommunityPage() {
   };
 
   const handleSearch = () => {
-    setActiveKeyword(keyword.trim());
+    const trimmed = keyword.trim();
+    
+    // ✅ 현재 activeKeyword와 같은 값이면 강제로 fetch 트리거
+    if (trimmed === activeKeyword) {
+      setActiveKeyword(""); // 초기화 후
+      setTimeout(() => setActiveKeyword(trimmed), 0); // 다시 세팅
+      return;
+    }
+    
+    setActiveKeyword(trimmed);
     setPage(0);
   };
 

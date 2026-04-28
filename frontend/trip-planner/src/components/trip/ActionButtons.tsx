@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
 import { CalculatorService } from "../layout/calculator";
+import toast from "react-hot-toast";
+import { getMe } from "../api/auth"; // ✅ Header와 동일한 방식
 
 interface ActionButtonsProps {
   onOpenSaveModal: () => void;
@@ -13,6 +15,25 @@ export default function ActionButtons({
   isLoading,
 }: ActionButtonsProps) {
   const [isCalcOpen, setIsCalcOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // ✅ 추가
+
+  // ✅ Header와 동일한 방식으로 로그인 상태 확인
+  useEffect(() => {
+    const validateLogin = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token || token === "undefined") {
+        setIsLoggedIn(false);
+        return;
+      }
+      try {
+        await getMe();
+        setIsLoggedIn(true);
+      } catch {
+        setIsLoggedIn(false);
+      }
+    };
+    validateLogin();
+  }, []);
 
   useEffect(() => {
     const handleCloseEvent = () => setIsCalcOpen(false);
@@ -27,12 +48,23 @@ export default function ActionButtons({
     };
   }, []);
 
+  const handleSaveClick = () => {
+    if (!isLoggedIn) {
+      toast.error("로그인 후 사용해 주세요.", { id: "auth-required" });
+      return;
+    }
+    onOpenSaveModal();
+  };
+
   const handleCalculatorToggle = () => {
+    if (!isLoggedIn) {
+      toast.error("로그인 후 사용해 주세요.", { id: "auth-required" });
+      return;
+    }
     if (isCalcOpen) {
       CalculatorService.closeCalculator();
       return;
     }
-
     CalculatorService.openCalculator();
   };
 
@@ -54,17 +86,10 @@ export default function ActionButtons({
   };
 
   return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-          alignItems: "center",
-        }}
-      >
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
       <button
         type="button"
-        onClick={onOpenSaveModal}
+        onClick={handleSaveClick}
         style={{
           ...baseButtonStyle,
           backgroundColor: "#1a1a1a",
@@ -91,14 +116,7 @@ export default function ActionButtons({
       </button>
 
       {isLoading && (
-        <span
-          style={{
-            width: "100%",
-            fontSize: "12px",
-            color: "#666",
-            textAlign: "center",
-          }}
-        >
+        <span style={{ width: "100%", fontSize: "12px", color: "#666", textAlign: "center" }}>
           데이터 로딩 중...
         </span>
       )}
