@@ -38,8 +38,21 @@ import java.util.stream.Collectors;
 public class CommunityService {
 
     // =========================
+    // 🔥 HTML 정리 함수
+    // =========================
+    private String cleanHtml(String html) {
+        if (html == null) return "";
+
+        // Safelist.relaxed()에는 기본적으로 span 태그가 없으므로 addTags("span") 필수
+        String clean = Jsoup.clean(html, Safelist.relaxed()
+                .addTags("span")
+                .addAttributes("span", "style"));
+
+        return clean.trim();
+    }
+
+    // =========================
     // 🔥 이미지 저장 방식 선택
-    // "DB" or "S3"
     // =========================
     private final String IMAGE_STORAGE = "DB";
 
@@ -52,18 +65,19 @@ public class CommunityService {
     private final NotificationService notificationService;
 
     // =========================
-    // 🔹 게시글 생성
+    // 🔥 게시글 생성
     // =========================
     @Transactional
     public Long createPost(CommunityRequest request) {
 
         validateRequest(request);
 
-        String safeContent = Jsoup.clean(request.getContent(), Safelist.relaxed());
+        String safeContent = cleanHtml(request.getContent());
+
         User user = getCurrentUser();
 
         TripPlan tripPlan = null;
-        if(request.getTripPlanId() != null) {
+        if (request.getTripPlanId() != null) {
             tripPlan = tripPlanRepository.findById(request.getTripPlanId())
                     .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행 계획 입니다."));
         }
@@ -110,7 +124,6 @@ public class CommunityService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
-        // ✅ 전체 선택 처리
         List<String> filterCategories =
                 (categories == null || categories.isEmpty() || categories.contains("전체보기"))
                         ? null
@@ -148,7 +161,6 @@ public class CommunityService {
 
         User finalUser = currentUser;
 
-        // 규칙 1, 2가 적용된 커스텀 리포지토리 메서드로 배열(List) 형태의 파라미터를そのまま 전달
         return communityRepository.findWithFilters(
                 filterCategories,
                 filterRegions,
@@ -186,7 +198,7 @@ public class CommunityService {
     }
 
     // =========================
-    // 🔹 게시글 수정
+    // 🔥 게시글 수정
     // =========================
     @Transactional
     public void updatePost(Long postId, CommunityRequest request) {
@@ -208,7 +220,7 @@ public class CommunityService {
 
         validateRequest(request);
 
-        String safeContent = Jsoup.clean(request.getContent(), Safelist.relaxed());
+        String safeContent = cleanHtml(request.getContent());
 
         community.update(
                 request.getCategory(),
@@ -281,13 +293,12 @@ public class CommunityService {
 
     private Long uploadToS3(MultipartFile file) {
         try {
-            // 🔥 나중에 진짜 S3 업로드 로직 넣는 자리
             String s3Url = "https://s3.amazonaws.com/bucket/" + file.getOriginalFilename();
 
             CommunityImage image = CommunityImage.builder()
                     .originalName(file.getOriginalFilename())
                     .contentType(file.getContentType())
-                    .data(s3Url.getBytes()) // 임시 (⚠️ 추후 imageUrl 필드 추천)
+                    .data(s3Url.getBytes())
                     .build();
 
             return communityImageRepository.save(image).getId();
@@ -316,7 +327,6 @@ public class CommunityService {
     }
 
     private byte[] getFromS3(Long id) {
-        // 🔥 나중에 S3 다운로드
         return new byte[0];
     }
 
@@ -382,7 +392,6 @@ public class CommunityService {
                 });
     }
 
-    // =========================
     @Transactional
     public void createComment(Long postId, Long userId, CommunityCommentRequest request) {
 
@@ -398,7 +407,6 @@ public class CommunityService {
         communityCommentRepository.save(comment);
         community.incrementCommentCount();
 
-        // ✅ 게시글 작성자에게 알림 (자기 자신 제외)
         User postAuthor = community.getAuthor();
         if (!postAuthor.getId().equals(userId)) {
             notificationService.send(
@@ -410,7 +418,6 @@ public class CommunityService {
         }
     }
 
-    // =========================
     @Transactional
     public void createReply(Long postId, Long parentId, Long userId, CommunityCommentRequest request) {
 
@@ -429,7 +436,6 @@ public class CommunityService {
         communityCommentRepository.save(reply);
         community.incrementCommentCount();
 
-        // ✅ 원 댓글 작성자에게 알림 (자기 자신 제외)
         User commentAuthor = parent.getUser();
         if (!commentAuthor.getId().equals(userId)) {
             notificationService.send(
@@ -441,16 +447,12 @@ public class CommunityService {
         }
     }
 
-    // =========================
-    // 🔹 댓글 조회
-    // =========================
     @Transactional(readOnly = true)
     public CommunityCommentResponse getComments(Long postId, int page, int size) {
 
         Community community = communityRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글 없음"));
 
-        // 🔥 descending()을 ascending()으로 변경하여 일반 댓글을 오래된 순으로 정렬합니다.
         Page<CommunityComment> parents =
                 communityCommentRepository.findByCommunityAndParentIsNull(
                         community,
@@ -475,32 +477,23 @@ public class CommunityService {
         return new CommunityCommentResponse(result, parents.getTotalPages());
     }
 
-    // =========================
-    // 🔹 댓글 수정 (✅ 새로 추가된 부분)
-    // =========================
     @Transactional
     public void updateComment(Long commentId, Long userId, CommunityCommentRequest request) {
 
         CommunityComment comment = communityCommentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
 
-        // 논리적 삭제가 된 상태라면 수정 불가 처리
         if (comment.isDeleted()) {
             throw new IllegalArgumentException("삭제된 댓글은 수정할 수 없습니다.");
         }
 
-        // 본인 확인
         if (!comment.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("댓글 수정 권한이 없습니다.");
         }
 
-        // JPA Dirty Checking으로 트랜잭션 종료 시 자동 반영됨
         comment.updateComment(request.getComment());
     }
 
-    // =========================
-    // 🔹 댓글 삭제
-    // =========================
     public void deleteComment(Long commentId, Long userId) {
 
         CommunityComment comment = communityCommentRepository.findById(commentId)
@@ -533,9 +526,6 @@ public class CommunityService {
         return communityLikeRepository.existsByUserAndCommunity(user, community);
     }
 
-    // =========================
-    // 🔐 현재 유저
-    // =========================
     private User getCurrentUser() {
 
         Object principal = SecurityContextHolder
@@ -550,15 +540,14 @@ public class CommunityService {
         throw new RuntimeException("로그인 사용자 정보 없음");
     }
 
-    // =========================
-    // 🔥 검증 로직
-    // =========================
     private void validateRequest(CommunityRequest request) {
 
         if (request.getTitle() == null || request.getTitle().trim().isEmpty())
             throw new IllegalArgumentException("제목은 필수입니다.");
 
-        if (request.getContent() == null || request.getContent().trim().equals("<p><br></p>"))
+        String plainText = Jsoup.parse(request.getContent()).text().trim();
+
+        if (plainText.isEmpty())
             throw new IllegalArgumentException("내용을 입력해주세요.");
 
         if (isPlanCategory(request.getCategory())) {
@@ -588,16 +577,13 @@ public class CommunityService {
         return value == null || value.trim().isEmpty();
     }
 
-    // =========================
-    // 🔹 내가 작성한 게시글 목록 조회 (마이페이지용)
-    // =========================
     public Page<CommunityResponse> getMyPosts(int page, int size) {
-        User user = getCurrentUser(); // 기존에 구현하신 로그인 유저 가져오기 메서드 활용
+
+        User user = getCurrentUser();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
         return communityRepository.findByAuthor(user, pageable)
                 .map(post -> {
-                    // 내가 쓴 글이므로 좋아요 여부는 exists 확인을 하거나 기본 true 처리
                     boolean likedByMe = communityLikeRepository.existsByUserAndCommunity(user, post);
                     return CommunityResponse.from(post, likedByMe);
                 });

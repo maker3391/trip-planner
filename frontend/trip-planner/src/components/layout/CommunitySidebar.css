@@ -56,9 +56,26 @@
 
 /* 지역 */
 .region-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2열 */
+  gap: 8px;
+}
+
+/* 🔥 전체보기 크게 */
+.region-all {
+  grid-column: span 2; /* 2칸 차지 */
+  text-align: center;
+  font-weight: 700;
+  background-color: #f3f3f3;
+  border-radius: 8px;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.region-all.active {
+  background-color: #007bff;
+  color: white;
 }
 
 .region-grid span {

@@ -12,7 +12,6 @@ interface CommunitySidebarProps {
 
 /**
  * 📌 카테고리 목록
- * - "전체보기"는 모든 카테고리를 의미하는 특수값
  */
 const CATEGORIES = [
   "전체보기",
@@ -23,14 +22,10 @@ const CATEGORIES = [
 ];
 
 /**
- * 📌 지역 목록
- * - "전체보기" : 모든 지역 포함
- * - "미정" : DB 상 region = "미정" 또는 null
- * 👉 UI에서는 "지정 없음"으로 표시
+ * 📌 지역 목록 (❌ "미정" 제거됨)
  */
 const REGIONS = [
   "전체보기",
-  "미정",
   "서울특별시",
   "부산광역시",
   "대구광역시",
@@ -58,9 +53,7 @@ export default function CommunitySidebar({
   const location = useLocation();
 
   /**
-   * 📌 카테고리 토글 로직
-   * 규칙 1: 카테고리 우선도 적용을 위해 백엔드로 다중 선택 배열을 전달합니다. (백엔드 로직에서 카테고리 조건 우선 평가)
-   * 규칙 2: 일반 카테고리 선택 시 기존 상태를 유지하며 새로운 값을 추가/제거하여 OR 연산이 가능하도록 배열로 관리합니다.
+   * 📌 카테고리 토글
    */
   const toggleCategory = (value: string) => {
     if (value === "전체보기") {
@@ -72,15 +65,13 @@ export default function CommunitySidebar({
       ? selectedCategories.filter(v => v !== value)
       : [...selectedCategories.filter(v => v !== "전체보기"), value];
 
-    // 규칙 3: 토글로 지정 취소를 했을 때, 배열이 비게 되면 자동으로 "전체보기"가 지정되도록 복구합니다.
     if (updated.length === 0) updated = ["전체보기"];
 
     onCategoryChange(updated);
   };
 
   /**
-   * 📌 지역 토글 로직
-   * 규칙 2: 지역 역시 다중 선택 시 OR 조건 연산이 되도록 배열 형태로 추가 및 삭제를 진행합니다.
+   * 📌 지역 토글
    */
   const toggleRegion = (value: string) => {
     if (value === "전체보기") {
@@ -92,14 +83,13 @@ export default function CommunitySidebar({
       ? selectedRegions.filter(v => v !== value)
       : [...selectedRegions.filter(v => v !== "전체보기"), value];
 
-    // 규칙 3: 토글 지정 취소 시 마지막 값이 없어지면 자동으로 "전체보기" 지정
     if (updated.length === 0) updated = ["전체보기"];
 
     onRegionChange(updated);
   };
 
   /**
-   * 📌 페이지 이동 + 필터 적용 처리
+   * 📌 페이지 이동 + 필터 적용
    */
   const handleFilterClick = (type: "category" | "region", value: string) => {
     if (location.pathname === "/community") {
@@ -108,9 +98,7 @@ export default function CommunitySidebar({
     } else {
       navigate("/community", {
         state: {
-          // 규칙 5 준수: 기존 CommunityPage에서 navState가 string 타입을 받아 배열화([navState.category])하므로,
-          // 인수의 구조가 깨지지 않도록 외부 페이지에서 접근 시 단일 문자열로 넘깁니다. 
-          [type]: value 
+          [type]: value
         }
       });
     }
@@ -137,15 +125,26 @@ export default function CommunitySidebar({
       {/* ================= 지역 ================= */}
       <div className="sidebar-section">
         <h3>지역별</h3>
+
         <div className="region-grid">
-          {REGIONS.map((reg) => (
+          {/* 🔥 전체보기 (2칸 강조) */}
+          <span
+            className={`region-all ${
+              selectedRegions.includes("전체보기") ? "active" : ""
+            }`}
+            onClick={() => handleFilterClick("region", "전체보기")}
+          >
+            전체보기
+          </span>
+
+          {/* 🔥 나머지 지역 */}
+          {REGIONS.filter((reg) => reg !== "전체보기").map((reg) => (
             <span
               key={reg}
               className={selectedRegions.includes(reg) ? "active" : ""}
               onClick={() => handleFilterClick("region", reg)}
             >
-              {/* 👉 "미정"은 UI에서 "지정 없음"으로 표시 (규칙 1과 관련된 휴먼 에러 완화 요소) */}
-              {reg === "미정" ? "지정 없음" : reg}
+              {reg}
             </span>
           ))}
         </div>

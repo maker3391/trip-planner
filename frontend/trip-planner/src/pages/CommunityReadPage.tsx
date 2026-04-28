@@ -24,6 +24,7 @@ import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
 import toast from "react-hot-toast";
 import CommunityList from "../components/layout/CommunityList.tsx";
 import CommunityComments from "../components/layout/CommunityComments.tsx";
+import "react-quill/dist/quill.snow.css";
 
 export const getPost = async (id: number) => {
     const res = await client.get(`/community/posts/${id}`);
@@ -505,7 +506,7 @@ export default function CommunityReadPage() {
                                                     )}
                                                 </div>
 
-                                                {isAuthor && (
+                                                {isAuthor && post.category !== "후기게시판" && (
                                                     <div className="trip-member-manage-box">
                                                         <h3>참가 신청 관리</h3>
                                                         {loadingMembers ? (
