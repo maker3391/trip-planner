@@ -10,15 +10,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-// =====================================================================
-// [요구사항 확인 및 반영 사항]
-// 규칙 1 (카테고리 우선도 - 1차 필터링 후 2차 종속 판독):
-// 기존의 단순 AND/OR 나열을 수정하여,
-// 1) 입력된 카테고리를 먼저 판별하도록 기준을 잡고,
-// 2) 지역 필터는 '해당 게시글의 카테고리가 지역 정보와 무관한 경우(자유/공지)'에는 완전히 무시되도록 논리식을 그룹화했습니다.
-// 이로써 카테고리와 맞지 않는 지역이 선택되어 아무것도 나오지 않는 휴먼 에러를 방지합니다.
-// =====================================================================
-
 public interface CommunityRepository extends JpaRepository<Community, Long> {
 
     // =========================
@@ -29,63 +20,91 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
 
 
     // =========================
-    // 🔥 통합 필터 + 검색 (핵심)
+    // 🔥 통합 필터 + 검색 (수정 완료)
     // =========================
     @Query(
-            value = "SELECT c FROM Community c LEFT JOIN c.author a WHERE " +
-                    // 1차 필터: 카테고리 우선 거르기 (다중선택 OR 연산 포함)
-                    "(:category IS NULL OR c.category IN :category) AND " +
+            value =
+                    "SELECT c FROM Community c LEFT JOIN c.author a WHERE " +
 
-                    // 2차 필터: 지역 판독 (카테고리에 종속)
-                    "(" +
-                    "   (:region IS NULL) OR " + // 지역 필터가 '전체'일 때
-                    "   (c.category IN ('자유게시판', '공지게시판')) OR " + // 지역 속성이 없는 카테고리는 지역 필터 무시
-                    "   (c.region IN :region)" + // 그 외(여행플랜, 후기 등)는 다중 지역 필터 적용
-                    ") AND " +
+                            // =========================
+                            // 1️⃣ 카테고리 필터
+                            // =========================
+                            "(:category IS NULL OR c.category IN :category) AND " +
 
-                    // 검색 필터
-                    "(" +
-                    "  :keyword IS NULL OR :searchType IS NULL OR " +
+                            // =========================
+                            // 2️⃣ 지역 필터
+                            // =========================
+                            "(" +
+                            "   (:region IS NULL) OR " +
+                            "   (c.category IN ('자유게시판', '공지게시판')) OR " +
+                            "   (c.region IN :region)" +
+                            ") AND " +
 
-                    "  (:searchType = 'title' AND c.title LIKE CONCAT('%', :keyword, '%')) OR " +
-                    "  (:searchType = 'author' AND a.nickname LIKE CONCAT('%', :keyword, '%')) OR " +
-                    "  (:searchType = 'content' AND c.content LIKE CONCAT('%', :keyword, '%')) OR " +
-                    "  (:searchType = 'tag' AND c.tags LIKE CONCAT('%', :keyword, '%')) OR " +
+                            // =========================
+                            // 3️⃣ 검색 필터 (🔥 핵심 수정)
+                            // =========================
+                            "(" +
+                            "   :keyword IS NULL OR " +
 
-                    "  (:searchType = 'title_author' AND " +
-                    "     (c.title LIKE CONCAT('%', :keyword, '%') OR a.nickname LIKE CONCAT('%', :keyword, '%'))" +
-                    "  ) OR " +
+                            // title
+                            "   (:searchType = 'title' AND c.title LIKE CONCAT('%', :keyword, '%')) OR " +
 
-                    "  (:searchType = 'title_content' AND " +
-                    "     (c.title LIKE CONCAT('%', :keyword, '%') OR c.content LIKE CONCAT('%', :keyword, '%'))" +
-                    "  )" +
+                            // author
+                            "   (:searchType = 'author' AND a.nickname LIKE CONCAT('%', :keyword, '%')) OR " +
 
-                    ")",
+                            // content
+                            "   (:searchType = 'content' AND c.content LIKE CONCAT('%', :keyword, '%')) OR " +
 
-            countQuery = "SELECT COUNT(c) FROM Community c LEFT JOIN c.author a WHERE " +
-                    "(:category IS NULL OR c.category IN :category) AND " +
-                    "(" +
-                    "   (:region IS NULL) OR " +
-                    "   (c.category IN ('자유게시판', '공지게시판')) OR " +
-                    "   (c.region IN :region)" +
-                    ") AND " +
-                    "(" +
-                    "  :keyword IS NULL OR :searchType IS NULL OR " +
+                            // tag
+                            "   (:searchType = 'tag' AND c.tags LIKE CONCAT('%', :keyword, '%')) OR " +
 
-                    "  (:searchType = 'title' AND c.title LIKE CONCAT('%', :keyword, '%')) OR " +
-                    "  (:searchType = 'author' AND a.nickname LIKE CONCAT('%', :keyword, '%')) OR " +
-                    "  (:searchType = 'content' AND c.content LIKE CONCAT('%', :keyword, '%')) OR " +
-                    "  (:searchType = 'tag' AND c.tags LIKE CONCAT('%', :keyword, '%')) OR " +
+                            // title + author
+                            "   (:searchType = 'title_author' AND " +
+                            "       (c.title LIKE CONCAT('%', :keyword, '%') OR a.nickname LIKE CONCAT('%', :keyword, '%'))" +
+                            "   ) OR " +
 
-                    "  (:searchType = 'title_author' AND " +
-                    "     (c.title LIKE CONCAT('%', :keyword, '%') OR a.nickname LIKE CONCAT('%', :keyword, '%'))" +
-                    "  ) OR " +
+                            // title + content
+                            "   (:searchType = 'title_content' AND " +
+                            "       (c.title LIKE CONCAT('%', :keyword, '%') OR c.content LIKE CONCAT('%', :keyword, '%'))" +
+                            "   ) OR " +
 
-                    "  (:searchType = 'title_content' AND " +
-                    "     (c.title LIKE CONCAT('%', :keyword, '%') OR c.content LIKE CONCAT('%', :keyword, '%'))" +
-                    "  )" +
+                            // 🔥 fallback (searchType 없을 때)
+                            "   (:searchType IS NULL AND " +
+                            "       (c.title LIKE CONCAT('%', :keyword, '%') OR c.content LIKE CONCAT('%', :keyword, '%'))" +
+                            "   )" +
+                            ")",
 
-                    ")"
+            countQuery =
+                    "SELECT COUNT(c) FROM Community c LEFT JOIN c.author a WHERE " +
+
+                            "(:category IS NULL OR c.category IN :category) AND " +
+
+                            "(" +
+                            "   (:region IS NULL) OR " +
+                            "   (c.category IN ('자유게시판', '공지게시판')) OR " +
+                            "   (c.region IN :region)" +
+                            ") AND " +
+
+                            "(" +
+                            "   :keyword IS NULL OR " +
+
+                            "   (:searchType = 'title' AND c.title LIKE CONCAT('%', :keyword, '%')) OR " +
+                            "   (:searchType = 'author' AND a.nickname LIKE CONCAT('%', :keyword, '%')) OR " +
+                            "   (:searchType = 'content' AND c.content LIKE CONCAT('%', :keyword, '%')) OR " +
+                            "   (:searchType = 'tag' AND c.tags LIKE CONCAT('%', :keyword, '%')) OR " +
+
+                            "   (:searchType = 'title_author' AND " +
+                            "       (c.title LIKE CONCAT('%', :keyword, '%') OR a.nickname LIKE CONCAT('%', :keyword, '%'))" +
+                            "   ) OR " +
+
+                            "   (:searchType = 'title_content' AND " +
+                            "       (c.title LIKE CONCAT('%', :keyword, '%') OR c.content LIKE CONCAT('%', :keyword, '%'))" +
+                            "   ) OR " +
+
+                            "   (:searchType IS NULL AND " +
+                            "       (c.title LIKE CONCAT('%', :keyword, '%') OR c.content LIKE CONCAT('%', :keyword, '%'))" +
+                            "   )" +
+                            ")"
     )
     Page<Community> findWithFilters(
             @Param("category") List<String> category,
@@ -103,7 +122,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
 
 
     // =========================
-    // 🔥 작성자 검색 (N+1 방지)
+    // 🔥 작성자 검색
     // =========================
     @Query(
             value = "SELECT c FROM Community c JOIN c.author a WHERE a.nickname LIKE CONCAT('%', :keyword, '%')",
@@ -116,12 +135,10 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
 
 
     // =========================
-    // 🔹 정렬 기준
+    // 🔹 정렬
     // =========================
     Page<Community> findByOrderByViewCountDesc(Pageable pageable);
-
     Page<Community> findByOrderByShareCountDesc(Pageable pageable);
-
     Page<Community> findByOrderByLikeCountDesc(Pageable pageable);
 
 
@@ -145,8 +162,9 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     // =========================
     Optional<Community> findFirstByTripPlan(TripPlan tripPlan);
 
+
     // =========================
-    // 🔥 마이페이지 전용: 내가 쓴 글 조회
+    // 🔥 마이페이지
     // =========================
-        Page<Community> findByAuthor(com.fiveguys.trip_planner.entity.User author, Pageable pageable);
+    Page<Community> findByAuthor(com.fiveguys.trip_planner.entity.User author, Pageable pageable);
 }

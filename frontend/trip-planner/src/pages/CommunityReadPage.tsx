@@ -24,6 +24,7 @@ import CommunitySidebar from "../components/layout/CommunitySidebar.tsx";
 import toast from "react-hot-toast";
 import CommunityList from "../components/layout/CommunityList.tsx";
 import CommunityComments from "../components/layout/CommunityComments.tsx";
+import "react-quill/dist/quill.snow.css";
 
 export const getPost = async (id: number) => {
     const res = await client.get(`/community/posts/${id}`);
@@ -296,10 +297,6 @@ export default function CommunityReadPage() {
             const res = await requestJoinTrip(post.tripPlan.id);
             toast.success(res.message || "참가 신청이 완료되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
-
-            setTimeout(() => {
-                navigate("/trip-list", { state: { joinedTrip: post.tripPlan } });
-            }, 1000);
         } catch (err: unknown) {
             const errorResponse = err as { response?: { data?: { message?: string } } };
             const message = errorResponse?.response?.data?.message || "참가 신청에 실패했습니다.";
@@ -489,7 +486,7 @@ export default function CommunityReadPage() {
                                                         이 여행 계획 불러오기
                                                     </button>
 
-                                                    {!isAuthor && (
+                                                    {!isAuthor && post.category !== "후기게시판" && (
                                                         <button
                                                             type="button"
                                                             className="join-trip-button"
@@ -505,7 +502,7 @@ export default function CommunityReadPage() {
                                                     )}
                                                 </div>
 
-                                                {isAuthor && (
+                                                {isAuthor && post.category !== "후기게시판" && (
                                                     <div className="trip-member-manage-box">
                                                         <h3>참가 신청 관리</h3>
                                                         {loadingMembers ? (

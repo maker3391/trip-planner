@@ -120,7 +120,6 @@
 }
 
 .ql-editor {
-    font-size: 15px;
     line-height: 1.8;
     color: #333;
 }
@@ -182,6 +181,111 @@
     color: #ffc107 !important;
 }
 
+<<<<<<< Updated upstream
+=======
+/* ========================= */
+/* 🔥 컬럼 디테일 */
+/* ========================= */
+.col-title {
+    text-align: left;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.col-title span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.col-route {
+    width: 85px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    font-size: 11px;
+    font-weight: 600;
+    color: #b8860b;
+    background: #fff9e6; /* 라우트 박스는 시인성을 위해 매우 연한 노란색 유지 */
+    padding: 3px 6px;
+    border-radius: 4px;
+}
+
+.col-author {
+    font-size: 13px;
+    color: #444;
+}
+
+.col-date,
+.col-views,
+.col-stats,
+.col-share {
+    font-size: 13px;
+    color: #999;
+}
+
+.col-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #ffb300;
+    font-weight: 500;
+}
+
+/* =========================
+   페이지네이션
+========================= */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 20px 15px;
+}
+
+.pagination button {
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #666;
+    transition: 0.2s;
+}
+
+.pagination button:hover {
+    background: #f8f9fa;
+    border-color: #ccc;
+}
+
+.active-page {
+    background: #ffc107 !important;
+    border-color: #ffc107 !important;
+    font-weight: 700;
+    color: #fff !important; /* 가독성을 위해 흰색 */
+}
+
+/* =========================
+   ✨ 개편된 하단 버튼 영역 ✨
+========================= */
+.community-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+}
+
+>>>>>>> Stashed changes
 .footer-left,
 .footer-right {
     display: flex;

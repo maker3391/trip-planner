@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 interface LocalMemoEditorProps {
   initialMemo: string;
   onSave: (val: string) => void;
+  isReadOnly?: boolean;
 }
 
-export default function LocalMemoEditor({ initialMemo, onSave }: LocalMemoEditorProps) {
+export default function LocalMemoEditor({ initialMemo, onSave, isReadOnly = false }: LocalMemoEditorProps) {
   // 사용자가 입력 중인 임시 상태
   const [tempMemo, setTempMemo] = useState(initialMemo);
 
@@ -17,11 +18,10 @@ export default function LocalMemoEditor({ initialMemo, onSave }: LocalMemoEditor
   return (
     <textarea 
       value={tempMemo} 
-      onChange={(e) => setTempMemo(e.target.value)}
-      // 입력을 마치고 포커스가 나갈 때(Blur) 부모 상태에 저장
-      onBlur={() => onSave(tempMemo)}
-      // 중요: 텍스트 입력 중 지도의 단축키나 이벤트가 발생하는 것 방지
+      onChange={(e) => !isReadOnly && setTempMemo(e.target.value)}  // ✅
+      onBlur={() => !isReadOnly && onSave(tempMemo)}  // ✅
       onKeyDown={(e) => e.stopPropagation()} 
+      readOnly={isReadOnly}  // ✅
       placeholder="메모를 입력하세요..."
       style={{ 
         border: '1px solid #e0e0e0', 
@@ -34,7 +34,8 @@ export default function LocalMemoEditor({ initialMemo, onSave }: LocalMemoEditor
         boxSizing: 'border-box', 
         borderRadius: '8px', 
         marginTop: '8px', 
-        backgroundColor: '#fafafa', 
+        backgroundColor: isReadOnly ? '#f5f5f5' : '#fafafa',  // ✅ 시각적 표시
+        cursor: isReadOnly ? 'not-allowed' : 'text',  // ✅
         fontFamily: 'inherit',
         lineHeight: '1.5'
       }}
