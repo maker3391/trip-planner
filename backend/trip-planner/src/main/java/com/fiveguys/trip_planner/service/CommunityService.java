@@ -43,10 +43,10 @@ public class CommunityService {
     private String cleanHtml(String html) {
         if (html == null) return "";
 
-        // Safelist.relaxed()에는 기본적으로 span 태그가 없으므로 addTags("span") 필수
         String clean = Jsoup.clean(html, Safelist.relaxed()
                 .addTags("span")
-                .addAttributes("span", "style"));
+                // :all을 사용하면 strong, em, p 등 Safelist에 등록된 모든 안전한 태그에 style을 허용합니다.
+                .addAttributes(":all", "style"));
 
         return clean.trim();
     }

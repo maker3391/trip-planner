@@ -486,7 +486,7 @@ export default function CommunityReadPage() {
                                                         이 여행 계획 불러오기
                                                     </button>
 
-                                                    {!isAuthor && (
+                                                    {!isAuthor && post.category !== "후기게시판" && (
                                                         <button
                                                             type="button"
                                                             className="join-trip-button"
