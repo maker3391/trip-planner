@@ -192,6 +192,16 @@ public class ItineraryRequestResolverService {
             return null;
         }
 
+        if (message.contains("일주일") || message.contains("한 주")) {
+            return 7;
+        }
+
+        Matcher weekMatcher = Pattern.compile("(\\d+)\\s*주").matcher(message);
+        if (weekMatcher.find()) {
+            Integer weeks = parseIntSafely(weekMatcher.group(1));
+            if (weeks != null) return weeks * 7;
+        }
+
         Matcher m1 = ENGLISH_NIGHTS_DAYS_PATTERN.matcher(message);
         if (m1.find()) return parseIntSafely(m1.group(3));
 

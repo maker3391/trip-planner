@@ -187,12 +187,12 @@ public class CombinedRecommendationOrchestratorService {
         RecommendationDraft adjusted;
 
         try {
-            adjusted = buildValidatedItineraryDraft(message, context, false);
+            adjusted = buildValidatedItineraryDraft(message, context);
         } catch (LlmCallException e) {
             if (!shouldRetryItinerary(e)) {
                 throw e;
             }
-            adjusted = buildValidatedItineraryDraft(message, context, true);
+            adjusted = buildValidatedItineraryDraft(message, context);
         }
 
         return new RecommendationContentResponse(
@@ -202,9 +202,8 @@ public class CombinedRecommendationOrchestratorService {
     }
 
     private RecommendationDraft buildValidatedItineraryDraft(String message,
-                                                             ItineraryRequestContext context,
-                                                             boolean expandedScope) {
-        ItineraryOnlyDraft itineraryOnlyDraft = openAiClient.generateItineraryDayPlans(context, expandedScope);
+                                                             ItineraryRequestContext context) {
+        ItineraryOnlyDraft itineraryOnlyDraft = openAiClient.generateItineraryDayPlans(context);
 
         RecommendationDraft rawDraft = new RecommendationDraft();
         rawDraft.setIntent("TRAVEL_ITINERARY");
