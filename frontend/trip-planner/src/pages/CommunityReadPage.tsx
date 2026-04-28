@@ -296,10 +296,6 @@ export default function CommunityReadPage() {
             const res = await requestJoinTrip(post.tripPlan.id);
             toast.success(res.message || "참가 신청이 완료되었습니다.");
             await fetchTripMembers(post.tripPlan.id);
-
-            setTimeout(() => {
-                navigate("/trip-list", { state: { joinedTrip: post.tripPlan } });
-            }, 1000);
         } catch (err: unknown) {
             const errorResponse = err as { response?: { data?: { message?: string } } };
             const message = errorResponse?.response?.data?.message || "참가 신청에 실패했습니다.";

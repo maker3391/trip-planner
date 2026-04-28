@@ -22,6 +22,7 @@ interface MyMapAppProps {
   setSelectedPinColor: (color: string) => void;
   lineColor: string;
   setLineColor: (color: string) => void;
+  isReadOnly?: boolean;
 }
 
 export default function MyMapApp({
@@ -40,6 +41,7 @@ export default function MyMapApp({
   setSelectedPinColor,
   lineColor,
   setLineColor,
+  isReadOnly = false,
 }: MyMapAppProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
@@ -68,6 +70,7 @@ export default function MyMapApp({
 
   const handleMapClick = useCallback(
     (newPoint: PlacePoint) => {
+      if (isReadOnly) return;
       setPath((prev: PlacePoint[]) => {
         const nextPath = [...prev, { ...newPoint }];
         reConnectAll(nextPath);
@@ -75,10 +78,11 @@ export default function MyMapApp({
         return nextPath;
       });
     },
-    [setPath, reConnectAll]
+    [setPath, reConnectAll, isReadOnly]
   );
 
   const handleDeletePin = () => {
+    if (isReadOnly) return;
     if (selectedIdx === null) return;
     const nextPath = path.filter((_: any, i: number) => i !== selectedIdx);
     setPath(nextPath);
@@ -111,13 +115,14 @@ export default function MyMapApp({
               onMapClick={handleMapClick}
               onSelect={setSelectedIdx}
               selectedSource={selectedIdx}
-              onMemoChange={(idx: number, text: string) =>
+               onMemoChange={(idx: number, text: string) => {
+                if (isReadOnly) return;  // ✅ 메모 수정 차단
                 setPath((prev: any) =>
                   prev.map((p: any, i: number) =>
                     i === idx ? { ...p, memo: text } : p
                   )
-                )
-              }
+                );
+              }}
               onPhotosRestored={handlePhotosRestored}
               toggleMemo={(idx: number) =>
                 setPath((prev: any) =>
@@ -152,6 +157,7 @@ export default function MyMapApp({
             setShowAllMemos={setShowAllMemos}
             handleDeletePin={handleDeletePin}
             reConnectAll={reConnectAll}
+            isReadOnly={isReadOnly}
           />
         </div>
 
@@ -160,6 +166,7 @@ export default function MyMapApp({
           path={path}
           setPath={setPath}
           onClose={() => setSelectedIdx(null)}
+          isReadOnly={isReadOnly}
         />
       </APIProvider>
     </div>

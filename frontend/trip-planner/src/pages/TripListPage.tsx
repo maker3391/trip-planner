@@ -28,6 +28,9 @@ export default function TripListPage() {
   // 1. 내 여행 계획 정렬 (최신순)
   // 원본 데이터(tripList)를 복사한 뒤 뒤집어서 가장 최근 데이터가 앞으로 오게 합니다.
   const sortedMyTrips = tripList ? [...tripList].reverse() : [];
+  // TripListPage.tsx
+
+
 
   useEffect(() => {
     const fetchJoinedTrips = async () => {
@@ -78,7 +81,20 @@ export default function TripListPage() {
     setSelectedTripId(null);
   };
 
-  const handleLoadTrip = (tripId: number) => navigate("/", { state: { tripId } });
+  // TripListPage.tsx
+  const handleLoadTrip = (tripId: number) => {
+    navigate("/", { state: { tripId, readOnly: activeTab === "JOINED" } });
+  };
+
+  // MY탭용 - isOwner는 항상 true
+  const handleLoadMyTrip = (tripId: number) => {
+    navigate("/", { state: { tripId, readOnly: false } });
+  };
+
+  // JOINED탭용 - isOwner는 항상 false  
+  const handleLoadJoinedTrip = (tripId: number) => {
+    navigate("/", { state: { tripId, readOnly: true } });
+  };
   const handleSelectTrip = (tripId: number) => setSelectedTripId(tripId);
   const handleCloseDetail = () => setSelectedTripId(null);
 
@@ -138,7 +154,7 @@ export default function TripListPage() {
                   tripList={sortedMyTrips} 
                   selectedTripId={selectedTripId} 
                   handleSelectTrip={handleSelectTrip} 
-                  handleLoadTrip={handleLoadTrip} 
+                  handleLoadTrip={handleLoadMyTrip} 
                   formatStatus={formatStatus} 
                 />
               ) : (
