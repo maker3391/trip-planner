@@ -29,6 +29,12 @@ public class ChatRoom {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean deletedByUser = false;
+
+
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
@@ -39,5 +45,9 @@ public class ChatRoom {
 
     public void updateStatus(String status) {
         this.status = status;
+    }
+
+    public void markAsDeletedByUser() {
+        this.deletedByUser = true;
     }
 }

@@ -39,6 +39,18 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 .map(existingUser -> updateExistingOAuthUser(existingUser, userInfo))
                 .orElseGet(() -> createOAuthUserIfEmailNotUsed(userInfo));
 
+        if ("BANNED".equals(user.getStatus())) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("banned_user", "이용이 정지된 계정입니다.", null)
+            );
+        }
+
+        if ("DELETED".equals(user.getStatus())) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("deleted_user", "탈퇴한 회원입니다.", null)
+            );
+        }
+
         Map<String, Object> normalizedAttributes = new HashMap<>(attributes);
         normalizedAttributes.put("email", userInfo.email());
         normalizedAttributes.put("name", userInfo.name());

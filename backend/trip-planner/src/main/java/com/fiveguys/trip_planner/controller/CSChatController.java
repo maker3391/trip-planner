@@ -96,4 +96,35 @@ public class CSChatController {
         return ResponseEntity.ok(CschatService.findRoomsByUser(currentUser));
     }
 
+    @Operation(summary = "상담 종료", description = "특정 상담 방의 상태를 종료(CLOSED)로 변경합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "종료 성공"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 방 번호")
+    })
+    @PatchMapping("/api/cs/room/{roomId}/close")
+    public ResponseEntity<?> closeRoom(@PathVariable("roomId") Long roomId) {
+        CschatService.closeRoom(roomId);
+        return ResponseEntity.ok().body("상담이 종료되었습니다.");
+    }
+
+    @Operation(summary = "상담 내역 삭제", description = "유저의 상담 목록에서 해당 내역을 삭제(숨김) 처리합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
+    @PatchMapping("/api/cs/room/{roomId}/delete")
+    public ResponseEntity<?> deleteRoom(@PathVariable("roomId") Long roomId) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new RuntimeException("인증 정보가 없습니다.");
+        }
+
+        if (!(auth.getPrincipal() instanceof User currentUser)) {
+            throw new RuntimeException("로그인 사용자 정보가 유효하지 않습니다.");
+        }
+
+        CschatService.deleteRoomByUser(roomId, currentUser);
+        return ResponseEntity.ok().body("상담 내역이 삭제되었습니다.");
+    }
 }
