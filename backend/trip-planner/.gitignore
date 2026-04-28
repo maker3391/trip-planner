@@ -1,6 +1,10 @@
 application-secrets.properties
 
+<<<<<<< HEAD
+
+=======
 # Java / Gradle
+>>>>>>> f3e1c124ce9eca2ca46dfe96c7ce5467c50c32c0
 HELP.md
 .gradle/
 build/
@@ -8,9 +12,25 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+<<<<<<< HEAD
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+=======
 # IDE
 .idea/
 *.iml
+>>>>>>> f3e1c124ce9eca2ca46dfe96c7ce5467c50c32c0
 *.iws
 *.ipr
 .vscode/
@@ -21,6 +41,7 @@ build/
 .apt_generated
 .springBeans
 .sts4-cache
+
 
 # Build output
 bin/
