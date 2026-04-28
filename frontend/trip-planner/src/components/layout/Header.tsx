@@ -29,6 +29,32 @@ export default function Header() {
   const isNotificationOpen = Boolean(anchorEl);
   const isAdmin = userRole === "ADMIN" || userRole === "ROLE_ADMIN";
 
+  const addNotificationOnce = (newNoti: NotificationResponseDto) => {
+    setNotifications((prev) => {
+      const exists = prev.some((noti) => noti.id === newNoti.id);
+
+      if (exists) {
+        return prev;
+      }
+
+      return [newNoti, ...prev];
+    });
+  };
+
+  useEffect(() => {
+    const handleAdminCSNotification = (event: Event) => {
+      const customEvent = event as CustomEvent<NotificationResponseDto>;
+
+      addNotificationOnce(customEvent.detail);
+    };
+
+    window.addEventListener("admin-cs-notification", handleAdminCSNotification);
+
+    return () => {
+      window.removeEventListener("admin-cs-notification", handleAdminCSNotification);
+    };
+  }, []);
+
   const clearAuth = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
@@ -166,7 +192,7 @@ export default function Header() {
               duration: 3000,
             });
 
-            setNotifications((prev) => [newNoti, ...prev]);
+            addNotificationOnce(newNoti);
 
             const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
 
