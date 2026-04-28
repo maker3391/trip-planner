@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useCSStore } from '../store/csStore';
-import { closeCSRoom } from './types/csChat'; 
+import { closeCSRoom, getCSMessages } from './types/csChat'; 
 import './css/CSChatWindow.css';
 
 interface CSChatWindowProps {
@@ -11,17 +11,67 @@ interface CSChatWindowProps {
     onBack: () => void;
 }
 
-export default function CSChatWindow({ roomId, senderId, onBack}: CSChatWindowProps) {
-    const { messages, addMessage, clearCsInfo } = useCSStore();
+export default function CSChatWindow({ roomId, senderId, onBack }: CSChatWindowProps) {
+    const messages = useCSStore((state) => state.messages);
+    const addMessage = useCSStore((state) => state.addMessage);
+    const setMessages = useCSStore((state) => state.setMessages);
+    const clearCsInfo = useCSStore((state) => state.clearCsInfo);
+
     const [inputMsg, setInputMsg] = useState('');
     const [connected, setConnected] = useState(false);
     
     const stompClient = useRef<Client | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = () => {
+    const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
+    }, []);
+
+    useEffect(() => {
+        if (roomId) {
+            getCSMessages(roomId)
+                .then((history) => {
+                    setMessages(Array.isArray(history) ? history : []);
+                })
+                .catch((err) => {
+                    console.error('과거 메시지 조회 실패:', err);
+                    setMessages([]);
+                });
+        }
+        
+    }, [roomId, setMessages]); 
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, scrollToBottom]);
+
+    useEffect(() => {
+        if (!roomId) return;
+
+        const client = new Client({
+            webSocketFactory: () => new SockJS('http://localhost:8080/ws-chat'),
+            reconnectDelay: 5000,
+            onConnect: () => {
+                setConnected(true);
+                client.subscribe(`/sub/chat/room/${roomId}`, (message) => {
+                    const receivedMsg = JSON.parse(message.body);
+                    addMessage(receivedMsg);
+                });
+            },
+            onDisconnect: () => {
+                setConnected(false);
+            }
+        });
+
+        stompClient.current = client;
+        client.activate();
+
+        return () => {
+            if (stompClient.current) {
+                stompClient.current.deactivate();
+            }
+        };
+    }, [roomId, addMessage]);
 
     const sendMessage = () => {
         if (inputMsg.trim() !== '' && stompClient.current?.connected) {
@@ -40,53 +90,17 @@ export default function CSChatWindow({ roomId, senderId, onBack}: CSChatWindowPr
     };
 
     const handleEndChat = async () => {
-        if (window.confirm("상담을 종료하시겠습니까? (종료 후에도 목록에서 내역을 확인할 수 있습니다)")) {
+        if (window.confirm("상담을 종료하시겠습니까?")) {
             try {
                 await closeCSRoom(roomId);
-                
-                if (stompClient.current) {
-                    stompClient.current.deactivate();
-                }
+                if (stompClient.current) stompClient.current.deactivate();
                 clearCsInfo(); 
                 onBack(); 
             } catch (error) {
-                console.error("상담 종료 실패:", error);
                 alert("상담 종료 처리에 실패했습니다.");
             }
         }
     };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    useEffect(() => {
-        const client = new Client({
-            webSocketFactory: () => new SockJS('http://localhost:8080/ws-chat'),
-            debug: (str) => console.log(str),
-            reconnectDelay: 5000,
-            onConnect: () => {
-                setConnected(true);
-                client.subscribe(`/sub/chat/room/${roomId}`, (message) => {
-                    const receivedMsg = JSON.parse(message.body);
-                    addMessage(receivedMsg);
-                });
-            },
-            onStompError: (frame) => {
-                console.error('Broker reported error: ' + frame.headers['message']);
-                console.error('Additional details: ' + frame.body);
-            },
-        });
-
-        stompClient.current = client;
-        client.activate();
-
-        return () => {
-            if (stompClient.current) {
-                stompClient.current.deactivate();
-            }
-        };
-    }, [roomId, addMessage]);
 
     return (
         <div className="cs-chat-container">
@@ -94,13 +108,15 @@ export default function CSChatWindow({ roomId, senderId, onBack}: CSChatWindowPr
                 <div className="cs-chat-header-left">
                     <button 
                         className="cs-chat-back-btn"
-                        onClick={onBack} 
-                        title="AI 챗봇 혹은 목록으로 돌아가기"
+                        onClick={() => {
+                            clearCsInfo();
+                            onBack();
+                        }} 
                     >
                         ⬅️
                     </button>
                     <div>
-                        <h3 className="cs-chat-title">1:1 문의 채팅방 (방 번호: {roomId})</h3>
+                        <h3 className="cs-chat-title">1:1 문의 (방 번호: {roomId})</h3>
                         <span className={`cs-chat-status ${connected ? 'connected' : 'disconnected'}`}>
                             {connected ? '🟢 연결됨' : '🔴 연결 끊어짐'}
                         </span>
@@ -112,9 +128,8 @@ export default function CSChatWindow({ roomId, senderId, onBack}: CSChatWindowPr
             </div>
 
             <div className="cs-chat-messages">
-                {messages.map((msg, idx) => {
+                {(messages || []).map((msg, idx) => {
                     const isMe = msg.senderId === senderId;
-                    
                     return (
                         <div key={idx} className={`cs-chat-msg-wrapper ${isMe ? 'me' : 'other'}`}>
                             <span className="cs-chat-sender">

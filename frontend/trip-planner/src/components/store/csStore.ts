@@ -18,6 +18,7 @@ interface CSState {
   setCsInfo: (info: CSInfo) => void;
   addMessage: (msg: ChatMessage) => void;
   clearCsInfo: () => void;
+  setMessages: (messages: ChatMessage[]) => void;
 }
 
 export const useCSStore = create<CSState>((set) => ({
@@ -26,4 +27,5 @@ export const useCSStore = create<CSState>((set) => ({
   setCsInfo: (info) => set({ csInfo: info }),
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
   clearCsInfo: () => set({ csInfo: null, messages: [] }), 
+  setMessages: (messages) => set({ messages }),
 }));
