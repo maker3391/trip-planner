@@ -42,6 +42,7 @@ bin/
 .springBeans
 .sts4-cache
 
+
 # Build output
 bin/
 out/
