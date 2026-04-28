@@ -36,14 +36,8 @@ public class OpenAiClient {
     }
 
     public ItineraryOnlyDraft generateItineraryDayPlans(ItineraryRequestContext context) {
-        return generateItineraryDayPlans(context, false);
-    }
-
-    public ItineraryOnlyDraft generateItineraryDayPlans(ItineraryRequestContext context, boolean expandedScope) {
         try {
-            String prompt = expandedScope
-                    ? promptBuilder.buildExpandedItineraryPrompt(context)
-                    : promptBuilder.buildItineraryPrompt(context);
+            String prompt = promptBuilder.buildItineraryPrompt(context);
 
             Map<String, Object> body = Map.of(
                     "model", properties.getModel(),
@@ -129,16 +123,12 @@ public class OpenAiClient {
         if (output.isArray()) {
             for (JsonNode item : output) {
                 JsonNode content = item.path("content");
-                if (!content.isArray()) {
-                    continue;
-                }
+                if (!content.isArray()) continue;
 
                 for (JsonNode c : content) {
                     if ("output_text".equals(c.path("type").asText())) {
                         String text = c.path("text").asText();
-                        if (!text.isBlank()) {
-                            return text;
-                        }
+                        if (!text.isBlank()) return text;
                     }
                 }
             }
