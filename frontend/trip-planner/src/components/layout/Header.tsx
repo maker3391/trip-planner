@@ -419,6 +419,7 @@ import tplanner from "../../assets/icons/tplanner2.png";
 import GuidePopup from "../guide/GuidePopup.tsx";
 import { getMe } from "../api/auth.ts";
 import { getUnreadNotifications, NotificationResponseDto, readNotificationApi } from "../api/Notification.ts";
+import { useNotificationStore } from "../store/notificationStore";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import toast from "react-hot-toast";
 
@@ -433,7 +434,10 @@ export default function Header() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-    const [notifications, setNotifications] = useState<NotificationResponseDto[]>([]);
+    const notifications = useNotificationStore((state) => state.notifications);
+    const setNotifications = useNotificationStore((state) => state.setNotifications);
+    const addNotification = useNotificationStore((state) => state.addNotification);
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
     const isNotificationOpen = Boolean(anchorEl);
@@ -442,15 +446,7 @@ export default function Header() {
     const getNotiKey = (userId: number) => `notificationHistory_${userId}`;
 
     const addNotificationOnce = (newNoti: NotificationResponseDto) => {
-        setNotifications((prev) => {
-            const exists = prev.some((noti) => noti.id === newNoti.id);
-
-            if (exists) {
-                return prev;
-            }
-
-            return [newNoti, ...prev];
-        });
+        addNotification(newNoti);
     };
 
     const saveNotificationToLocal = (newNoti: NotificationResponseDto) => {
@@ -572,7 +568,7 @@ export default function Header() {
         return () => {
             window.clearInterval(intervalId);
         };
-    }, [isLoggedIn]);
+    }, [isLoggedIn, navigate]);
 
     useEffect(() => {
         if (!isLoggedIn || !currentUserId) return;
@@ -620,6 +616,7 @@ export default function Header() {
                         });
 
                         addNotificationOnce(newNoti);
+                        saveNotificationToLocal(newNoti);
 
                     } catch (error) {
                         console.error("알림 데이터 파싱 오류:", error);
@@ -637,7 +634,7 @@ export default function Header() {
         return () => {
             abortController.abort();
         };
-    }, [isLoggedIn, currentUserId]);
+    }, [isLoggedIn, currentUserId, setNotifications]);
 
     const handleReadNotification = async (id: number, targetUrl?: string) => {
         setNotifications((prev) => prev.filter((noti) => noti.id !== id));
@@ -701,6 +698,7 @@ export default function Header() {
             clearAuth();
             setIsLoggedIn(false);
             setCurrentUserId(null);
+            setNotifications([]);
             toast.success("로그아웃되었습니다.");
             navigate("/login");
         }

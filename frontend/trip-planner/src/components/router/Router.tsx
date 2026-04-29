@@ -146,10 +146,16 @@ import AdminRoute from "./AdminRoute";
 import AdminCSNotifier from "../cschat/AdminCSNotifier";
 import { getMe } from "../api/auth";
 
+import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { useNotificationStore } from "../store/notificationStore";
+import toast from "react-hot-toast";
+
 export default function Router() {
     const [openChatBot, setOpenChatBot] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const location = useLocation();
+
+    const addNotification = useNotificationStore((state) => state.addNotification);
 
     const isAdmin = userRole === "ADMIN" || userRole === "ROLE_ADMIN";
     const showChatBot = !isAdmin;
@@ -173,6 +179,59 @@ export default function Router() {
 
         checkUserRole();
     }, [location.pathname]);
+
+    useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+        if (!token || token === "undefined") return;
+
+        const abortController = new AbortController();
+
+        const connectSSE = async () => {
+            try {
+                await fetchEventSource("http://localhost:8080/api/notifications/subscribe", {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "text/event-stream",
+                    },
+                    signal: abortController.signal,
+                    onmessage(ev) {
+                    if (ev.data.includes("EventStream Created")) return;
+
+                    try {
+                        const newNoti = JSON.parse(ev.data);
+
+                        const currentNotis = useNotificationStore.getState().notifications;
+                        const isDuplicate = currentNotis.some((n) => n.id === newNoti.id);
+
+                        if (!isDuplicate) {
+                            toast(newNoti.message, {
+                                icon: "🔔",
+                                duration: 3000,
+                            });
+                            addNotification(newNoti);
+                        }
+
+                    } catch (error) {
+                        console.error("알림 데이터 파싱 오류:", error);
+                    }
+                },
+                    onerror(err) {
+                        console.error("SSE 연결 에러:", err);
+                        throw err;
+                    },
+                });
+            } catch (error) {
+                console.error("SSE 구독 실패:", error);
+            }
+        };
+
+        connectSSE();
+
+        return () => {
+            abortController.abort();
+        };
+    }, [addNotification]);
 
     useEffect(() => {
         if (isAdmin) {
