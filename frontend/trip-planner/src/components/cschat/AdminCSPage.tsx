@@ -20,6 +20,7 @@ export default function AdminCSPage() {
   const stompClient = useRef<Client | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const autoSelectedRoomIdRef = useRef<number | null>(null);
+  const [isClosed, setIsClosed] = useState(false);
 
   const fetchRooms = async () => {
     try {
@@ -31,6 +32,7 @@ export default function AdminCSPage() {
   };
 
   const handleSelectRoom = async (room: CSRoomResponse) => {
+    setIsClosed(room.status === "CLOSED");
     if (stompClient.current) {
       stompClient.current.deactivate();
     }
@@ -51,6 +53,13 @@ export default function AdminCSPage() {
       onConnect: () => {
         client.subscribe(`/sub/chat/room/${room.id}`, (message) => {
           const receivedMsg = JSON.parse(message.body);
+
+          if (receivedMsg.type === "CLOSE") {
+            setMessages((prev) => [...prev, { ...receivedMsg, content: "문의가 종료되었습니다." }]);
+            setIsClosed(true);
+            return;
+          }
+
           setMessages((prev) => [...prev, receivedMsg]);
         });
       },
@@ -202,16 +211,17 @@ export default function AdminCSPage() {
 
               <div className="admin-cs-input-area">
                 <TextField
+                  disabled={isClosed} 
                   fullWidth
                   variant="outlined"
                   size="small"
-                  placeholder="고객에게 보낼 답변을 입력하세요..."
+                  placeholder={isClosed ? "종료된 문의입니다." : "고객에게 보낼 답변을 입력하세요..."}
                   value={inputMsg}
                   onChange={(e) => setInputMsg(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                 />
 
-                <Button variant="contained" disableElevation onClick={handleSendMessage}>
+                <Button variant="contained" disableElevation onClick={handleSendMessage} disabled={isClosed} >
                   전송
                 </Button>
               </div>

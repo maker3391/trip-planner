@@ -91,10 +91,6 @@ export default function TripListPage() {
     navigate("/", { state: { tripId, readOnly: false } });
   };
 
-  // JOINED탭용 - isOwner는 항상 false  
-  const handleLoadJoinedTrip = (tripId: number) => {
-    navigate("/", { state: { tripId, readOnly: true } });
-  };
   const handleSelectTrip = (tripId: number) => setSelectedTripId(tripId);
   const handleCloseDetail = () => setSelectedTripId(null);
 

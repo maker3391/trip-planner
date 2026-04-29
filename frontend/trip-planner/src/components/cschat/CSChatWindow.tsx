@@ -9,9 +9,10 @@ interface CSChatWindowProps {
     roomId: number;
     senderId: number;
     onBack: () => void;
+    status: string;
 }
 
-export default function CSChatWindow({ roomId, senderId, onBack }: CSChatWindowProps) {
+export default function CSChatWindow({ roomId, senderId, onBack, status }: CSChatWindowProps) {
     const messages = useCSStore((state) => state.messages);
     const addMessage = useCSStore((state) => state.addMessage);
     const setMessages = useCSStore((state) => state.setMessages);
@@ -19,6 +20,7 @@ export default function CSChatWindow({ roomId, senderId, onBack }: CSChatWindowP
 
     const [inputMsg, setInputMsg] = useState('');
     const [connected, setConnected] = useState(false);
+    const [isClosed, setIsClosed] = useState(status === "CLOSED");
     
     const stompClient = useRef<Client | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -55,6 +57,11 @@ export default function CSChatWindow({ roomId, senderId, onBack }: CSChatWindowP
                 setConnected(true);
                 client.subscribe(`/sub/chat/room/${roomId}`, (message) => {
                     const receivedMsg = JSON.parse(message.body);
+                    if (receivedMsg.type === "CLOSE") {
+                        addMessage({ ...receivedMsg, content: "상담이 종료되었습니다." });
+                        setIsClosed(true);
+                        return;
+                    }
                     addMessage(receivedMsg);
                 });
             },
@@ -90,12 +97,12 @@ export default function CSChatWindow({ roomId, senderId, onBack }: CSChatWindowP
     };
 
     const handleEndChat = async () => {
+        if (isClosed) return;  // 이미 종료된 경우 차단
         if (window.confirm("상담을 종료하시겠습니까?")) {
             try {
                 await closeCSRoom(roomId);
-                if (stompClient.current) stompClient.current.deactivate();
-                clearCsInfo(); 
-                onBack(); 
+                setIsClosed(true);  // ← CLOSE 브로드캐스트 기다리지 않고 바로 차단
+                // onBack() 제거 - 그냥 입력만 막고 화면 유지
             } catch (error) {
                 alert("상담 종료 처리에 실패했습니다.");
             }
@@ -122,7 +129,7 @@ export default function CSChatWindow({ roomId, senderId, onBack }: CSChatWindowP
                         </span>
                     </div>
                 </div>
-                <button className="cs-chat-end-btn" onClick={handleEndChat}>
+                <button className="cs-chat-end-btn" onClick={handleEndChat}  disabled={isClosed}>
                     상담 종료
                 </button>
             </div>
@@ -145,15 +152,16 @@ export default function CSChatWindow({ roomId, senderId, onBack }: CSChatWindowP
             </div>
 
             <div className="cs-chat-input-area">
-                <input 
+                <input
+                    disabled={isClosed}
                     className="cs-chat-input"
                     type="text"
-                    placeholder="메시지를 입력하세요..." 
+                    placeholder={isClosed ? "종료된 상담입니다." : "메시지를 입력하세요..."}
                     value={inputMsg}
                     onChange={(e) => setInputMsg(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                    onKeyPress={(e) => e.key === "Enter" && !isClosed && sendMessage()}
                 />
-                <button className="cs-chat-send-btn" onClick={sendMessage}>
+                <button className="cs-chat-send-btn"  disabled={isClosed} onClick={sendMessage}>
                     전송
                 </button>
             </div>

@@ -19,13 +19,10 @@ interface MapControllerProps {
   onMapClick: (point: PlacePoint) => void;
   onSelect: (idx: number) => void;
   selectedSource: number | null;
-  onMemoChange: (idx: number, text: string) => void;
   onPhotosRestored?: (idx: number, photos: string[]) => void;
-  toggleMemo: (idx: number) => void;
   lineColor: string;
   pinColor: string;
   selectedPinColor: string;
-  showAllMemos: boolean;
 }
 
 const normalizeText = (text: string) =>
@@ -66,13 +63,10 @@ export default function MapController({
   onMapClick,
   onSelect,
   selectedSource,
-  onMemoChange,
   onPhotosRestored,
-  toggleMemo,
   lineColor,
   pinColor,
   selectedPinColor,
-  showAllMemos,
 }: MapControllerProps) {
   const map = useMap();
   const placesLib = useMapsLibrary("places");

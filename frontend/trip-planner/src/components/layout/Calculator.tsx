@@ -15,7 +15,6 @@ const Calculator: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
     deleteExpense,
     addSubExpense,
     updateSubExpense,
-    deleteSubSubExpense,
   } = useTripStore();
 
   // 1. 계산기 닫기 함수 (이벤트 연동 추가)

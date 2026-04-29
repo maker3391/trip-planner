@@ -45,8 +45,8 @@ public class NotificationService {
                 .build();
         notificationRepository.save(notification);
 
-        String eventId = String.valueOf(notification.getId());
-        sendToClient(receiver.getId(), Map.of("message", message, "type", type, "notificationId", eventId, "targetUrl", targetUrl));
+        NotificationResponseDto responseDto = NotificationResponseDto.fromEntity(notification);
+        sendToClient(receiver.getId(), responseDto);
     }
 
     private void sendToClient(Long userId, Object data) {
