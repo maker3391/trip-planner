@@ -115,26 +115,10 @@ export default function MyMapApp({
               onMapClick={handleMapClick}
               onSelect={setSelectedIdx}
               selectedSource={selectedIdx}
-              onMemoChange={(idx: number, text: string) => {
-                if (isReadOnly) return;  // ✅ 메모 수정 차단
-                setPath((prev: any) =>
-                  prev.map((p: any, i: number) =>
-                    i === idx ? { ...p, memo: text } : p
-                  )
-                );
-              }}
               onPhotosRestored={handlePhotosRestored}
-              toggleMemo={(idx: number) =>
-                setPath((prev: any) =>
-                  prev.map((p: any, i: number) =>
-                    i === idx ? { ...p, isMemoOpen: !p.isMemoOpen } : p
-                  )
-                )
-              }
               lineColor={lineColor}
               pinColor={pinColor}
               selectedPinColor={selectedPinColor}
-              showAllMemos={showAllMemos}
             />
           </Map>
 
