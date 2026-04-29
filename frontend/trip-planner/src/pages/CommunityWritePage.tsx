@@ -213,7 +213,7 @@ export default function CommunityWritePage() {
         // 혹시 Quill이 inline style 제거했을 경우 복구
         return html.replace(
             /<span([^>]*)data-size="([^"]+)"([^>]*)>/g,
-            (match, p1, size, p2) => {
+            (_, p1, size, p2) => {
                 return `<span${p1}${p2} style="font-size:${size}">`;
             }
         );

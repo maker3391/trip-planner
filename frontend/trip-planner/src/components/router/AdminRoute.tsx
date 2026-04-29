@@ -9,7 +9,7 @@ interface AdminRouteProps {
 
 export default function AdminRoute({ children }: AdminRouteProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  // const [isAdmin, setIsAdmin] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function AdminRoute({ children }: AdminRouteProps) {
         const user = await getMe();
 
         if (user.role === "ADMIN") {
-          setIsAdmin(true);
+          // setIsAdmin(true);
         } else {
           toast.error("관리자만 접근 가능합니다.");
           setShouldRedirect(true);
