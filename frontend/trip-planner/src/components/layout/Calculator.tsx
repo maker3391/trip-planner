@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTripStore } from "../store/useTripStore";
 import "./Calculator.css";
 
-const Calculator: React.FC = () => {
+const Calculator: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const [isCalcOpen, setIsCalcOpen] = useState(false);
 
   const {
@@ -115,21 +115,22 @@ const Calculator: React.FC = () => {
                 {expenses.map((item) => (
                   <li key={item.id} className="calc-group-container">
                     <div className="calc-item main-row">
-                      <button 
-                        className="sub-add-btn" 
-                        onClick={() => addSubExpense(item.id)}
-                        title="하위 항목 추가"
-                      >
-                        +
-                      </button>
+                      {!readOnly && (
+                        <button 
+                          className="sub-add-btn" 
+                          onClick={() => addSubExpense(item.id)}
+                          title="하위 항목 추가"
+                        >
+                          +
+                        </button>
+                      )}
                       <input
                         className="input-name main-category-input"
                         type="text"
                         value={item.description || ""}
                         placeholder="카테고리(식비, 교통 등)"
-                        onChange={(e) =>
-                          handleInputChange(item.id, "description", e.target.value)
-                        }
+                        onChange={(e) => handleInputChange(item.id, "description", e.target.value)}
+                        readOnly={readOnly}  // ✅
                       />
                       <div className="main-amount-display">
                         {/* 상위 금액은 하위 금액의 합계이므로 읽기 전용으로 두는 것이 일반적입니다 */}
@@ -154,27 +155,23 @@ const Calculator: React.FC = () => {
                               type="text"
                               value={sub.description || ""}
                               placeholder="상세 내역 입력"
-                              onChange={(e) =>
-                                handleInputChange(sub.id, "description", e.target.value, item.id)
-                              }
+                              onChange={(e) => handleInputChange(sub.id, "description", e.target.value, item.id)}
+                              readOnly={readOnly}  // ✅
                             />
                             <input
                               className="input-price sub-price"
                               type="text"
-                              // 숫자를 콤마 포맷으로 보여주고 싶다면 toLocaleString 사용 가능
                               value={sub.amount === 0 ? "" : sub.amount}
                               placeholder="0"
-                              onChange={(e) =>
-                                handleInputChange(sub.id, "amount", e.target.value, item.id)
-                              }
+                              onChange={(e) => handleInputChange(sub.id, "amount", e.target.value, item.id)}
+                              readOnly={readOnly}  // ✅
                             />
                             <span className="unit">원</span>
-                            <button
-                              className="item-delete-btn small"
-                              onClick={() => deleteSubSubExpense(item.id, sub.id)}
-                            >
-                              ✕
-                            </button>
+                            {!readOnly && (
+                              <button className="item-delete-btn" onClick={() => deleteExpense(item.id)}>
+                                ✕
+                              </button>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -183,9 +180,11 @@ const Calculator: React.FC = () => {
                 ))}
               </ul>
             )}
-            <button className="addButton" onClick={addExpense}>
-              + 카테고리 추가
-            </button>
+            {!readOnly && (
+              <button className="addButton" onClick={addExpense}>
+                + 카테고리 추가
+              </button>
+            )}
           </div>
 
           <div className="calc-footer">
@@ -197,6 +196,7 @@ const Calculator: React.FC = () => {
                   value={budget || ""}
                   onChange={(e) => setBudget(Number(e.target.value))}
                   placeholder="0"
+                  readOnly={readOnly}  // ✅
                 />
                 <span className="currency-label">원</span>
               </div>

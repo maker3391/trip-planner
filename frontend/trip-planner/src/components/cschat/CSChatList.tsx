@@ -5,7 +5,7 @@ import './css/CSChatList.css';
 interface CSChatListProps {
     onBack: () => void;
     onEnterRoom: (room: CSRoomResponse) => void;
-    onCreateNew: (title: string) => void; 
+    onCreateNew: (title: string) => void;
 }
 
 export default function CSChatList({ onBack, onEnterRoom, onCreateNew }: CSChatListProps) {
@@ -34,7 +34,7 @@ export default function CSChatList({ onBack, onEnterRoom, onCreateNew }: CSChatL
             alert("문의하실 제목을 입력해주세요!");
             return;
         }
-        onCreateNew(newTitle); 
+        onCreateNew(newTitle);
     };
 
     const handleDelete = async (e: React.MouseEvent, roomId: number) => {
@@ -47,6 +47,18 @@ export default function CSChatList({ onBack, onEnterRoom, onCreateNew }: CSChatL
                 alert("삭제 처리에 실패했습니다.");
             }
         }
+    };
+
+    const getStatusText = (status: string) => {
+        if (status === "WAITING") return "대기중";
+        if (status === "CLOSED") return "종료됨";
+        return "진행중";
+    };
+
+    const getStatusClass = (status: string) => {
+        if (status === "WAITING") return "cs-status-waiting";
+        if (status === "CLOSED") return "cs-status-closed";
+        return "cs-status-progress";
     };
 
     return (
@@ -68,17 +80,21 @@ export default function CSChatList({ onBack, onEnterRoom, onCreateNew }: CSChatL
                                 <h4>{room.title}</h4>
                                 <p>방 번호: {room.id} | {new Date(room.createdAt).toLocaleDateString()}</p>
                             </div>
-                            <div className="cs-list-status">
-                                {room.status === 'WAITING' ? '대기중' : room.status === 'CLOSED' ? '종료됨' : '진행중'}
+
+                            <div className="cs-list-right">
+                                <div className={`cs-list-status ${getStatusClass(room.status)}`}>
+                                    {getStatusText(room.status)}
+                                </div>
+
+                                {room.status === 'CLOSED' && (
+                                    <button
+                                        className="cs-list-delete-btn"
+                                        onClick={(e) => handleDelete(e, room.id)}
+                                    >
+                                        삭제
+                                    </button>
+                                )}
                             </div>
-                            {room.status === 'CLOSED' && (
-                                <button 
-                                    className="cs-list-delete-btn" 
-                                    onClick={(e) => handleDelete(e, room.id)}
-                                >
-                                    삭제
-                                </button>
-                            )}
                         </div>
                     ))
                 )}
@@ -87,13 +103,13 @@ export default function CSChatList({ onBack, onEnterRoom, onCreateNew }: CSChatL
             <div className="cs-list-create-area">
                 {isCreating ? (
                     <>
-                        <input 
+                        <input
                             className="cs-list-title-input"
-                            type="text" 
-                            placeholder="예) 결제 취소 요청합니다" 
+                            type="text"
+                            placeholder="예) 결제 취소 요청합니다"
                             value={newTitle}
                             onChange={(e) => setNewTitle(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleCreateSubmit()}
+                            onKeyDown={(e) => e.key === 'Enter' && handleCreateSubmit()}
                         />
                         <button className="cs-list-submit-btn" onClick={handleCreateSubmit}>
                             상담 시작하기

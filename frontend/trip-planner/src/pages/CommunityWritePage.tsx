@@ -6,19 +6,17 @@ import "react-quill/dist/quill.snow.css";
 import "./CommunityWritePage.css";
 import Header from "../components/layout/Header.tsx";
 import { UserMeResponse } from "../components/api/auth.ts";
-
-// react-hot-toast 임포트
 import toast from "react-hot-toast";
 
 // =====================================================================
 // [요구사항 확인 및 안내]
-// 1~3번 규칙(우선순위, 다중선택 OR 연산, 전체보기 자동전환)은 
+// 1~3번 규칙(우선순위, 다중선택 OR 연산, 전체보기 자동전환)은
 // 커뮤니티 목록 '조회' 사이드바 필터링에 해당하는 로직이므로 글쓰기 페이지에는 직접적인 영향이 없습니다.
-// 
+//
 // 규칙 4에 따라 코드 주석으로만 설명을 기재하고 전문을 반환합니다.
 // 규칙 5에 따라 formData의 'region' 변수 타입(단일 문자열)과 폼 구조를 임의로 변경하지 않았습니다.
-// 
-// ※ 만약 '하나의 게시글'에 여러 지역(예: 서울과 부산 동시 지정)을 등록할 수 있도록 
+//
+// ※ 만약 '하나의 게시글'에 여러 지역(예: 서울과 부산 동시 지정)을 등록할 수 있도록
 // 다중 선택(Select Multiple) 기능이 추가로 필요하시다면 허가를 부탁드립니다.
 // 현재는 기존의 단일 지역/카테고리 선택 구조를 그대로 유지했습니다.
 // =====================================================================
@@ -46,8 +44,9 @@ const PLAN_SHARE_ENABLED_CATEGORIES = ["여행플랜", "후기게시판"];
 // =========================
 // Quill 설정 (폰트 사이즈)
 // =========================
+// style 기반 size를 사용하므로 style attributor를 등록합니다.
 const Size = Quill.import("attributors/style/size");
-Size.whitelist = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px", "36px"];
+Size.whitelist = ["12px","14px","16px","18px","20px","24px","28px","32px","36px"];
 Quill.register(Size, true);
 
 export default function CommunityWritePage() {
@@ -55,9 +54,9 @@ export default function CommunityWritePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [tripLoading, setTripLoading] = useState(false);
     const navigate = useNavigate();
-    
+
     // 1. URL의 마지막 단어를 가져와서 ID인지 확인합니다.
-    const pathSegments = window.location.pathname.split('/');
+    const pathSegments = window.location.pathname.split("/");
     const lastSegment = pathSegments[pathSegments.length - 1];
 
     // 마지막 단어가 숫자로 변환 가능하고 'write'가 아니면 ID로 인식
@@ -91,18 +90,9 @@ export default function CommunityWritePage() {
         tripPlanId: ""
     });
 
-    const categories_user = [
-        "자유게시판",
-        "여행플랜",
-        "후기게시판"
-    ];
+    const categories_user = ["자유게시판", "여행플랜", "후기게시판"];
 
-    const categories_admin = [
-        "자유게시판",
-        "여행플랜",
-        "후기게시판",
-        "공지게시판"
-    ];
+    const categories_admin = ["자유게시판", "여행플랜", "후기게시판", "공지게시판"];
 
     const categories = isAdmin ? categories_admin : categories_user;
 
@@ -121,7 +111,7 @@ export default function CommunityWritePage() {
         "전라도",
         "경상도",
         "제주특별자치도"
-        ];
+    ];
 
     // =========================
     // 로그인 유저 가져오기
@@ -216,6 +206,19 @@ export default function CommunityWritePage() {
         setFormData(prev => ({ ...prev, content }));
     };
 
+    // Quill HTML 보정 (font-size span 유지 보장)
+    const normalizeQuillHtml = (html: string) => {
+        if (!html) return "";
+
+        // 혹시 Quill이 inline style 제거했을 경우 복구
+        return html.replace(
+            /<span([^>]*)data-size="([^"]+)"([^>]*)>/g,
+            (match, p1, size, p2) => {
+                return `<span${p1}${p2} style="font-size:${size}">`;
+            }
+        );
+    };
+
     // =========================
     // rating 변경
     // =========================
@@ -262,7 +265,7 @@ export default function CommunityWritePage() {
     };
 
     // =========================
-    // Quill module 설정
+    // Quill module / format 설정
     // =========================
     const modules = useMemo(() => ({
         toolbar: {
@@ -273,41 +276,53 @@ export default function CommunityWritePage() {
         }
     }), []);
 
+    const formats = useMemo(
+        () => ["size", "bold", "italic", "underline", "align", "image"],
+        []
+    );
+
     // =========================
     // submit (수정/등록 분기 처리)
     // =========================
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault(); // 1. 폼의 기본 새로고침 동작을 가장 먼저 막습니다.
+        e.preventDefault();
 
-        if (isSubmitting) return; // 2. 이미 통신 중이면 함수 실행을 강제 종료
+        if (isSubmitting) return;
 
-        // 3. 상태 변경 전에 유효성 검사 먼저!
         if (!formData.title.trim()) {
             toast.error("제목을 입력해주세요.", { id: "validation-title" });
             return;
         }
-        if (!formData.content.trim()) {
+        // 🔥 HTML → TEXT 변환해서 검사
+        const plainText = formData.content
+            .replace(/<[^>]*>/g, "")   // 태그 제거
+            .replace(/&nbsp;/g, " ")   // 공백 처리
+            .trim();
+
+        if (!plainText) {
             toast.error("내용을 입력해주세요.", { id: "validation-content" });
             return;
         }
 
-        // 4. 모든 검증이 끝나고 통신 시작 직전에 비활성화
         setIsSubmitting(true);
 
         try {
-            // =====================================================================
-            // [추가된 로직]
-            // 카테고리가 PLAN_SHARE_ENABLED_CATEGORIES에 포함되어 있으면서 
-            // 선택된 지역이 "미정"인 경우, regions 배열의 0번째 인덱스 값으로 대체합니다.
-            // =====================================================================
             let finalRegion = formData.region;
-            if (PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && formData.region === "미정") {
-                finalRegion = regions[0]; // (ex: "서울특별시")
+            if (
+                PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) &&
+                formData.region === "미정"
+            ) {
+                finalRegion = regions[0];
             }
+
+            const fixedContent = normalizeQuillHtml(formData.content);
+
+            console.log("최종 제출 데이터: ", {fixedContent});
 
             const payload = {
                 ...formData,
-                region: finalRegion, // 🔥 수정된 지역 값 적용
+                content: fixedContent,
+                region: finalRegion,
                 tripPlanId: formData.tripPlanId ? Number(formData.tripPlanId) : null,
                 imageIds: uploadedImageIds
             };
@@ -320,14 +335,13 @@ export default function CommunityWritePage() {
                 toast.success("새 게시글이 등록되었습니다.", { id: "post-create-success" });
             }
 
-            // 토스트를 보여주기 위해 약간의 지연 후 이동
             setTimeout(() => {
                 navigate("/community");
             }, 1000);
         } catch (err) {
             console.error(err);
             toast.error("저장에 실패했습니다.");
-            setIsSubmitting(false); // 🔥 실패 시에만 버튼 다시 활성화 (성공 시엔 페이지 이동하므로 안 풀어도 됨)
+            setIsSubmitting(false);
         }
     };
 
@@ -341,6 +355,7 @@ export default function CommunityWritePage() {
             </div>
         );
     }
+
     return (
         <>
             <Header />
@@ -348,20 +363,32 @@ export default function CommunityWritePage() {
                 <div className="community-container">
                     <main className="community-main-content">
                         <form className="community-post-form" onSubmit={handleSubmit}>
-                            
                             <div className="form-row">
                                 <div className="form-group">
                                     <label>분류</label>
-                                    <select name="category" value={formData.category} onChange={handleChange} disabled={isEditMode}>
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleChange}
+                                        disabled={isEditMode}
+                                    >
                                         {categories.map(cat => <option key={cat}>{cat}</option>)}
                                     </select>
                                 </div>
 
-                                {(formData.category == "여행플랜" || formData.category == "후기게시판") && (
+                                {(formData.category === "여행플랜" || formData.category === "후기게시판") && (
                                     <div className="form-group">
                                         <label>지역</label>
-                                        <select name="region" value={formData.region} onChange={handleChange}>
-                                            {regions.map(r => <option key={r} selected={r === formData.region[0] ? true : false}>{r}</option>)}
+                                        <select
+                                            name="region"
+                                            value={formData.region}
+                                            onChange={handleChange}
+                                        >
+                                            {regions.map(r => (
+                                                <option key={r} value={r}>
+                                                    {r}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
                                 )}
@@ -369,9 +396,19 @@ export default function CommunityWritePage() {
 
                             {PLAN_SHARE_ENABLED_CATEGORIES.includes(formData.category) && (
                                 <div className="route-inputs form-row">
-                                    <input name="departure" placeholder="출발지" value={formData.departure} onChange={handleChange} />
+                                    <input
+                                        name="departure"
+                                        placeholder="출발지"
+                                        value={formData.departure}
+                                        onChange={handleChange}
+                                    />
                                     <div className="route-arrow">→</div>
-                                    <input name="arrival" placeholder="도착지" value={formData.arrival} onChange={handleChange} />
+                                    <input
+                                        name="arrival"
+                                        placeholder="도착지"
+                                        value={formData.arrival}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             )}
 
@@ -391,7 +428,11 @@ export default function CommunityWritePage() {
                                         ))}
                                     </select>
 
-                                    {tripLoading && <div className="trip-plan-help">여행 계획 불러오는 중...</div>}
+                                    {tripLoading && (
+                                        <div className="trip-plan-help">
+                                            여행 계획 불러오는 중...
+                                        </div>
+                                    )}
 
                                     {selectedTrip && (
                                         <div className="selected-trip-preview">
@@ -412,8 +453,12 @@ export default function CommunityWritePage() {
                                 <div className="rating-form-row">
                                     <div className="rating-input-container">
                                         <div className="stars">
-                                            {[1,2,3,4,5].map(n => (
-                                                <span key={n} onClick={() => handleRating(n)} style={{ cursor: "pointer" }}>
+                                            {[1, 2, 3, 4, 5].map(n => (
+                                                <span
+                                                    key={n}
+                                                    onClick={() => handleRating(n)}
+                                                    style={{ cursor: "pointer" }}
+                                                >
                                                     {n <= formData.rating ? "★" : "☆"}
                                                 </span>
                                             ))}
@@ -433,32 +478,40 @@ export default function CommunityWritePage() {
                                 />
 
                                 <div id="toolbar" className="post-toolbar">
-                                    <select className="ql-size" defaultValue="16px">
-                                        {Size.whitelist.map(size => <option key={size} value={size}>{size}</option>)}
+                                    <select className="ql-size" defaultValue="">
+                                        <option value="">기본</option>
+                                        {Size.whitelist.map(size => (
+                                            <option key={size} value={size}>
+                                                {size}
+                                            </option>
+                                        ))}
                                     </select>
+
                                     <div className="toolbar-divider" />
-                                    <button className="ql-bold" />
-                                    <button className="ql-italic" />
-                                    <button className="ql-underline" />
+                                    <button type="button" className="ql-bold" />
+                                    <button type="button" className="ql-italic" />
+                                    <button type="button" className="ql-underline" />
                                     <div className="toolbar-divider" />
-                                    <button className="ql-align" value="" />
-                                    <button className="ql-align" value="center" />
-                                    <button className="ql-align" value="right" />
+                                    <button type="button" className="ql-align" value="" />
+                                    <button type="button" className="ql-align" value="center" />
+                                    <button type="button" className="ql-align" value="right" />
                                     <div className="toolbar-divider" />
-                                    <button className="ql-image" />
+                                    <button type="button" className="ql-image" />
                                 </div>
 
                                 <ReactQuill
                                     ref={quillRef}
+                                    theme="snow"
                                     value={formData.content}
                                     onChange={handleContentChange}
                                     modules={modules}
+                                    formats={formats}
                                     placeholder="내용을 작성해주세요."
                                 />
 
                                 <input
                                     className="post-input-tags"
-                                    name="tags" 
+                                    name="tags"
                                     value={formData.tags}
                                     onChange={handleChange}
                                     placeholder="#태그를 입력하세요 (,으로 구분)"
@@ -466,21 +519,23 @@ export default function CommunityWritePage() {
                             </div>
 
                             <div className="community-footer">
-                                <button type="button" className="cancel-button" onClick={() => navigate(-1)}>
+                                <button
+                                    type="button"
+                                    className="cancel-button"
+                                    onClick={() => navigate(-1)}
+                                >
                                     취소
                                 </button>
                                 <button
                                     type="submit"
                                     className="write-button"
-                                    disabled={isSubmitting} // 이미 잘 작성하신 부분!
+                                    disabled={isSubmitting}
                                 >
-                                    {/* 🔥 isSubmitting 상태에 따라 텍스트를 다르게 보여줍니다 */}
                                     {isSubmitting
                                         ? "처리 중..."
                                         : (isEditMode ? "수정 완료" : "게시하기")}
                                 </button>
                             </div>
-
                         </form>
                     </main>
                 </div>

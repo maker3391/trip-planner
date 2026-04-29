@@ -8,6 +8,7 @@ const client = axios.create({
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
+// 🔥 재요청 대기열 처리
 const onRefreshed = (token: string) => {
   refreshSubscribers.forEach((callback) => callback(token));
   refreshSubscribers = [];
@@ -15,30 +16,6 @@ const onRefreshed = (token: string) => {
 
 const addRefreshSubscriber = (callback: (token: string) => void) => {
   refreshSubscribers.push(callback);
-};
-
-const clearAuthAndRedirect = (message: string) => {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  sessionStorage.setItem("authErrorMessage", message);
-
-  if (window.location.pathname !== "/login") {
-    window.location.replace("/login");
-  }
-};
-
-const getErrorMessage = (error: any) => {
-  const data = error?.response?.data;
-
-  if (typeof data === "string") {
-    return data;
-  }
-
-  if (data?.message) {
-    return data.message;
-  }
-
-  return "인증이 만료되었습니다. 다시 로그인해주세요.";
 };
 
 client.interceptors.request.use(
@@ -60,19 +37,11 @@ client.interceptors.response.use(
     const status = error?.response?.status;
     const originalRequest = error.config;
 
-    if (status === 403) {
-      clearAuthAndRedirect(getErrorMessage(error));
-      return Promise.reject(error);
-    }
-
-    if (
-      status === 401 &&
-      originalRequest &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes("/auth/refresh")
-    ) {
+    // 🔥 401일 때 → 토큰 재발급 시도
+    if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      // 이미 refresh 중이면 → 대기
       if (isRefreshing) {
         return new Promise((resolve) => {
           addRefreshSubscriber((token: string) => {
@@ -87,29 +56,37 @@ client.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem("refreshToken");
 
-        if (!refreshToken || refreshToken === "undefined") {
-          clearAuthAndRedirect("로그인이 만료되었습니다. 다시 로그인해주세요.");
-          return Promise.reject(error);
-        }
-
+        // 🔥 refresh API 호출 (서버에 맞게 수정)
         const response = await client.post("/auth/refresh", {
           refreshToken,
         });
 
         const newAccessToken = response.data.accessToken;
 
+        // 🔥 토큰 저장
         localStorage.setItem("accessToken", newAccessToken);
 
+        // 대기 중 요청들 처리
         onRefreshed(newAccessToken);
 
+        // 원래 요청 재시도
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return client(originalRequest);
       } catch (refreshError) {
-        clearAuthAndRedirect(getErrorMessage(refreshError));
+        // 🔥 refresh 실패 → 로그아웃 처리
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
+    }
+
+    // 🔥 403은 그냥 로그아웃 처리 유지
+    if (status === 403) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
     }
 
     return Promise.reject(error);
