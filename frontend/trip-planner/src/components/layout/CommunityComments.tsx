@@ -86,7 +86,7 @@ export default function CommunityComments({ postId, currentUserId, currentUserRo
     };
 
     const initiateReply = (item: CommentItem) => {
-        const displayName = item.nickname || item.userName || item.authorNickname || "사용자";
+        // const displayName = item.nickname || item.userName || item.authorNickname || "사용자";
         setEditingId(null); 
         setReplyingTo(item.id);
     };
