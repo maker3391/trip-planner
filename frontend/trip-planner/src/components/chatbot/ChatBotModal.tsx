@@ -76,6 +76,7 @@ export default function ChatBotModal({ open, onClose }: ChatBotModalProps) {
             setCsInfo({
                 roomId: newRoom.id,
                 senderId: me.id,
+                status: "OPEN",
             });
 
             setChatMode("CS");
@@ -90,12 +91,11 @@ export default function ChatBotModal({ open, onClose }: ChatBotModalProps) {
     const handleEnterExistingRoom = async (room: CSRoomResponse) => {
         try {
             const me = await getMe();
-
             setCsInfo({
                 roomId: room.id,
                 senderId: me.id,
+                status: room.status,  // ← 추가
             });
-
             setChatMode("CS");
         } catch (error) {
             alert("로그인이 필요합니다.");
@@ -154,6 +154,7 @@ export default function ChatBotModal({ open, onClose }: ChatBotModalProps) {
                             roomId={csInfo.roomId}
                             senderId={csInfo.senderId}
                             onBack={() => setChatMode("LIST")}
+                            status={csInfo.status ?? "OPEN"}
                         />
                     )
                 )}

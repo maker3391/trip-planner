@@ -1,6 +1,5 @@
 import { useState, FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import Header from "../components/layout/Header";
 import LogoIcon from "../assets/icons/logo.png";
 import { confirmPasswordReset } from "../components/api/auth";
 import "./LoginPage.css";

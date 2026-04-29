@@ -220,17 +220,26 @@ export default function DetailPanel({
           <input
             type="number"
             min={1}
-            value={point.dayNumber ?? 1}
-            onChange={(e) => updateSelectedPoint("dayNumber", Number(e.target.value))}
-            readOnly={isReadOnly}  // ✅
-            style={{ 
+            value={point.dayNumber === 0 ? "" : (point.dayNumber ?? "")}
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === "") {
+                updateSelectedPoint("dayNumber", raw === "" ? 0 : Number(raw)); // 또는 0, 빈 상태 표현
+              } else {
+                updateSelectedPoint("dayNumber", Number(raw));
+              }
+            }}
+            readOnly={isReadOnly}
+            style={{
               width: "100%",
               padding: "10px 12px",
               border: "1px solid #ddd",
               borderRadius: "8px",
               fontSize: "14px",
-              boxSizing: "border-box", 
-              background: isReadOnly ? "#f5f5f5" : "white", cursor: isReadOnly ? "not-allowed" : "text" }}
+              boxSizing: "border-box",
+              background: isReadOnly ? "#f5f5f5" : "white",
+              cursor: isReadOnly ? "not-allowed" : "text",
+            }}
           />
         </div>      
         <div

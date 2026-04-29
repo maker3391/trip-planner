@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { client } from "../api/client.ts"
+import client from "../api/client.ts"
 
 type AuthState = {
     isLogin: boolean;
@@ -15,8 +15,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     logout: () => set({ isLogin: false, token: null }),
 }));
 
-import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
-import { CommunityResponse } from "../../types/community";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 // 대기열 관리를 위한 변수
 let isRefreshing = false;
@@ -34,7 +33,7 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 client.interceptors.response.use(
-    (response: CommunityResponse) => response,
+    (response) => response,
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 

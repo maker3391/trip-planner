@@ -115,7 +115,7 @@ export default function MyMapApp({
               onMapClick={handleMapClick}
               onSelect={setSelectedIdx}
               selectedSource={selectedIdx}
-               onMemoChange={(idx: number, text: string) => {
+              onMemoChange={(idx: number, text: string) => {
                 if (isReadOnly) return;  // ✅ 메모 수정 차단
                 setPath((prev: any) =>
                   prev.map((p: any, i: number) =>

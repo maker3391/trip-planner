@@ -19,6 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 
 @Tag(name = "🎧 고객센터 API", description = "1:1 문의 및 실시간 상담 관리")
@@ -104,6 +106,7 @@ public class CSChatController {
     @PatchMapping("/api/cs/room/{roomId}/close")
     public ResponseEntity<?> closeRoom(@PathVariable("roomId") Long roomId) {
         CschatService.closeRoom(roomId);
+        messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, Optional.of(Map.of("type", "CLOSE", "content", "상담이 종료되었습니다.")));
         return ResponseEntity.ok().body("상담이 종료되었습니다.");
     }
 

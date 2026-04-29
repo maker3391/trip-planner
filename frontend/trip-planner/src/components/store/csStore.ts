@@ -10,6 +10,7 @@ interface CSInfo {
   roomId: number;
   senderId: number;
   nickname?: string;
+  status?: string;
 }
 
 interface CSState {
