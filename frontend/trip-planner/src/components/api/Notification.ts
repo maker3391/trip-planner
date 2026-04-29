@@ -16,7 +16,7 @@ export const getUnreadNotifications = async (): Promise<NotificationResponseDto[
 
 export const readNotificationApi = async (id: number): Promise<void> => {
   await client.patch(`/notifications/${id}/read`);
-}
+};
 
 export const getAllNotifications = async (): Promise<NotificationResponseDto[]> => {
   const response = await client.get<NotificationResponseDto[]>("/notifications/history");
