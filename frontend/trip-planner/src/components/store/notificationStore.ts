@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { NotificationResponseDto } from "../api/Notification.ts";
+import { NotificationResponseDto } from "../api/Notification";
 
 interface NotificationState {
   notifications: NotificationResponseDto[];
@@ -13,7 +13,10 @@ export const useNotificationStore = create<NotificationState>((set) => ({
     notifications: typeof notis === 'function' ? notis(state.notifications) : notis
   })),
   addNotification: (noti) => set((state) => {
-    if (state.notifications.some((n) => n.id === noti.id)) return state;
+    const isDuplicate = state.notifications.some(
+      (n) => String(n.id) === String(noti.id)
+    );
+    if (isDuplicate) return state;
     return { notifications: [noti, ...state.notifications] };
   }),
 }));

@@ -6,11 +6,10 @@ import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
 
 import tplanner from "../../assets/icons/tplanner2.png";
-import GuidePopup from "../guide/GuidePopup.tsx";
-import { getMe } from "../api/auth.ts";
-import { getUnreadNotifications, NotificationResponseDto, readNotificationApi } from "../api/Notification.ts";
+import GuidePopup from "../guide/GuidePopup";
+import { getMe } from "../api/auth";
+import { getUnreadNotifications, readNotificationApi } from "../api/Notification";
 import { useNotificationStore } from "../store/notificationStore";
-import { fetchEventSource } from "@microsoft/fetch-event-source";
 import toast from "react-hot-toast";
 
 export default function Header() {
@@ -26,431 +25,136 @@ export default function Header() {
 
     const notifications = useNotificationStore((state) => state.notifications);
     const setNotifications = useNotificationStore((state) => state.setNotifications);
-    const addNotification = useNotificationStore((state) => state.addNotification);
-
+    
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
     const isNotificationOpen = Boolean(anchorEl);
     const isAdmin = userRole === "ADMIN" || userRole === "ROLE_ADMIN";
 
     const getNotiKey = (userId: number) => `notificationHistory_${userId}`;
 
-    const addNotificationOnce = (newNoti: NotificationResponseDto) => {
-        addNotification(newNoti);
-    };
-
-    const saveNotificationToLocal = (newNoti: NotificationResponseDto) => {
-        if (!currentUserId) return;
-
-        const notiKey = getNotiKey(currentUserId);
-        const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
-
-        const exists = existing.some((noti: NotificationResponseDto) => noti.id === newNoti.id);
-
-        if (exists) {
-            return;
-        }
-
-        const updated = [
-            {
-                ...newNoti,
-                receivedAt: new Date().toISOString(),
-            },
-            ...existing,
-        ].slice(0, 50);
-
-        localStorage.setItem(notiKey, JSON.stringify(updated));
-    };
-
-    useEffect(() => {
-        const handleAdminCSNotification = (event: Event) => {
-            const customEvent = event as CustomEvent<NotificationResponseDto>;
-
-            addNotificationOnce(customEvent.detail);
-            saveNotificationToLocal(customEvent.detail);
-        };
-
-        window.addEventListener("admin-cs-notification", handleAdminCSNotification);
-
-        return () => {
-            window.removeEventListener("admin-cs-notification", handleAdminCSNotification);
-        };
-    }, [currentUserId]);
-
-    const clearAuth = () => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        setUserRole(null);
-    };
-
-    useEffect(() => {
-        const today = new Date().toLocaleDateString("sv-SE");
-        const hideGuidePopupDate = localStorage.getItem("hideGuidePopupDate");
-
-        if (hideGuidePopupDate !== today) {
-            setOpenGuidePopup(true);
-        }
-    }, []);
-
     useEffect(() => {
         let isMounted = true;
-
         const validateLogin = async () => {
             const token = localStorage.getItem("accessToken");
-
             if (!token || token === "undefined") {
                 if (isMounted) {
                     setIsLoggedIn(false);
                     setCurrentUserId(null);
-                    setUserRole(null);
                     setIsCheckingAuth(false);
                 }
                 return;
             }
-
             try {
                 const user = await getMe();
-
                 if (isMounted) {
                     setIsLoggedIn(true);
                     setCurrentUserId(user.id);
                     setUserRole(user.role);
                 }
             } catch (error) {
-                clearAuth();
-
-                if (isMounted) {
-                    setIsLoggedIn(false);
-                    setCurrentUserId(null);
-                    setUserRole(null);
-                }
+                if (isMounted) setIsLoggedIn(false);
             } finally {
-                if (isMounted) {
-                    setIsCheckingAuth(false);
-                }
+                if (isMounted) setIsCheckingAuth(false);
             }
         };
-
-        setIsCheckingAuth(true);
         validateLogin();
-
-        return () => {
-            isMounted = false;
-        };
+        return () => { isMounted = false; };
     }, [location.pathname]);
 
     useEffect(() => {
-        if (!isLoggedIn) return;
-
-        const intervalId = window.setInterval(async () => {
-            try {
-                await getMe();
-            } catch (error) {
-                clearAuth();
-                setIsLoggedIn(false);
-                setCurrentUserId(null);
-                setUserRole(null);
-                toast.error("계정이 정지되었습니다.");
-                navigate("/login");
-            }
-        }, 5000);
-
-        return () => {
-            window.clearInterval(intervalId);
-        };
-    }, [isLoggedIn, navigate]);
-
-    useEffect(() => {
         if (!isLoggedIn || !currentUserId) return;
-
-        const notiKey = getNotiKey(currentUserId);
-
         const fetchNotifications = async () => {
             try {
                 const data = await getUnreadNotifications();
-                const localItems = JSON.parse(localStorage.getItem(notiKey) || "[]");
-
+                const localItems = JSON.parse(localStorage.getItem(getNotiKey(currentUserId)) || "[]");
                 const merged = [...data, ...localItems].filter(
-                    (noti, index, self) =>
-                        index === self.findIndex((item) => item.id === noti.id)
+                    (noti, index, self) => index === self.findIndex((item) => item.id === noti.id)
                 );
-
                 setNotifications(merged);
             } catch (error) {
-                console.error("알림 목록 조회 실패:", error);
+                console.error("알림 조회 실패:", error);
             }
         };
-
         fetchNotifications();
-
-        const token = localStorage.getItem("accessToken");
-        const abortController = new AbortController();
-
-        const connectSSE = async () => {
-            await fetchEventSource("http://localhost:8080/api/notifications/subscribe", {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: "text/event-stream",
-                },
-                signal: abortController.signal,
-                // openWhenHidden: true,
-                onmessage(ev) {
-                    if (ev.data.includes("EventStream Created")) return;
-
-                    try {
-                        const data = JSON.parse(ev.data);
-
-                        const newNoti: NotificationResponseDto = {
-                            id: Number(data.notificationId),
-                            message: data.message,
-                            type: data.type,
-                            targetUrl: data.targetUrl,
-                            isRead: false,
-                            createdAt: new Date().toISOString(),
-                        };
-
-                        toast(newNoti.message, {
-                            icon: "🔔",
-                            duration: 3000,
-                        });
-
-                        addNotificationOnce(newNoti);
-                        saveNotificationToLocal(newNoti);
-
-                    } catch (error) {
-                        console.error("알림 데이터 파싱 오류:", error);
-                    }
-                },
-                onerror(err) {
-                    console.error("SSE 연결 에러:", err);
-                    throw err;
-                },
-            });
-        };
-
-        connectSSE();
-
-        return () => {
-            abortController.abort();
-        };
     }, [isLoggedIn, currentUserId, setNotifications]);
 
     const handleReadNotification = async (id: number, targetUrl?: string) => {
         setNotifications((prev) => prev.filter((noti) => noti.id !== id));
-
         if (currentUserId) {
             const notiKey = getNotiKey(currentUserId);
             const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
-            const updated = existing.filter((noti: NotificationResponseDto) => noti.id !== id);
+            const updated = existing.filter((noti: any) => noti.id !== id);
             localStorage.setItem(notiKey, JSON.stringify(updated));
         }
-
         setAnchorEl(null);
-
-        if (targetUrl) {
-            navigate(targetUrl);
-        }
-
-        if (targetUrl?.startsWith("/admin/cs")) {
-            return;
-        }
-
-        try {
-            await readNotificationApi(id);
-        } catch (error) {
-            console.error("알람 읽음 처리 실패:", error);
+        if (targetUrl) navigate(targetUrl);
+        try { await readNotificationApi(id); } catch (e) {
+            console.error(e);
         }
     };
 
     const handleReadAllNotifications = async () => {
-        const currentNotifications = [...notifications];
-
+        const currentNotis = [...notifications];
         setNotifications([]);
         setAnchorEl(null);
-
-        if (currentUserId) {
-            localStorage.removeItem(getNotiKey(currentUserId));
-        }
-
-        try {
-            const serverNotifications = currentNotifications.filter(
-                (noti) => !noti.targetUrl?.startsWith("/admin/cs")
-            );
-
-            await Promise.all(
-                serverNotifications.map((noti) => readNotificationApi(noti.id))
-            );
-        } catch (error) {
-            console.error("전체 알림 읽음 처리 실패:", error);
+        if (currentUserId) localStorage.removeItem(getNotiKey(currentUserId));
+        try { await Promise.all(currentNotis.map(n => readNotificationApi(n.id))); } catch (e) {
+            console.error(e);
         }
     };
 
-    const handleLogout = async () => {
-        try {
-            await fetch("http://localhost:8080/api/auth/logout", {
-                method: "POST",
-                credentials: "include",
-            });
-        } catch (error) {
-            console.error("백엔드 로그아웃 요청 실패:", error);
-        } finally {
-            clearAuth();
-            setIsLoggedIn(false);
-            setCurrentUserId(null);
-            setNotifications([]);
-            toast.success("로그아웃되었습니다.");
-            navigate("/login");
-        }
-    };
-
-    const handleTripListClick = () => {
-        if (isCheckingAuth) return;
-
-        if (!isLoggedIn) {
-            toast.error("로그인 후 이용 가능합니다.");
-            navigate("/login");
-            return;
-        }
-
-        navigate("/trip-list");
-    };
-
-    const handleCommunityClick = () => {
-        if (isCheckingAuth) return;
-
-        if (!isLoggedIn) {
-            toast.error("로그인 후 이용 가능합니다.");
-            navigate("/login");
-            return;
-        }
-
-        navigate("/community");
+    const handleLogout = () => {
+        localStorage.removeItem("accessToken");
+        setIsLoggedIn(false);
+        setNotifications([]);
+        toast.success("로그아웃되었습니다.");
+        navigate("/login");
     };
 
     return (
-        <>
-            <AppBar position="static" elevation={0} className="header">
-                <Toolbar className="header-toolbar">
-                    <div className="header-logo" onClick={() => navigate("/")}>
-                        <img src={tplanner} alt="TPlanner" className="header-logo-img" />
-                    </div>
-
-                    <nav className="header-nav">
-                        <span onClick={() => navigate("/")}>여행 계획</span>
-                        <span onClick={handleTripListClick}>여행 목록</span>
-                        <span onClick={handleCommunityClick}>게시판</span>
-                        <span onClick={() => setOpenTutorial(true)}>도움말</span>
-                    </nav>
-
-                    <div className="header-actions">
-                        {!isCheckingAuth && isLoggedIn && (
-                            <>
-                                <span className="header-icon">
-                                    <button
-                                        type="button"
-                                        className="header-icon-btn"
-                                        onClick={(e) => setAnchorEl(e.currentTarget)}
-                                    >
-                                        <Badge badgeContent={notifications.length} color="error">
-                                            <NotificationsNoneOutlinedIcon />
-                                        </Badge>
-                                    </button>
-                                </span>
-
-                                <Menu
-                                    anchorEl={anchorEl}
-                                    open={isNotificationOpen}
-                                    onClose={() => setAnchorEl(null)}
-                                    slotProps={{
-                                        paper: {
-                                            className: "notification-menu-paper",
-                                            style: { pointerEvents: "auto" },
-                                        },
-                                    }}
-                                    disableScrollLock
-                                >
-                                    {notifications.length > 0 && (
-                                        <MenuItem
-                                            onClick={handleReadAllNotifications}
-                                            className="notification-mark-all"
-                                        >
-                                            전체 읽음
-                                        </MenuItem>
-                                    )}
-
-                                    {notifications.length === 0 ? (
-                                        <MenuItem disabled>새로운 알림이 없습니다.</MenuItem>
-                                    ) : (
-                                        notifications.map((noti) => (
-                                            <MenuItem
-                                                key={noti.id}
-                                                onClick={() =>
-                                                    handleReadNotification(noti.id, noti.targetUrl)
-                                                }
-                                                className="notification-item"
-                                            >
-                                                <Typography variant="body2">
-                                                    {noti.message}
-                                                </Typography>
-                                            </MenuItem>
-                                        ))
-                                    )}
-                                </Menu>
-                            </>
-                        )}
-
-                        {!isCheckingAuth && isLoggedIn ? (
-                            <>
-                                {isAdmin ? (
-                                    <Button
-                                        className="header-login-btn"
-                                        onClick={() => navigate("/admin")}
-                                    >
-                                        관리자 페이지
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        className="header-login-btn"
-                                        onClick={() => navigate("/mypage")}
-                                    >
-                                        마이페이지
-                                    </Button>
+        <AppBar position="static" elevation={0} className="header">
+            <Toolbar className="header-toolbar">
+                <div className="header-logo" onClick={() => navigate("/")}>
+                    <img src={tplanner} alt="TPlanner" className="header-logo-img" />
+                </div>
+                <nav className="header-nav">
+                    <span onClick={() => navigate("/")}>여행 계획</span>
+                    <span onClick={() => navigate("/trip-list")}>여행 목록</span>
+                    <span onClick={() => navigate("/community")}>게시판</span>
+                    <span onClick={() => setOpenTutorial(true)}>도움말</span>
+                </nav>
+                <div className="header-actions">
+                    {!isCheckingAuth && isLoggedIn && (
+                        <>
+                            <button type="button" className="header-icon-btn" onClick={(e) => setAnchorEl(e.currentTarget)}>
+                                <Badge badgeContent={notifications.length} color="error">
+                                    <NotificationsNoneOutlinedIcon />
+                                </Badge>
+                            </button>
+                            <Menu anchorEl={anchorEl} open={isNotificationOpen} onClose={() => setAnchorEl(null)}>
+                                {notifications.length > 0 && (
+                                    <MenuItem onClick={handleReadAllNotifications}>전체 읽음</MenuItem>
                                 )}
-
-                                <Button className="header-login-btn" onClick={handleLogout}>
-                                    로그아웃
-                                </Button>
-                            </>
-                        ) : !isCheckingAuth ? (
-                            <>
-                                <Button
-                                    className="header-login-signup-btn"
-                                    onClick={() => navigate("/login")}
-                                >
-                                    로그인
-                                </Button>
-                                <Button
-                                    className="header-login-signup-btn"
-                                    onClick={() => navigate("/signup")}
-                                >
-                                    회원가입
-                                </Button>
-                            </>
-                        ) : null}
-                    </div>
-                </Toolbar>
-            </AppBar>
-
-            <GuidePopup
-                open={openGuidePopup}
-                onClose={() => setOpenGuidePopup(false)}
-            />
-
-            <TutorialModal
-                open={openTutorial}
-                onClose={() => setOpenTutorial(false)}
-            />
-        </>
+                                {notifications.length === 0 ? (
+                                    <MenuItem disabled>새로운 알림이 없습니다.</MenuItem>
+                                ) : (
+                                    notifications.map((noti) => (
+                                        <MenuItem key={noti.id} onClick={() => handleReadNotification(noti.id, noti.targetUrl)}>
+                                            <Typography variant="body2">{noti.message}</Typography>
+                                        </MenuItem>
+                                    ))
+                                )}
+                            </Menu>
+                            <Button className="header-login-btn" onClick={() => navigate(isAdmin ? "/admin" : "/mypage")}>
+                                {isAdmin ? "관리자" : "마이페이지"}
+                            </Button>
+                            <Button className="header-login-btn" onClick={handleLogout}>로그아웃</Button>
+                        </>
+                    )}
+                </div>
+            </Toolbar>
+            <GuidePopup open={openGuidePopup} onClose={() => setOpenGuidePopup(false)} />
+            <TutorialModal open={openTutorial} onClose={() => setOpenTutorial(false)} />
+        </AppBar>
     );
 }
