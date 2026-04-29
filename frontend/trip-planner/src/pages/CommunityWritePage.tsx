@@ -480,7 +480,7 @@ export default function CommunityWritePage() {
                                 <div id="toolbar" className="post-toolbar">
                                     <select className="ql-size" defaultValue="">
                                         <option value="">기본</option>
-                                        {Size.whitelist.map(size => (
+                                        {Size.whitelist.map((size:string) => (
                                             <option key={size} value={size}>
                                                 {size}
                                             </option>
