@@ -494,6 +494,7 @@ public class CommunityService {
         comment.updateComment(request.getComment());
     }
 
+    @Transactional
     public void deleteComment(Long commentId, Long userId) {
 
         CommunityComment comment = communityCommentRepository.findById(commentId)
@@ -505,7 +506,14 @@ public class CommunityService {
 
         Community community = comment.getCommunity();
 
+        // 🔥 자식 댓글 먼저 삭제
+        if (comment.getChildren() != null && !comment.getChildren().isEmpty()) {
+            communityCommentRepository.deleteAll(comment.getChildren());
+        }
+
+        // 🔥 부모 삭제
         communityCommentRepository.delete(comment);
+
         community.decrementCommentCount();
     }
 
