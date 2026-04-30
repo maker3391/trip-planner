@@ -517,6 +517,21 @@ export default function CommunityReadPage() {
                                                                         <div>
                                                                             <strong>{member.nickname}</strong> ({member.name})
                                                                         </div>
+
+                                                                        {member.role !== "OWNER" && (
+                                                                            <div className="member-action-buttons">
+                                                                                <button
+                                                                                    className="reject-button"
+                                                                                    onClick={() => {
+                                                                                        if (window.confirm(`${member.nickname}님을 여행 계획에서 내보내시겠습니까?`)) {
+                                                                                            handleRemoveMember(member.memberId);
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    강퇴
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 ))}
                                                                 <div className="member-count-row">

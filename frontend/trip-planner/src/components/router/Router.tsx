@@ -25,39 +25,87 @@ import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { useNotificationStore } from "../store/notificationStore";
 import toast from "react-hot-toast";
 
+import { NotificationResponseDto } from "../api/Notification";
+
 export default function Router() {
-    const [openChatBot, setOpenChatBot] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [openChatBot, setOpenChatBot] = useState(false);
     const location = useLocation();
 
     const addNotification = useNotificationStore((state) => state.addNotification);
-
-    const isAdmin = userRole === "ADMIN" || userRole === "ROLE_ADMIN";
+    // User Summary에 근거한 관리자 권한 확인
+    const isAdmin = userRole === "ADMIN" || userRole === "ROLE_ADMIN"; 
     const showChatBot = !isAdmin;
 
-    useEffect(() => {
-        const checkUserRole = async () => {
-            const token = localStorage.getItem("accessToken");
+    const getNotiKey = (userId: number) => `notificationHistory_${userId}`;
 
+    const addNotificationOnce = (newNoti: NotificationResponseDto) => {
+        addNotification(newNoti);
+    };
+
+    const saveNotificationToLocal = (newNoti: NotificationResponseDto) => {
+        if (!currentUserId) return;
+
+        const notiKey = getNotiKey(currentUserId);
+        const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
+
+        const exists = existing.some((noti: NotificationResponseDto) => noti.id === newNoti.id);
+
+        if (exists) {
+            return;
+        }
+
+        const updated = [
+            {
+                ...newNoti,
+                receivedAt: new Date().toISOString(),
+            },
+            ...existing,
+        ].slice(0, 50);
+
+        localStorage.setItem(notiKey, JSON.stringify(updated));
+    };
+
+    useEffect(() => {
+        const handleAdminCSNotification = (event: Event) => {
+            const customEvent = event as CustomEvent<NotificationResponseDto>;
+
+            addNotificationOnce(customEvent.detail);
+            saveNotificationToLocal(customEvent.detail);
+        };
+
+        window.addEventListener("admin-cs-notification", handleAdminCSNotification);
+
+        return () => {
+            window.removeEventListener("admin-cs-notification", handleAdminCSNotification);
+        };
+    }, [currentUserId]);
+
+    useEffect(() => {
+        const checkUser = async () => {
+            const token = localStorage.getItem("accessToken");
             if (!token || token === "undefined") {
                 setUserRole(null);
+                setCurrentUserId(null);
                 return;
             }
-
             try {
                 const user = await getMe();
                 setUserRole(user.role);
+                setCurrentUserId(user.id);
             } catch (error) {
                 setUserRole(null);
+                setCurrentUserId(null);
             }
         };
-
-        checkUserRole();
+        checkUser();
     }, [location.pathname]);
 
+    // 일반 알림 SSE 연결 (Router에서 전담)
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
-        if (!token || token === "undefined") return;
+        if (!token || token === "undefined" || !currentUserId) return;
 
         const abortController = new AbortController();
 
@@ -71,51 +119,40 @@ export default function Router() {
                     },
                     signal: abortController.signal,
                     onmessage(ev) {
-                    if (ev.data.includes("EventStream Created")) return;
+                        if (ev.data.includes("EventStream Created")) return;
+                        try {
+                            const newNoti = JSON.parse(ev.data);
+                            const currentNotis = useNotificationStore.getState().notifications;
+                            const isDuplicate = currentNotis.some(n => String(n.id) === String(newNoti.id));
 
-                    try {
-                        const newNoti = JSON.parse(ev.data);
+                            if (!isDuplicate) {
+                                toast(newNoti.message, { icon: "🔔", duration: 3000 });
+                                addNotification(newNoti);
 
-                        const currentNotis = useNotificationStore.getState().notifications;
-                        const isDuplicate = currentNotis.some((n) => n.id === newNoti.id);
-
-                        if (!isDuplicate) {
-                            toast(newNoti.message, {
-                                icon: "🔔",
-                                duration: 3000,
-                            });
-                            addNotification(newNoti);
-                        }
-
-                    } catch (error) {
-                        console.error("알림 데이터 파싱 오류:", error);
-                    }
-                },
-                    onerror(err) {
-                        console.error("SSE 연결 에러:", err);
-                        throw err;
+                                const notiKey = `notificationHistory_${currentUserId}`;
+                                const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
+                                if (!existing.some((n: any) => String(n.id) === String(newNoti.id))) {
+                                    localStorage.setItem(notiKey, JSON.stringify([newNoti, ...existing].slice(0, 50)));
+                                }
+                            }
+                        } catch (e) { console.error("알림 파싱 에러", e); }
                     },
+                    onerror(err) { throw err; }
                 });
-            } catch (error) {
-                console.error("SSE 구독 실패:", error);
-            }
+            } catch (e) { console.error("SSE 연결 실패", e); }
         };
 
         connectSSE();
-
-        return () => {
-            abortController.abort();
-        };
-    }, [addNotification]);
+        return () => abortController.abort();
+    }, [currentUserId, addNotification]);
 
     useEffect(() => {
-        if (isAdmin) {
-            setOpenChatBot(false);
-        }
+        if (isAdmin) setOpenChatBot(false);
     }, [isAdmin]);
 
     return (
         <>
+            {/* 🔥 관리자 계정일 때만 실시간 문의 알림 활성화 */}
             {isAdmin && <AdminCSNotifier />}
 
             <Routes>
@@ -124,58 +161,21 @@ export default function Router() {
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-                <Route
-                    path="/mypage"
-                    element={
-                        <ProtectedRoute>
-                            <MyPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin"
-                    element={
-                        <AdminRoute>
-                            <AdminPage />
-                        </AdminRoute>
-                    }
-                />
-
+                <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
+                <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                 <Route path="/community" element={<CommunityPage />} />
                 <Route path="/community/write" element={<CommunityWritePage />} />
                 <Route path="/community/write/:id" element={<CommunityWritePage />} />
                 <Route path="/community/:id" element={<CommunityReadPage />} />
                 <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
-
-                <Route
-                    path="/trip-list"
-                    element={
-                        <ProtectedRoute>
-                            <TripListPage />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/admin/cs"
-                    element={
-                        <AdminRoute>
-                            <AdminCSPage />
-                        </AdminRoute>
-                    }
-                />
+                <Route path="/trip-list" element={<ProtectedRoute><TripListPage /></ProtectedRoute>} />
+                <Route path="/admin/cs" element={<AdminRoute><AdminCSPage /></AdminRoute>} />
             </Routes>
 
             {showChatBot && (
                 <>
                     <ChatBotButton onClick={() => setOpenChatBot((prev) => !prev)} />
-
-                    <ChatBotModal
-                        open={openChatBot}
-                        onClose={() => setOpenChatBot(false)}
-                    />
+                    <ChatBotModal open={openChatBot} onClose={() => setOpenChatBot(false)} />
                 </>
             )}
         </>
