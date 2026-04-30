@@ -48,7 +48,7 @@ export default function AdminCSPage() {
     }
 
     const client = new Client({
-      webSocketFactory: () => new SockJS("${import.meta.env.VITE_API_URL}/ws-chat"),
+      webSocketFactory: () => new SockJS('${import.meta.env.VITE_API_URL}/ws-chat'),
       reconnectDelay: 5000,
       onConnect: () => {
         client.subscribe(`/sub/chat/room/${room.id}`, (message) => {
@@ -84,7 +84,7 @@ export default function AdminCSPage() {
     init();
 
     const adminGlobalClient = new Client({
-      webSocketFactory: () => new SockJS("${import.meta.env.VITE_API_URL}/ws-chat"),
+      webSocketFactory: () => new SockJS('${import.meta.env.VITE_API_URL}/ws-chat'),
       reconnectDelay: 5000,
       onConnect: () => {
         adminGlobalClient.subscribe("/sub/chat/admin/new-room", () => {

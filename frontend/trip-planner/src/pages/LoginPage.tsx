@@ -103,11 +103,11 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "${import.meta.env.VITE_API_URL}/oauth2/authorization/google";
+    window.location.href = '${import.meta.env.VITE_API_URL}/oauth2/authorization/google';
   };
 
   const handleKakaoLogin = () => {
-    window.location.href = "${import.meta.env.VITE_API_URL}/oauth2/authorization/kakao";
+    window.location.href = '${import.meta.env.VITE_API_URL}/oauth2/authorization/kakao';
   };
 
   return (
