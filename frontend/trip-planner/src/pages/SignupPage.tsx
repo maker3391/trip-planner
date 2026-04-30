@@ -1,6 +1,6 @@
 import { useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast"; // Toaster는 최상위(Router)에서 한 번만 쓰기로 했으므로 삭제
+import toast from "react-hot-toast";
 import type { SignupRequest } from "../types/auth";
 import Header from "../components/layout/Header";
 import KakaoIcon from "../assets/icons/Kakao.png";
@@ -13,7 +13,6 @@ import "./SignupPage.css";
 export default function SignupPage() {
   const navigate = useNavigate();
 
-  // 1. 회원가입 입력 데이터 상태
   const [formData, setFormData] = useState<SignupRequest>({
     email: "",
     password: "",
@@ -23,18 +22,15 @@ export default function SignupPage() {
   });
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
-  // 2. 약관 동의 상태
   const [agreements, setAgreements] = useState({
     all: false,
-    terms: false,    // 이용약관 (필수)
-    privacy: false,  // 개인정보 수집 (필수)
-    marketing: false // 마케팅 수신 (선택)
+    terms: false,
+    privacy: false,
+    marketing: false
   });
 
-  // 3. 모달 상태 제어 ("terms" | "privacy" | null)
   const [activeModal, setActiveModal] = useState<"terms" | "privacy" | null>(null);
 
-  // 입력 핸들러
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -43,10 +39,8 @@ export default function SignupPage() {
     }));
   };
 
-  // 체크박스 핸들러
   const handleAgreementChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-
     if (name === "all") {
       setAgreements({
         all: checked,
@@ -62,17 +56,11 @@ export default function SignupPage() {
     }
   };
 
-  // 회원가입 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 유효성 검사 - 공통 ID 'signup-validation' 사용
     if (!formData.email || !formData.password || !passwordConfirm || !formData.name) {
-      // 예시: 모든 toast 호출부에 duration 추가
-      toast.error("필수 내용을 모두 입력해주세요. ✍️", { 
-        id: "signup-validation",
-        duration: 3000 // 3초 후 삭제
-      });
+      toast.error("필수 내용을 모두 입력해주세요. ✍️", { id: "signup-validation", duration: 3000 });
       return;
     }
 
@@ -101,7 +89,7 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch('${import.meta.env.VITE_API_URL}/api/auth/signup', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -109,7 +97,6 @@ export default function SignupPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // 성공 시 기존 에러 토스트들을 지움
         toast.dismiss();
 
         if (data.accessToken && data.refreshToken) {
@@ -142,26 +129,24 @@ export default function SignupPage() {
       default: toast.error("회원가입에 실패했습니다.", { id: "signup-fail" });
     }
   };
-    const handleGoogleLogin = () => {
-    window.location.href = '${import.meta.env.VITE_API_URL}/oauth2/authorization/google';
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/oauth2/authorization/google`;
   };
 
   const handleKakaoLogin = () => {
-    window.location.href = '${import.meta.env.VITE_API_URL}/oauth2/authorization/kakao';
+    window.location.href = `${import.meta.env.VITE_API_URL}/oauth2/authorization/kakao`;
   };
-
 
   return (
     <div className="signup-page">
       <Header />
-
       <div className="signup-page-body">
         <div className="signup-card">
           <div className="signup-header">
             <img src={LogoIcon} alt="로고 아이콘" className="signup-logo" />
           </div>
           <h1 className="signup-title">회원가입</h1>
-          
           <div className="signup-form-fields">
             <input className="signup-input" type="email" name="email" placeholder="* 이메일" value={formData.email} onChange={handleChange} />
             <input className="signup-input" type="text" name="nickname" placeholder="* 닉네임" value={formData.nickname} onChange={handleChange} />
@@ -179,7 +164,6 @@ export default function SignupPage() {
               </label>
             </div>
             <div className="agreement-divider"></div>
-            
             <div className="agreement-item">
               <label>
                 <input type="checkbox" name="terms" checked={agreements.terms} onChange={handleAgreementChange} />
@@ -187,7 +171,6 @@ export default function SignupPage() {
               </label>
               <span className="view-detail" onClick={() => setActiveModal("terms")}>보기</span>
             </div>
-
             <div className="agreement-item">
               <label>
                 <input type="checkbox" name="privacy" checked={agreements.privacy} onChange={handleAgreementChange} />
@@ -195,7 +178,6 @@ export default function SignupPage() {
               </label>
               <span className="view-detail" onClick={() => setActiveModal("privacy")}>보기</span>
             </div>
-
             <div className="agreement-item">
               <label>
                 <input type="checkbox" name="marketing" checked={agreements.marketing} onChange={handleAgreementChange} />
@@ -204,45 +186,24 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <button className="signup-button" onClick={handleSubmit}>
-            회원가입
-          </button>
-
+          <button className="signup-button" onClick={handleSubmit}>회원가입</button>
           <div className="signup-divider">또는</div>
-
-          <button
-            type="button"
-            className="social-button"
-            onClick={handleKakaoLogin}
-          >
+          <button type="button" className="social-button" onClick={handleKakaoLogin}>
             <img src={KakaoIcon} alt="카카오 아이콘" className="social-icon" />
             <span className="social-button-text">Kakao 계정으로 진행하기</span>
           </button>
-          <button
-            type="button"
-            className="social-button"
-            onClick={handleGoogleLogin}
-          >
+          <button type="button" className="social-button" onClick={handleGoogleLogin}>
             <img src={GoogleIcon} alt="구글 아이콘" className="social-icon" />
             <span className="social-button-text">Google 계정으로 진행하기</span>
           </button>
-
           <p className="signup-login">
             이미 계정이 있으신가요? <span onClick={() => navigate("/login")}>지금 로그인하세요</span>
           </p>
         </div>
       </div>
 
-      <TermsModal 
-        open={activeModal === "terms"} 
-        onClose={() => setActiveModal(null)} 
-        title="이용약관" 
-      />
-      <TermsSecurityModal 
-        open={activeModal === "privacy"} 
-        onClose={() => setActiveModal(null)} 
-        title="개인정보 수집 및 이용 동의" 
-      />
+      <TermsModal open={activeModal === "terms"} onClose={() => setActiveModal(null)} title="이용약관" />
+      <TermsSecurityModal open={activeModal === "privacy"} onClose={() => setActiveModal(null)} title="개인정보 수집 및 이용 동의" />
     </div>
   );
 }
