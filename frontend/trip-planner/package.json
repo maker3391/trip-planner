@@ -31,6 +31,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@types/sockjs-client": "^1.5.4",
