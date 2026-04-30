@@ -51,7 +51,7 @@ export default function CSChatWindow({ roomId, senderId, onBack, status }: CSCha
         if (!roomId) return;
 
         const client = new Client({
-            webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL}/ws-chat'),
+            webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL}/ws-chat`),
             reconnectDelay: 5000,
             onConnect: () => {
                 setConnected(true);
