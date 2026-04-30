@@ -45,8 +45,8 @@ public class CommunityService {
 
         String clean = Jsoup.clean(html, Safelist.relaxed()
                 .addTags("span")
-                // :all을 사용하면 strong, em, p 등 Safelist에 등록된 모든 안전한 태그에 style을 허용합니다.
-                .addAttributes(":all", "style"));
+                .addAttributes(":all", "style", "class") // 🔥 이거 추가
+        );
 
         return clean.trim();
     }
@@ -54,7 +54,7 @@ public class CommunityService {
     // =========================
     // 🔥 이미지 저장 방식 선택
     // =========================
-    private final String IMAGE_STORAGE = "DB";
+    private final String IMAGE_STORAGE = "S3";
 
     private final CommunityRepository communityRepository;
     private final UserRepository userRepository;
