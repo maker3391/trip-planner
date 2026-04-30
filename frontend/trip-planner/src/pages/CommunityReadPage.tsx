@@ -78,19 +78,17 @@ export default function CommunityReadPage() {
 
         if (post.category && PLAN_SHARE_ENABLED_CATEGORIES.includes(post.category)) {
             if (!post.departure && !post.arrival) return " - ";
-
             return (
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "4px",
-                    }}
-                >
-                    <span>{post.departure || "미정"}</span>
-                    <ArrowRightAltIcon fontSize="small" />
-                    <span>{post.arrival || "미정"}</span>
+                <div style={{ 
+                    display: "inline-flex", /* 🔥 flex -> inline-flex로 변경 (말줄임표 유지용) */
+                    alignItems: "center", 
+                    justifyContent: "flex-start", /* 센터 정렬 대신 왼쪽부터 채우기 */
+                    gap: "4px", 
+                    direction: "ltr" /* 🔥 핵심: 부모의 rtl을 무시하고 다시 좌->우 순서로 배치 */
+                }}>
+                <span>{post.departure || "미정"}</span>
+                <ArrowRightAltIcon fontSize="small" />
+                <span>{post.arrival || "미정"}</span>
                 </div>
             );
         }

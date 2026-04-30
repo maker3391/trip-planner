@@ -58,7 +58,9 @@ export default function CommunityList({
         <div className="col-stats">{formatCount(post.likeCount)}</div>
         <div className="col-share">{formatCount(post.shareCount)}</div>
         <div className="col-date">{post.createdAt?.split("T")[0]}</div>
-        <div className="col-route">{renderRouteOrRating(post)}</div>
+        <div className="route-wrapper">
+            <div className="col-route">{renderRouteOrRating(post)}</div>
+        </div>
         </div>
     );
 
