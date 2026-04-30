@@ -29,7 +29,7 @@
 //         }
 
 //         const client = new Client({
-//           webSocketFactory: () => new SockJS("http://localhost:8080/ws-chat"),
+//           webSocketFactory: () => new SockJS("${import.meta.env.VITE_API_URL}/ws-chat"),
 //           reconnectDelay: 5000,
 
 //           onConnect: () => {
@@ -139,7 +139,7 @@ export default function AdminCSNotifier() {
             isConnecting = true;
 
             const client = new Client({
-                webSocketFactory: () => new SockJS("http://localhost:8080/ws-chat"),
+                webSocketFactory: () => new SockJS("${import.meta.env.VITE_API_URL}/ws-chat"),
                 reconnectDelay: 5000,
 
                 onConnect: () => {

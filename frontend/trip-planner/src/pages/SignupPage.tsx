@@ -101,7 +101,7 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/signup", {
+      const response = await fetch("${import.meta.env.VITE_API_URL}/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -143,11 +143,11 @@ export default function SignupPage() {
     }
   };
     const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+    window.location.href = "${import.meta.env.VITE_API_URL}/oauth2/authorization/google";
   };
 
   const handleKakaoLogin = () => {
-    window.location.href = "http://localhost:8080/oauth2/authorization/kakao";
+    window.location.href = "${import.meta.env.VITE_API_URL}/oauth2/authorization/kakao";
   };
 
 
