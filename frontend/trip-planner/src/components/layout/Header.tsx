@@ -26,7 +26,7 @@ export default function Header() {
 
     const notifications = useNotificationStore((state) => state.notifications);
     const setNotifications = useNotificationStore((state) => state.setNotifications);
-    const addNotificationOnce = useNotificationStore((state) => state.addNotificationOnce);
+    const addNotification = useNotificationStore((state) => state.addNotification);
     
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const isNotificationOpen = Boolean(anchorEl);
