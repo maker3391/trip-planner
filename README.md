@@ -6,7 +6,6 @@
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=flat-square&logo=springboot)
 ![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
 ![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=flat-square&logo=mariadb)
-![AWS](https://img.shields.io/badge/AWS-FF9900?style=flat-square&logo=amazonaws&logoColor=white)
 
 <br>
 
@@ -28,7 +27,7 @@
 | 역할 | 이름 | 담당 기능 |
 |------|------|----------|
 | 팀장 | 김승일 | 지도 핀 & 동선 기능 |
-| 팀원 | 최병현 | AI 챗봇 |
+| 팀원 | 최병현 | AI 챗봇 & OAuth2 로그인·JWT 인증|
 | 팀원 | 최영 | 프론트엔드 전반, 마이페이지 |
 | 팀원 | 남수원 | 백엔드 전반, 소켓 기반 관리자 문의 기능 |
 | 팀원 | 신원준 | 게시판 |
@@ -47,7 +46,6 @@
 ### Backend
 ![Java](https://img.shields.io/badge/Java_21-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-FF9900?style=flat-square&logo=amazonaws&logoColor=white)
  
 ### Database
 ![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=flat-square&logo=mariadb&logoColor=white)
