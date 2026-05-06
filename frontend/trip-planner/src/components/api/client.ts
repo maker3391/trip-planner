@@ -37,11 +37,14 @@ client.interceptors.response.use(
     const status = error?.response?.status;
     const originalRequest = error.config;
 
-    // 🔥 401일 때 → 토큰 재발급 시도
-    if (status === 401 && !originalRequest._retry) {
+    const isAuthRequest =
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/auth/signup") ||
+      originalRequest.url?.includes("/auth/refresh");
+
+    if (status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
 
-      // 이미 refresh 중이면 → 대기
       if (isRefreshing) {
         return new Promise((resolve) => {
           addRefreshSubscriber((token: string) => {

@@ -47,14 +47,13 @@ public class CommunityService {
                 .addTags("span")
                 // :all을 사용하면 strong, em, p 등 Safelist에 등록된 모든 안전한 태그에 style을 허용합니다.
                 .addAttributes(":all", "style","class"));
-
         return clean.trim();
     }
 
     // =========================
     // 🔥 이미지 저장 방식 선택
     // =========================
-    private final String IMAGE_STORAGE = "DB";
+    private final String IMAGE_STORAGE = "S3";
 
     private final CommunityRepository communityRepository;
     private final UserRepository userRepository;
@@ -494,6 +493,7 @@ public class CommunityService {
         comment.updateComment(request.getComment());
     }
 
+    @Transactional
     public void deleteComment(Long commentId, Long userId) {
 
         CommunityComment comment = communityCommentRepository.findById(commentId)
@@ -505,7 +505,14 @@ public class CommunityService {
 
         Community community = comment.getCommunity();
 
+        // 🔥 자식 댓글 먼저 삭제
+        if (comment.getChildren() != null && !comment.getChildren().isEmpty()) {
+            communityCommentRepository.deleteAll(comment.getChildren());
+        }
+
+        // 🔥 부모 삭제
         communityCommentRepository.delete(comment);
+
         community.decrementCommentCount();
     }
 

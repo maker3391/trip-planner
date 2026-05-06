@@ -1,27 +1,30 @@
 /* ========================= */
-/* 🔥 게시판 */
+/* 🔥 게시판 컨테이너 */
 /* ========================= */
 .community-board-container {
     border-top: 2px solid #333;
     border-bottom: 1px solid #eee;
     background-color: #ffffff;
     border-radius: 4px;
-    overflow-x: hidden;
+    overflow: visible; /* 툴팁이 밖으로 뻗어나갈 수 있도록 허용 */
 }
 
-/* 🔥 컬럼 비율 */
+/* ========================= */
+/* 🔥 컬럼 비율 (TSX 구조에 완벽 대응) */
+/* ========================= */
 .board-header-row,
 .board-item-row {
     display: grid;
+    /* TSX의 8개 컬럼 순서: 분류, 제목, 작성자, 조회, 좋아요, 공유, 날짜, 비고 */
     grid-template-columns: 
-        80px
-        1.8fr
-        90px
-        55px
-        55px
-        55px
-        85px
-        85px;
+        70px        /* 1. 분류 (.col-category) */
+        1fr         /* 2. 제목 (.col-title) - 남은 공간 모두 차지 */
+        100px       /* 3. 작성자 (.col-author) */
+        55px        /* 4. 조회 (.col-views) */
+        55px        /* 5. 좋아요 (.col-stats) */
+        55px        /* 6. 공유 (.col-share) */
+        80px        /* 7. 날짜 (.col-date) */
+        140px;      /* 8. 비고 (.route-wrapper) */
 
     align-items: center;
     padding: 12px 0;
@@ -36,22 +39,33 @@
 /* ========================= */
 /* 🔥 헤더 */
 /* ========================= */
+/* ========================= */
+/* 🔥 헤더 */
+/* ========================= */
 .board-header-row {
-    background-color: #f5f5f5; /* 🔥 기준 색 */
+    background-color: #f5f5f5;
     font-weight: 600;
     border-bottom: 1px solid #eee;
     font-size: 14px;
     color: #555;
 }
 
+/* 👇 이 부분을 추가해 주세요! (헤더 비고란 배경 초기화) 👇 */
+.board-header-row .col-route {
+    background-color: transparent !important; /* 배경색 완벽히 제거 */
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0; /* 필요시 패딩 제거 */
+}
+
 /* ========================= */
-/* 🔥 리스트 */
+/* 🔥 리스트 행 */
 /* ========================= */
 .board-item-row {
     border-bottom: 1px solid #f5f5f5;
     font-size: 14px;
     transition: background-color 0.2s ease;
-    color: #444; /* 🔥 기본 텍스트 통일 */
+    color: #444;
 }
 
 .board-item-row:hover {
@@ -59,7 +73,7 @@
     cursor: pointer;
 }
 
-/* 현재 글 */
+/* 현재 글 (선택됨) */
 .board-item-row.active-row {
     background-color: #f0f0f0;
     border-left: 3px solid #999;
@@ -71,7 +85,7 @@
 }
 
 /* ========================= */
-/* 🔥 컬럼 디테일 */
+/* 🔥 컬럼 디테일 (제목, 텍스트) */
 /* ========================= */
 .col-title {
     text-align: left;
@@ -82,7 +96,6 @@
     overflow: hidden;
 }
 
-/* 제목 */
 .title-text {
     flex: 1;
     min-width: 0;
@@ -91,69 +104,183 @@
     text-overflow: ellipsis;
 }
 
-/* 댓글 수 */
 .comment-count {
     flex-shrink: 0;
     font-size: 12px;
-    color: #888; /* 🔥 강조 제거 */
+    color: #888;
     font-weight: 500;
 }
 
-/* 🔥 기타 (헤더 느낌으로 통일) */
-.col-route {
-    width: calc(100% - 16px);
-    justify-self: center;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    font-size: 12px;
-    font-weight: 500;
-
-    color: #555;                /* 🔥 헤더 텍스트 톤 */
-    background: #f5f5f5;       /* 🔥 헤더 배경과 통일 */
-    border-radius: 4px;
-    padding: 3px 6px;
-}
-
-/* 작성자 */
-.col-author {
+.col-category {
     font-size: 13px;
     color: #555;
 }
 
-/* 날짜 */
+.col-author {
+    font-size: 13px;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .col-date {
     font-size: 13px;
     color: #888;
 }
 
-/* 숫자 컬럼 */
+/* ========================= */
+/* 🔥 숫자 컬럼 (조회, 좋아요, 공유) */
+/* ========================= */
 .col-views,
 .col-stats,
 .col-share {
-    width: 55px;
-    max-width: 55px;
+    width: 100%;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-variant-numeric: tabular-nums;
-
-    color: #777; /* 🔥 전부 통일 */
+    color: #777;
+    font-size: 13px;
 }
 
-/* 공유 컬럼 (색 제거) */
 .col-share {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 4px;
+}
+
+/* ========================= */
+/* 🔥 비고 (Route 툴팁 확장형) */
+/* ========================= */
+/* 1. 원래 공간 유지 Wrapper */
+.route-wrapper {
+    position: relative;
+    width: 100%;
+    height: 26px; 
+    display: flex;
+    align-items: center;
+}
+
+/* 2. 평소 상태 
+   (주의: 헤더의 비고 글씨가 날아가지 않도록 .route-wrapper 하위의 .col-route만 absolute 적용) */
+.route-wrapper .col-route {
+    position: absolute;
+    top: 50%;
+    left: 0; /* 만약 가로로 늘어날 때 우측 화면을 벗어난다면 left 대신 right: 0; 으로 변경하세요 */
+    transform: translateY(-50%);
+    width: 100%; 
+    
+    display: block;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    text-align: left;
+    
+    background: #f5f5f5;
+    border-radius: 4px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+
+    /* 도착지(끝부분) 우선 보존 */
+    direction: rtl;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    line-height: 1.4;
+    z-index: 1;
+    transition: width 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* 3. 마우스 올렸을 때 전체 보기 */
+.route-wrapper .col-route:hover {
+    direction: ltr; 
+    width: max-content; 
+    max-width: 500px; /* 너무 길어져서 화면을 깨는 것 방지 */
+    
+    background: #fff;
+    border-color: #ddd;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* ========================= */
+/* 🔥 공지사항 */
+/* ========================= */
+.board-item-row.notice-row {
+    background-color: #fffbef;
+    border-bottom: 1px solid #f9eebc;
+}
+
+.board-item-row.notice-row:hover {
+    background-color: #fff8e1;
+}
+
+.notice-row .col-category {
+    color: #b88600;
+    font-weight: 800;
+}
+
+.notice-row .title-text {
+    font-weight: 700;
+    color: #222;
+}
+
+.no-notices {
+    padding: 15px;
+    text-align: center;
+    font-size: 13px;
+    color: #bbb;
+    background-color: #fafafa;
+    border-bottom: 1px solid #eee;
+}
+
+/* 공지 + active 겹침 방지 */
+.board-item-row.notice-row.active-row {
+    background-color: #fff5d1;
+    border-left: 3px solid #b88600;
+}
+
+/* ========================= */
+/* 🔥 공지 토글 버튼 */
+/* ========================= */
+.notice-toggle-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    margin-bottom: 1px;
+    background-color: #fdfdfd;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.notice-toggle-bar:hover {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+/* ========================= */
+/* 🔥 게시글 없음 & 섹션 구분 */
+/* ========================= */
+.posts-section {
+    border-top: 1px solid #ddd;
+}
+
+.no-posts {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
 }
 
 /* ========================= */
@@ -179,114 +306,19 @@
     transition: 0.2s;
 }
 
-.pagination button:hover {
+.pagination button:hover:not(:disabled) {
     background-color: #f5f5f5;
     border-color: #ccc;
 }
 
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .pagination button.active-page {
-    background-color: #333; /* 🔥 포인트 컬러 하나만 유지 */
+    background-color: #333;
     color: #fff;
     font-weight: 700;
     border-color: #333;
-}
-
-/* ========================= */
-/* 🔥 게시글 없음 */
-/* ========================= */
-.no-posts {
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-}
-
-.notice-row {
-    background-color: #fff8e1;
-    font-weight: 600;
-    border-left: 3px solid #ffc107;
-}
-
-/* ========================= */
-/* 🔥 공지사항 섹션 및 로우 */
-/* ========================= */
-
-/* 공지사항 로우 전용 스타일 */
-.board-item-row.notice-row {
-    background-color: #fffbef; /* 아주 연한 노란색으로 가독성 확보 */
-    border-bottom: 1px solid #f9eebc;
-}
-
-.board-item-row.notice-row:hover {
-    background-color: #fff8e1;
-}
-
-/* 공지사항의 '최신 공지' 텍스트 강조 */
-.notice-row .col-category {
-    color: #b88600; /* 노란색 톤의 어두운 갈색 */
-    font-weight: 800;
-}
-
-/* 공지사항 제목 강조 */
-.notice-row .title-text {
-    font-weight: 700;
-    color: #222;
-}
-
-/* 공지사항이 없을 때 */
-.no-notices {
-    padding: 15px;
-    text-align: center;
-    font-size: 13px;
-    color: #bbb;
-    background-color: #fafafa;
-    border-bottom: 1px solid #eee;
-}
-
-/* ========================= */
-/* 🔥 공지사항 펼치기/접기 버튼 */
-/* ========================= */
-.notice-toggle-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    padding: 10px 0;
-    margin-bottom: 1px; /* 게시글과의 간격 */
-    
-    background-color: #fdfdfd;
-    border-bottom: 1px solid #eee;
-    
-    font-size: 13px;
-    font-weight: 600;
-    color: #888;
-    
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.notice-toggle-bar:hover {
-    background-color: #f5f5f5;
-    color: #333;
-}
-
-/* 버튼 내 화살표나 아이콘 강조를 원할 경우 */
-.notice-toggle-bar::after {
-    margin-left: 8px;
-    font-size: 11px;
-    opacity: 0.7;
-}
-
-/* ========================= */
-/* 🔥 게시글 섹션 구분선 */
-/* ========================= */
-.posts-section {
-    border-top: 1px solid #ddd; /* 공지 섹션과 일반 게시글 사이 구분 */
-}
-
-/* 기존 active-row(현재 읽고 있는 글)와 notice-row가 겹칠 때의 우선순위 */
-.board-item-row.notice-row.active-row {
-    background-color: #f0f0f0;
-    border-left: 3px solid #333;
 }
