@@ -4,8 +4,8 @@ import Header from "../components/layout/Header";
 import { getMe, updateMe, withdrawApi } from "../components/api/auth.ts";
 import "./MyPage.css";
 import toast from "react-hot-toast"; // toast 임포트 추가
-import axios from "axios";
 import { getAllNotifications, deleteNotificationApi } from "../components/api/Notification.ts";
+import client from "../components/api/client";
 
 interface MyPost {
   id: number;
@@ -57,10 +57,8 @@ export default function MyPage() {
   const fetchMyPosts = async () => {
     try {
       setIsLoadingPosts(true);
-      const token = localStorage.getItem("accessToken");
-      const response = await axios.get("/api/community/me/posts", {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { page: 0, size: 5 } // 최근 5개만 표시
+      const response = await client.get("/community/me/posts", {
+        params: { page: 0, size: 5 }
       });
       // Page 객체로 오기 때문에 content를 꺼냅니다.
       setMyPosts(response.data.content);
