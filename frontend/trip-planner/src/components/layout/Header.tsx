@@ -99,7 +99,7 @@ export default function Header() {
                     try {
                         const newNoti = JSON.parse(ev.data);
                         toast(newNoti.message, { icon: "🔔", duration: 3000 });
-                        addNotificationOnce(newNoti);
+                        addNotification(newNoti);
                     } catch (error) { console.error("알림 파싱 오류:", error); }
                 },
                 onerror(err) { console.error("SSE 연결 에러:", err); throw err; },
