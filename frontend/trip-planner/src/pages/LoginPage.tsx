@@ -91,9 +91,11 @@ export default function LoginPage() {
       navigate("/");
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
+        console.log("로그인 에러 응답:", error.response?.data);
+
         const data = error.response?.data;
         const serverMessage =
-          typeof data === "string" ? data : data?.message;
+          typeof data === "string" ? data : data?.message || data?.error ||  data?.detail;
 
         handleLoginFailure(error.response?.status, serverMessage);
       } else {
