@@ -4,7 +4,7 @@ export interface NotificationResponseDto {
   id: number;
   message: string;
   type: string;
-  isRead: boolean;
+  read: boolean;
   createdAt: string;
   targetUrl: string;
 }
