@@ -2,6 +2,7 @@ import { AppBar, Toolbar, Button, Badge, Menu, MenuItem, Typography } from "@mui
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 import TutorialModal from "../guide/TutorialModal";
 import "./Header.css";
 
@@ -25,6 +26,7 @@ export default function Header() {
 
     const notifications = useNotificationStore((state) => state.notifications);
     const setNotifications = useNotificationStore((state) => state.setNotifications);
+    const addNotificationOnce = useNotificationStore((state) => state.addNotificationOnce);
     
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const isNotificationOpen = Boolean(anchorEl);
@@ -32,6 +34,7 @@ export default function Header() {
 
     const getNotiKey = (userId: number) => `notificationHistory_${userId}`;
 
+    // 1. 유저 인증 상태 확인
     useEffect(() => {
         let isMounted = true;
         const validateLogin = async () => {
@@ -62,8 +65,14 @@ export default function Header() {
         return () => { isMounted = false; };
     }, [location.pathname]);
 
+    // 2. 실시간 알림 SSE 연결 (main의 핵심 기능)
     useEffect(() => {
         if (!isLoggedIn || !currentUserId) return;
+
+        const token = localStorage.getItem("accessToken");
+        const abortController = new AbortController();
+
+        // 초기 알림 리스트 로드
         const fetchNotifications = async () => {
             try {
                 const data = await getUnreadNotifications();
@@ -75,28 +84,64 @@ export default function Header() {
             } catch (e) { console.error("초기 알림 로드 실패", e); }
         };
         fetchNotifications();
-    }, [isLoggedIn, currentUserId, setNotifications]);
 
-    const handleReadNotification = async (id: number, targetUrl?: string) => {
-        setNotifications((prev) => prev.filter((noti) => noti.id !== id));
-        if (currentUserId) {
-            const notiKey = getNotiKey(currentUserId);
-            const existing = JSON.parse(localStorage.getItem(notiKey) || "[]");
-            localStorage.setItem(notiKey, JSON.stringify(existing.filter((n: any) => n.id !== id)));
+        // 실시간 구독 시작
+        const connectSSE = async () => {
+            await fetchEventSource(`${import.meta.env.VITE_API_URL}/api/notifications/subscribe`, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "text/event-stream",
+                },
+                signal: abortController.signal,
+                onmessage(ev) {
+                    if (ev.data.includes("EventStream Created")) return;
+                    try {
+                        const newNoti = JSON.parse(ev.data);
+                        toast(newNoti.message, { icon: "🔔", duration: 3000 });
+                        addNotificationOnce(newNoti);
+                    } catch (error) { console.error("알림 파싱 오류:", error); }
+                },
+                onerror(err) { console.error("SSE 연결 에러:", err); throw err; },
+            });
+        };
+        connectSSE();
+
+        return () => abortController.abort();
+    }, [isLoggedIn, currentUserId]);
+
+    // 3. 로그아웃 (서버 세션 정리 포함)
+    const handleLogout = async () => {
+        try {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+                method: "POST",
+                credentials: "include",
+            });
+        } catch (error) {
+            console.error("백엔드 로그아웃 요청 실패:", error);
+        } finally {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            if (currentUserId) localStorage.removeItem(getNotiKey(currentUserId));
+            
+            setIsLoggedIn(false);
+            setCurrentUserId(null);
+            setNotifications([]);
+            setAnchorEl(null);
+            toast.success("로그아웃되었습니다.");
+            navigate("/login");
         }
-        setAnchorEl(null);
-        if (targetUrl) navigate(targetUrl);
-        try { await readNotificationApi(id); } catch (e) { console.error("읽음 처리 실패", e); }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        setIsLoggedIn(false);
-        setUserRole(null);
-        setNotifications([]);
-        toast.success("로그아웃되었습니다.");
-        navigate("/login");
+    // 4. 네비게이션 가드 (로그인 체크 후 이동)
+    const handleProtectedNavigation = (path: string) => {
+        if (isCheckingAuth) return;
+        if (!isLoggedIn) {
+            toast.error("로그인 후 이용 가능합니다.");
+            navigate("/login");
+            return;
+        }
+        navigate(path);
     };
 
     return (
@@ -107,8 +152,8 @@ export default function Header() {
                 </div>
                 <nav className="header-nav">
                     <span onClick={() => navigate("/")}>여행 계획</span>
-                    <span onClick={() => navigate("/trip-list")}>여행 목록</span>
-                    <span onClick={() => navigate("/community")}>게시판</span>
+                    <span onClick={() => handleProtectedNavigation("/trip-list")}>여행 목록</span>
+                    <span onClick={() => handleProtectedNavigation("/community")}>게시판</span>
                     <span onClick={() => setOpenTutorial(true)}>도움말</span>
                 </nav>
                 <div className="header-actions">
@@ -134,13 +179,16 @@ export default function Header() {
                                         <MenuItem disabled>새로운 알림이 없습니다.</MenuItem>
                                     ) : (
                                         notifications.map((noti) => (
-                                            <MenuItem key={noti.id} onClick={() => handleReadNotification(noti.id, noti.targetUrl)}>
+                                            <MenuItem key={noti.id} onClick={() => {
+                                                setNotifications((prev) => prev.filter((n) => n.id !== noti.id));
+                                                if (noti.targetUrl) navigate(noti.targetUrl);
+                                                readNotificationApi(noti.id);
+                                            }}>
                                                 <Typography variant="body2">{noti.message}</Typography>
                                             </MenuItem>
                                         ))
                                     )}
                                 </Menu>
-                                {/* 🔥 관리자 권한에 따른 버튼 복구 */}
                                 <Button className="header-login-btn" onClick={() => navigate(isAdmin ? "/admin" : "/mypage")}>
                                     {isAdmin ? "관리자 페이지" : "마이페이지"}
                                 </Button>

@@ -45,9 +45,8 @@ public class CommunityService {
 
         String clean = Jsoup.clean(html, Safelist.relaxed()
                 .addTags("span")
-                .addAttributes(":all", "style", "class") // 🔥 이거 추가
-        );
-
+                // :all을 사용하면 strong, em, p 등 Safelist에 등록된 모든 안전한 태그에 style을 허용합니다.
+                .addAttributes(":all", "style","class"));
         return clean.trim();
     }
 
