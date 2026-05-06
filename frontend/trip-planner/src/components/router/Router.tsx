@@ -111,7 +111,7 @@ export default function Router() {
 
         const connectSSE = async () => {
             try {
-                await fetchEventSource("http://localhost:8080/api/notifications/subscribe", {
+                await fetchEventSource(`${import.meta.env.VITE_API_URL}/api/notifications/subscribe`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
