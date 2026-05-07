@@ -40,7 +40,8 @@ client.interceptors.response.use(
     const isAuthRequest =
       originalRequest.url?.includes("/auth/login") ||
       originalRequest.url?.includes("/auth/signup") ||
-      originalRequest.url?.includes("/auth/refresh");
+      originalRequest.url?.includes("/auth/refresh") ||
+      originalRequest.url?.includes("/auth/password-reset");
 
     if (status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
