@@ -54,6 +54,13 @@ export default function Header() {
                     setIsLoggedIn(true);
                     setCurrentUserId(user.id);
                     setUserRole(user.role);
+
+                    // ✅ 추가: 유저별 팝업 오픈 여부 체크
+                    const hideDate = localStorage.getItem(`hideGuidePopupDate_${user.id}`);
+                    const today = new Date().toLocaleDateString("sv-SE");
+                    if (hideDate !== today) {
+                        setOpenGuidePopup(true);
+                    }
                 }
             } catch (error) {
                 if (isMounted) { setIsLoggedIn(false); setUserRole(null); }
@@ -64,7 +71,6 @@ export default function Header() {
         validateLogin();
         return () => { isMounted = false; };
     }, [location.pathname]);
-
     // 2. 실시간 알림 SSE 연결 (main의 핵심 기능)
     useEffect(() => {
         if (!isLoggedIn || !currentUserId) return;
@@ -203,7 +209,11 @@ export default function Header() {
                     )}
                 </div>
             </Toolbar>
-            <GuidePopup open={openGuidePopup} onClose={() => setOpenGuidePopup(false)} />
+            <GuidePopup
+            open={openGuidePopup}
+            onClose={() => setOpenGuidePopup(false)}
+            userId={currentUserId} // 추가
+            />
             <TutorialModal open={openTutorial} onClose={() => setOpenTutorial(false)} />
         </AppBar>
     );

@@ -35,7 +35,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         String providerId = (String) oAuth2User.getAttributes().get("providerId");
 
         if (provider == null || provider.isBlank() || providerId == null || providerId.isBlank()) {
-            response.sendRedirect("http://localhost:5173/login?error=oauth2&message="
+            response.sendRedirect("https://trip-planner-eight-zeta.vercel.app/login?error=oauth2&message="
                     + URLEncoder.encode("소셜 사용자 정보를 찾을 수 없습니다.", StandardCharsets.UTF_8));
             return;
         }
@@ -44,7 +44,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 .orElse(null);
 
         if (user == null) {
-            response.sendRedirect("http://localhost:5173/login?error=user_not_found");
+            response.sendRedirect("https://trip-planner-eight-zeta.vercel.app/login?error=user_not_found");
             return;
         }
 
@@ -60,7 +60,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         refreshTokenRepository.save(refreshTokenEntity);
 
         String redirectUrl =
-                "http://localhost:5173/oauth2/callback" +
+                "https://trip-planner-eight-zeta.vercel.app/oauth2/callback" +
                         "?accessToken=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8) +
                         "&refreshToken=" + URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
 
