@@ -59,7 +59,9 @@ export const withdrawApi = async (): Promise<MessageResponse> => {
 }
 
 export const requestPasswordReset = async (email: string): Promise<MessageResponse> => {
-  const response = await client.post<MessageResponse>(`/auth/password-reset/request`, { email });
+  const response = await client.post<MessageResponse>(
+    `/auth/password-reset/request?email=${encodeURIComponent(email)}`
+  );
   return response.data;
 };
 
