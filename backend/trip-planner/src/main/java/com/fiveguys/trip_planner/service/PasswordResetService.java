@@ -44,7 +44,7 @@ public class PasswordResetService {
             helper.setSubject("[TPlanner] 비밀번호 재설정 안내입니다.");
             helper.setFrom("tndnjs981102@gmail.com", "TPlanner");
 
-            String resetLink = "http://localhost:5173/reset-password?token=" + token;
+            String resetLink = "https://trip-planner-eight-zeta.vercel.app/reset-password?token=" + token;
 
             String content = "<h3>안녕하세요, TPlanner입니다.</h3>" +
                     "<p>아래 링크를 클릭하여 비밀번호를 재설정해 주세요.</p>" +

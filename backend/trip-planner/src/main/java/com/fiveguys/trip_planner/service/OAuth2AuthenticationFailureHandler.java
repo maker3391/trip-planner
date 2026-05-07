@@ -36,7 +36,7 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
         }
 
         String redirectUrl =
-                "http://localhost:5173/login?error=oauth2&message=" +
+                "https://trip-planner-eight-zeta.vercel.app/login?error=oauth2&message=" +
                         URLEncoder.encode(errorMessage, StandardCharsets.UTF_8);
 
         response.sendRedirect(redirectUrl);

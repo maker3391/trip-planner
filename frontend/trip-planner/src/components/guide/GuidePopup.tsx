@@ -4,9 +4,10 @@ import "./GuidePopup.css";
 interface GuidePopupProps {
   open: boolean;
   onClose: () => void;
+  userId: number | null;
 }
 
-export default function GuidePopup({ open, onClose }: GuidePopupProps) {
+export default function GuidePopup({ open, onClose, userId }: GuidePopupProps) {
   const [dontShowToday, setDontShowToday] = useState(false);
 
   if (!open) return null;
@@ -14,7 +15,7 @@ export default function GuidePopup({ open, onClose }: GuidePopupProps) {
   const handleClose = () => {
     if (dontShowToday) {
       const today = new Date().toLocaleDateString("sv-SE");
-      localStorage.setItem("hideGuidePopupDate", today);
+      localStorage.setItem(`hideGuidePopupDate_${userId}`, today);
     }
     onClose();
   };
