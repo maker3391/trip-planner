@@ -4,18 +4,18 @@
 
 
 <br>
-
+<div align="center">
 <!-- 라이브 데모 버튼 -->
 <a href="https://trip-planner-eight-zeta.vercel.app/">
   <img src="https://img.shields.io/badge/🌐%20Live%20Demo-Trip%20Planner-0f3460?style=for-the-badge&labelColor=16213e" />
 </a>
-
+</div>
 
 <br><br>
 
 
 
-
+<div align="center">
 <!-- 기술 스택 뱃지 -->
 <img src="https://img.shields.io/badge/Java_21-ED8B00?style=flat-square&logo=openjdk&logoColor=white"/>
 <img src="https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white"/>
@@ -23,7 +23,7 @@
 <img src="https://img.shields.io/badge/MariaDB-003545?style=flat-square&logo=mariadb&logoColor=white"/>
 <img src="https://img.shields.io/badge/AWS_S3-FF9900?style=flat-square&logo=amazons3&logoColor=white"/>
 <img src="https://img.shields.io/badge/WebSocket-010101?style=flat-square&logo=socketdotio&logoColor=white"/>
-
+</div>
 
 
 <br><br>
