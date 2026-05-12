@@ -1,4 +1,4 @@
-<div align="center">
+<img width="886" height="873" alt="chatbot" src="https://github.com/user-attachments/assets/4b9063a1-9831-4204-9852-6b0afc0feaa4" /><div align="center">
 
 <!-- 헤더 배너 -->
 ![header](https://capsule-render.vercel.app/api?type=waving&color=0,1a1a2e,16213e,0f3460&height=220&section=header&text=TPlanner&fontSize=72&fontColor=ffffff&fontAlignY=38&desc=지도%20위에%20핀을%20찍고%20동선을%20계획하는%20여행%20플래너&descSize=18&descColor=a8c8f0&descAlignY=60&animation=fadeIn)
@@ -54,6 +54,7 @@
   <tr>
     <td width="50%" valign="top">
       <h3>🗺️ 지도 기반 동선 계획</h3>
+      
       <ul>
         <li>지도에 핀을 찍어 방문할 장소 등록</li>
         <li>핀 순서 조정으로 최적 동선 시각화</li>
@@ -72,6 +73,7 @@
   <tr>
     <td width="50%" valign="top">
       <h3>🤖 AI 챗봇</h3>
+      <img width="886" height="873" alt="chatbot" src="https://github.com/user-attachments/assets/e49c60cd-f54a-4f9c-bb33-05d59d9725b6" />
       <ul>
         <li>여행지 추천 및 일정 관련 질문 해결</li>
         <li>AI 기반 여행 비서 실시간 채팅</li>
@@ -79,6 +81,7 @@
     </td>
     <td width="50%" valign="top">
       <h3>💬 실시간 관리자 문의</h3>
+      
       <ul>
         <li>WebSocket 기반 실시간 1:1 문의</li>
         <li>SSE를 활용한 실시간 알림 서비스</li>
