@@ -1,4 +1,4 @@
-<img width="886" height="873" alt="chatbot" src="https://github.com/user-attachments/assets/4b9063a1-9831-4204-9852-6b0afc0feaa4" /><div align="center">
+<!-- <img width="886" height="873" alt="chatbot" src="https://github.com/user-attachments/assets/4b9063a1-9831-4204-9852-6b0afc0feaa4" /><div align="center"> -->
 
 <!-- 헤더 배너 -->
 ![header](https://capsule-render.vercel.app/api?type=waving&color=0,1a1a2e,16213e,0f3460&height=220&section=header&text=TPlanner&fontSize=72&fontColor=ffffff&fontAlignY=38&desc=지도%20위에%20핀을%20찍고%20동선을%20계획하는%20여행%20플래너&descSize=18&descColor=a8c8f0&descAlignY=60&animation=fadeIn)
