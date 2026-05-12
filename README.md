@@ -104,7 +104,7 @@
     </td>
     <td width="50%" valign="top">
       <h3>👤 관리자 페이지</h3>
-      
+      <img width="851" height="839" alt="banned" src="https://github.com/user-attachments/assets/3deef630-3385-4acb-8fa1-34f242c23dc5" />
       <ul>
         <li>다른 유저들 관리</li>
       </ul>
