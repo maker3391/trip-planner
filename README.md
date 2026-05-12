@@ -1,4 +1,3 @@
-<!-- <img width="886" height="873" alt="chatbot" src="https://github.com/user-attachments/assets/4b9063a1-9831-4204-9852-6b0afc0feaa4" /><div align="center"> -->
 
 <!-- 헤더 배너 -->
 ![header](https://capsule-render.vercel.app/api?type=waving&color=0,1a1a2e,16213e,0f3460&height=220&section=header&text=TPlanner&fontSize=72&fontColor=ffffff&fontAlignY=38&desc=지도%20위에%20핀을%20찍고%20동선을%20계획하는%20여행%20플래너&descSize=18&descColor=a8c8f0&descAlignY=60&animation=fadeIn)
@@ -54,6 +53,7 @@
   <tr>
     <td width="50%" valign="top">
       <h3>🗺️ 지도 기반 동선 계획</h3>
+      <img width="1563" height="769" alt="baselogic" src="https://github.com/user-attachments/assets/773af146-ef82-4d8b-970b-0edc5e8d8f80" />
       <ul>
         <li>지도에 핀을 찍어 방문할 장소 등록</li>
         <li>핀 순서 조정으로 최적 동선 시각화</li>
@@ -62,6 +62,7 @@
     </td>
     <td width="50%" valign="top">
       <h3>📋 커뮤니티 게시판 공유</h3>
+      <img width="773" height="762" alt="communityShare" src="https://github.com/user-attachments/assets/995423fa-c4cd-421a-be7f-5f9cdb2d4c27" />
       <ul>
         <li>완성된 여행 계획을 커뮤니티에 공유</li>
         <li>다른 사용자의 여행 플랜 탐색 및 참고</li>
