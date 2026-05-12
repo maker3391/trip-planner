@@ -4,10 +4,12 @@
 
 <br>
 
+<div align="center">
 <!-- 라이브 데모 버튼 -->
 <a href="https://trip-planner-eight-zeta.vercel.app/">
   <img src="https://img.shields.io/badge/🌐%20Live%20Demo-Trip%20Planner-0f3460?style=for-the-badge&labelColor=16213e" />
 </a>
+</div>
 
 <br><br>
 
