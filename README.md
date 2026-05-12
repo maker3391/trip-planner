@@ -276,7 +276,7 @@ trip-planner/
 <details>
 <summary><b>🔐 인증 및 사용자 관리 (Auth API)</b></summary>
 
-> Base URL : `http://localhost:8080`  
+> Base URL : `https://trip-planner-eight-zeta.vercel.app`  
 > 인증 방식 : JWT Bearer Token
 
 | 기능 | Method | Endpoint |
