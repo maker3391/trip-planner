@@ -23,6 +23,7 @@
 <img src="https://img.shields.io/badge/MariaDB-003545?style=flat-square&logo=mariadb&logoColor=white"/>
 <img src="https://img.shields.io/badge/Google_Cloud_Storage-4285F4?style=flat-square&logo=googlecloudstorage&logoColor=white"/>
 <img src="https://img.shields.io/badge/WebSocket-010101?style=flat-square&logo=socketdotio&logoColor=white"/>
+<img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white"/>
 </div>
 
 
@@ -138,7 +139,7 @@
 ### Database & Infra
 <img src="https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white"/>
 <img src="https://img.shields.io/badge/Google_Cloud_Storage-4285F4?style=flat-square&logo=googlecloudstorage&logoColor=white"/>
-
+<img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white"/>
 </div>
 
 <br>
