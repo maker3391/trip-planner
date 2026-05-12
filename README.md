@@ -145,7 +145,7 @@
 
 <div align="center">
 
-| <img width="60" src="https://github.com/identicons/kimseungil.png"/> | <img width="60" src="https://github.com/identicons/choibyeonghyeon.png"/> | <img width="60" src="https://github.com/identicons/choiyoung.png"/> | <img width="60" src="https://github.com/identicons/namsuwon.png"/> | <img width="60" src="https://github.com/identicons/shinwonjun.png"/> |
+| <img width="60" src="https://github.com/identicons/tmdzm.png"/> | <img width="60" src="https://github.com/identicons/choibyeonghyeon.png"/> | <img width="60" src="https://github.com/identicons/choiyoung.png"/> | <img width="60" src="https://github.com/identicons/namsuwon.png"/> | <img width="60" src="https://github.com/identicons/shinwonjun.png"/> |
 |:---:|:---:|:---:|:---:|:---:|
 | **김승일** | **최병현** | **최영** | **남수원** | **신원준** |
 | 팀장 | 팀원 | 팀원 | 팀원 | 팀원 |
