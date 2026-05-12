@@ -79,6 +79,7 @@
     </td>
     <td width="50%" valign="top">
       <h3>💬 실시간 관리자 문의</h3>
+      <img width="1169" height="577" alt="adminTalk (2)" src="https://github.com/user-attachments/assets/86141ef3-0c3e-4ee5-ace1-727d338633e0" />
       <ul>
         <li>WebSocket 기반 실시간 1:1 문의</li>
         <li>SSE를 활용한 실시간 알림 서비스</li>
