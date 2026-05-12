@@ -39,7 +39,7 @@
 ## 🖼️ 서비스 미리보기
 
 <div align="center">
-  <img src="./preview.png" width="90%" alt="TPlanner 서비스 화면" style="border-radius: 12px;"/>
+  <img width="1898" height="943" alt="image" src="https://github.com/user-attachments/assets/04e31b54-3e4a-4d49-a73b-3010828c3ba8" />
 </div>
 
 <br>
