@@ -11,6 +11,9 @@
 
 <br><br>
 
+
+<div align="center">
+
 <!-- 기술 스택 뱃지 -->
 <img src="https://img.shields.io/badge/Java_21-ED8B00?style=flat-square&logo=openjdk&logoColor=white"/>
 <img src="https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white"/>
@@ -18,6 +21,8 @@
 <img src="https://img.shields.io/badge/MariaDB-003545?style=flat-square&logo=mariadb&logoColor=white"/>
 <img src="https://img.shields.io/badge/AWS_S3-FF9900?style=flat-square&logo=amazons3&logoColor=white"/>
 <img src="https://img.shields.io/badge/WebSocket-010101?style=flat-square&logo=socketdotio&logoColor=white"/>
+
+</div>
 
 <br><br>
 
@@ -87,6 +92,7 @@
     </td>
     <td width="50%" valign="top">
       <h3>💰 경비 관리 Dashboard</h3>
+      <img width="521" height="763" alt="calculator" src="https://github.com/user-attachments/assets/6805ba50-d50b-4825-a0de-4f022c9031a8" />
       <ul>
         <li>여행별 경비 항목 추가 / 수정 / 삭제</li>
         <li>경비 요약 및 전체 내역 조회</li>
@@ -94,11 +100,10 @@
       </ul>
     </td>
     <td width="50%" valign="top">
-      <h3>👤 마이페이지</h3>
+      <h3>👤 관리자 페이지</h3>
+      
       <ul>
-        <li>내가 만든 여행 플랜 관리</li>
-        <li>프로필 및 개인 정보 수정</li>
-        <li>OAuth2 로그인 · JWT 인증 지원</li>
+        <li>다른 유저들 관리</li>
       </ul>
     </td>
   </tr>
