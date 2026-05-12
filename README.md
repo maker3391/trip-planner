@@ -54,7 +54,6 @@
   <tr>
     <td width="50%" valign="top">
       <h3>🗺️ 지도 기반 동선 계획</h3>
-      
       <ul>
         <li>지도에 핀을 찍어 방문할 장소 등록</li>
         <li>핀 순서 조정으로 최적 동선 시각화</li>
@@ -69,8 +68,6 @@
         <li>좋아요 및 이미지 업로드 지원</li>
       </ul>
     </td>
-  </tr>
-  <tr>
     <td width="50%" valign="top">
       <h3>🤖 AI 챗봇</h3>
       <img width="886" height="873" alt="chatbot" src="https://github.com/user-attachments/assets/e49c60cd-f54a-4f9c-bb33-05d59d9725b6" />
@@ -81,14 +78,11 @@
     </td>
     <td width="50%" valign="top">
       <h3>💬 실시간 관리자 문의</h3>
-      
       <ul>
         <li>WebSocket 기반 실시간 1:1 문의</li>
         <li>SSE를 활용한 실시간 알림 서비스</li>
       </ul>
     </td>
-  </tr>
-  <tr>
     <td width="50%" valign="top">
       <h3>💰 경비 관리 Dashboard</h3>
       <ul>
